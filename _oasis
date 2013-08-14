@@ -1,0 +1,66 @@
+OASISFormat:      0.3
+OCamlVersion:     >= 4.00.0
+FindlibVersion:   >= 1.3.2
+Name:             email_message
+Version:          109.38.alpha1
+Synopsis:         E-mail message parser
+Authors:          Jane Street Capital LLC <opensource@janestreet.com>
+Copyrights:       (C) 2005-2013 Jane Street Capital LLC <opensource@janestreet.com>
+Maintainers:      Jane Street Capital LLC <opensource@janestreet.com>
+License:          Apache-2.0
+LicenseFile:      LICENSE.txt
+Homepage:         https://github.com/janestreet-alpha/email_message
+Plugins:          StdFiles (0.3), DevFiles (0.3), META (0.3)
+XStdFilesAUTHORS: false
+XStdFilesREADME:  false
+BuildTools:       ocamlbuild, camlp4o
+
+Library email_message
+  Path:               lib
+  Pack:               true
+  Modules:            Bigstringable,
+                      Bigstring_extended,
+                      Boundary,
+                      Debug,
+                      Email,
+                      Email_regex,
+                      Encoding,
+                      Error_handling,
+                      Field_name,
+                      Grammar,
+                      Grammar_types,
+                      Header,
+                      Lexable,
+                      Lexer,
+                      Lexer_state,
+                      Mailbox,
+                      Media_type,
+                      Mimestring,
+                      Octet_stream,
+                      Parser_intf,
+                      Rfc,
+                      String_monoidable,
+                      String_monoid
+  BuildDepends:       async,
+                      core,
+                      core_extended,
+                      re2,
+                      oUnit,
+                      sexplib.syntax,
+                      fieldslib.syntax,
+                      pa_ounit.syntax,
+                      threads
+  XMETARequires:      async,
+                      core,
+                      core_extended,
+                      re2,
+                      oUnit,
+                      threads
+
+Document "email_message"
+  Title:                E-mail message parser
+  Type:                 ocamlbuild (0.3)
+  BuildTools+:          ocamldoc
+  XOCamlbuildPath:      lib
+  XOCamlbuildLibraries: email_message
+

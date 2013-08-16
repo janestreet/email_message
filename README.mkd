@@ -1,10 +1,10 @@
 This library implements parsers and encoders for email messages
 ([RFC 2045](http://www.ietf.org/rfc/rfc2045.txt) and
 [RFC 2822](http://www.ietf.org/rfc/rfc2822.txt)), as well as mbox
-files ([RFC 4155](http://tools.ietf.org/html/rfc4155)).
+files ([RFC 4155](http://www.ietf.org/rfc/rfc4155.txt)).
 
-It was written by Victor Juan during his internship over the Summer of
-2012.
+It was written by Victor Lopez Juan during his internship over the 
+Summer of 2012.
 
 The projects hosted under
 [janestreet-alpha](https://github.com/janestreet-alpha) are libraries

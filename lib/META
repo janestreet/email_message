@@ -1,0 +1,12 @@
+# OASIS_START
+# DO NOT EDIT (digest: 59ac9e16624f3d372c4b9d413d7709f8)
+version = "109.42.alpha1"
+description = "E-mail message parser"
+requires = "async core core_extended re2 oUnit threads"
+archive(byte) = "email_message.cma"
+archive(byte, plugin) = "email_message.cma"
+archive(native) = "email_message.cmxa"
+archive(native, plugin) = "email_message.cmxs"
+exists_if = "email_message.cma"
+# OASIS_STOP
+

@@ -10,9 +10,11 @@ open Core.Std let _ = _squelch_unused_module_warning_
 /*(* Headers *)*/
 %token <Field_name.t * string> FIELD
 %token HEADER_END
+/**/
+%token NO_HEADER_END
 
 /*(* Body *)*/
-%token <string> OCTET_STREAM
+/*(* %token <string> OCTET_STREAM *)*/
 %token <int> OCTET_STREAM_OFFSET
 
 %token <string> STRING
@@ -37,28 +39,21 @@ open Core.Std let _ = _squelch_unused_module_warning_
 
 message : part EOF { $1 };
 
-part : header HEADER_END content 
-  { 
-    `Message ($1, $3)
-  }
+part : header HEADER_END OCTET_STREAM_OFFSET
+    { `Message ($1, `Content_offset $3) }
+/**/
+| header NO_HEADER_END OCTET_STREAM_OFFSET
+    { `Message ($1, `Bad_headers $3) }
 | header
-  {
-    `Message ($1, `Truncated)
-  }
+  { `Message ($1, `Truncated) }
   ;
 only_header : header EOF { $1 };
 
 header :
-  { [] }
-  | header FIELD
-    { 
-      let header = $1 in
-      let name_body = $2 in
-      (name_body :: header)
-    }
+  FIELD header { ($1 :: $2) }
+  | { [] }
 ;
 
-content : OCTET_STREAM_OFFSET  { `Content_offset $1 } ;
 /*
 (*
   | part_list CLOSE_BOUNDARY { `Content (None, Some $1) }
@@ -78,7 +73,7 @@ csubtype : ATOM { $1 };
 /*(* Some implementations wrongfully add semicolons at the end of the Content-type field.
 This rule allows for it.
 *)*/
-param_list : 
+param_list :
   | param_list_aux EOF { $1 }
   | param_list_aux semicolon EOF { $1 }
 ;
@@ -95,8 +90,8 @@ param_list_aux :
 ;
 
 parameter : attribute EQUALS value { ($1, $3) };
-attribute : ATOM { $1 };
-value : 
+attribute : ATOM { Field_name.of_string $1 };
+value :
     ATOM { $1 }
   | STRING { $1 }
 ;

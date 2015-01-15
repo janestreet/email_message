@@ -1,55 +1,58 @@
 open Core.Std
 
-type t with sexp
+(* RFC 2045 MIME-encoded Bigstrings. *)
 
-(** 
-  These are the most efficient functions to convert to/from octet_streams.
- *)
+module Encoding : sig
+  (** Text or binary are the type of the plaintext. For Base64, if the mode is
+      text, '\n' is turned into '\r\n' when encoding, and vice versa. *)
+  type known =
+    [ `Base64 of [ `Text | `Binary ]
+    | `Bit7
+    | `Bit8
+    | `Binary
+    | `Quoted_printable of [ `Text | `Binary ]
+    ]
+  with sexp, bin_io, compare
 
-(*
-  This is the preferred way to create
-    `mode' is `Text by default. 
-    fix_win_eol is false by default. 
-    If fix_win_eol is true, and `mode' is `Text, all CRLF pairs will
-      be converted to LF in place.
+  type t =
+    [ known
+    | `Unknown of string
+    ] with sexp, bin_io, compare
+  ;;
 
-*)
-val create : ?mode:[`Text | `Binary] -> ?fix_win_eol:bool -> Bigstring.t -> t
-val contents : t -> Bigstring.t
+  (* RFC 2045 says 7bit should be assumed if the Content-Transfer-Encoding heading is
+     missing. *)
+  val default : known
 
-(** mode defaults to `Text *)
-include Stringable.S with type t := t
-include Bigstringable.S with type t := t
+  val of_headers_or_default : Headers.t -> t
+end
+
+type t with sexp, bin_io, compare
 
 include String_monoidable.S with type t := t
-include Lexable.S with type t := t
+include Stringable.S with type t := t
 
-val of_string_monoid : String_monoid.t -> t
+val hash : t -> int
+
+(*
+(** mode defaults to `Text *)
+include Bigstringable.S with type t := t
+include Lexable.S with type t := t
+*)
 
 val empty : t
+
+val create : ?encoding:Encoding.t -> Bigstring_shared.t -> t
+val encoding : t -> Encoding.t
+val encoded_contents : t -> Bigstring_shared.t
+
+(* These are the expensive operation. *)
+val encode : Bigstring_shared.t -> Encoding.known -> t
+(* None if encoding is `Unknown. *)
+val decode : t -> Bigstring_shared.t option
+
+(*
+val empty : t
 val length : t -> int
-
-val mode_set : t -> [`Text | `Binary] -> t
-val mode : t -> [`Text | `Binary]
-
-val is_text : t -> bool
-val is_binary : t -> bool
-
 val sub : ?pos:int -> ?len:int -> t -> t
-
-(** RFC2045 compliant base64 *)
-module Base64 : sig
-  val decode : ?mode:[`Text | `Binary] -> t -> t
-  val encode : t -> t
-end
-
-(** RFC2045 compliant Quoted-printable *)
-module Quoted_printable : sig
-  val decode : ?mode:[`Text | `Binary] -> t -> t
-  val encode : t -> t
-end
-
-module Identity : sig
-  val decode : ?mode:[`Text | `Binary] -> t -> t
-  val encode : t -> t
-end
+*)

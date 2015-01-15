@@ -408,7 +408,7 @@ let crlf_qp_non_conforming = "\\" crlf
 let quoted_pair = "\\" text_non_conforming | crlf_qp_non_conforming | obs_qp
 
 (** RFC2822 3.2.3 -- Folding whitespace and comments *)
-(* Obs: If this matches a CRLF, there's forcibly wspafterwards *)
+(* Obs: If this matches a CRLF, there's forcibly wsp afterwards *)
 let obs_fws = wsp + (crlf wsp +) *
 let fws = ((wsp * crlf) ? wsp + ) | obs_fws
 
@@ -460,22 +460,23 @@ let obs_text = lf * cr * (obs_char lf * cr *)
 *)
 let obs_cr_text = cr + [ ^ '\r' '\n']
 
+let no_ws_printable = [ '\033' - '\126' ]
 
 let utext =
   no_ws_ctl |
-  [ '\033' - '\126' ] |
+  no_ws_printable |
   obs_char |
   obs_cr_text
 
-let unstructured = (fws ? utext) * fws ?
-
+(* Beware of "a\n\t\nb". RFC2822, 3.2.3 says such headers must not be produced,
+   but if they are, we must deal with them. *)
+let unstructured = (fws? utext?)*
 
 (**********************************************************)
 
 (* Header fields *)
 let ftext = [ '\033'-'\057' '\059'-'\126' ]
 let field_name = ftext +
-let optional_field = field_name ":" unstructured crlf
 
 (**********************************************************)
 
@@ -494,15 +495,8 @@ let token_char_strict = (token_char # [ '\128' - '\255' ])
 let token_strict = token_char_strict +
 
 (* RFC 2046 5.1.1 -- Common syntax *)
-let bcharnospace = (digit | alpha |
-  ['\'' '(' ')' '+' '_' ',' '-'  '.' '/' ':' '=' '?'])
-
-let bchar = bcharnospace | ' '
-
-let b = bchar ?
-
-(* 1 + 64 + 5 = 70 is what the standard requires *)
-let boundary_name = bcharnospace (b *)
+(* the spec is more restrictive on this, in practice more characters are used *)
+let bchar = [ ^ '\r' '\n' ]
 
 (* Base 64 *)
 let b64c = [ 'A'-'Z' 'a'-'z' '0'-'9' '+' '/' ]
@@ -568,10 +562,11 @@ field = parse
       (* This code is repeated to avoid cyclical dependencies. Effort has
        * been made to make it minimal.
        *)
-      LS.return [FIELD(name, body)]
+      LS.return [FIELD(Field_name.of_string name, body)]
     }
   | crlf { LS.return ~new_state:`Content [HEADER_END] }
-  | eof  { LS.return_eof }
+      | eof  { LS.return_eof }
+  | "" { LS.return ~new_state:`Content [NO_HEADER_END] }
 
 and
 
@@ -605,7 +600,7 @@ expected_eof =
 lexers do, without a dispatcher or state handlers *)
 
 
-(** Allows other lexers to skips comments.
+(** Allows other lexers to skip comments.
 
    Example usage:
 rule my_lexer = parse
@@ -639,17 +634,8 @@ content_type = parse
   | eof          { EOF }
 
 and
-(* Parses a field with only one token. Ignore the following tokens. *)
-field_token = parse
-  | fws          { field_token lexbuf }
-  | '('          { field_token (comment 1 lexbuf) }
-  | token as str { C.Result.Ok (Some str) }
-  | '"' (quoted_string_contents as str) '"'
-    { C.Result.Ok (Some (unescape str)) }
-  | _ as c       { C.Result.Error (LS.Error.unexpected_char c) }
-  | eof          { C.Result.Ok None }
 
-and
+  (*
 (* Unfolds an Unstructured field, as per RFC2822 *)
 field_unstructured_unfold buffer = parse
   | crlf ((wsp as c) ?) {
@@ -693,6 +679,8 @@ field_unstructured_fold buffer = parse
   | eof             { () }
 
 and
+  *)
+
 (* There are two very similar rules because the first boundary
  in the file might not begin with a CRLF sequence *)
 find_boundary_first reference = parse
@@ -700,7 +688,7 @@ find_boundary_first reference = parse
     let start = Lexing.lexeme_start lexbuf in
     match_boundary_name start reference 0 true lexbuf
     }
-  | ""   { find_boundary_inner reference lexbuf }
+  | "" { find_boundary_inner reference lexbuf }
   | eof  { `Eof }
 
 and
@@ -722,7 +710,7 @@ consume_rest_of_line cont = parse
   unless the CRLF does belong to a boundary *)
 and
 match_boundary_name start reference pos is_first = parse
-  | bchar as c  {
+  | bchar as c {
       if c = reference.[pos] then
         let pos = pos + 1 in
         if pos = String.length reference then
@@ -737,15 +725,20 @@ match_boundary_name start reference pos is_first = parse
 
 and
 match_boundary_end start reference is_first = parse
-  | wsp * crlf {
+  | crlf {
       if is_first then
         `Open_boundary_first (Lexing.lexeme_end lexbuf)
       else
         `Open_boundary (start, Lexing.lexeme_end lexbuf)
     }
-  | "--" wsp * { `Close_boundary (start, Lexing.lexeme_end lexbuf) }
-  | ""         { find_boundary_inner reference lexbuf }
-  | eof        { `Eof }
+  | "--" (crlf as crlf) {
+      `Close_boundary (start, Lexing.lexeme_end lexbuf - (String.length crlf))
+    }
+  | "--" eof {
+      `Close_boundary (start, Lexing.lexeme_end lexbuf)
+    }
+  | "" { find_boundary_inner reference lexbuf }
+  | eof { `Eof }
 
 (* VALIDATION *)
 and

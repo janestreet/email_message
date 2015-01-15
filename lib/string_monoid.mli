@@ -1,4 +1,4 @@
-(** Simple library for concatenating immutable strings efficiently *) 
+(** Simple library for concatenating immutable strings efficiently *)
 
 open Core.Std
 type t
@@ -18,7 +18,8 @@ val concat_string : ?sep:string -> string list -> t
 
 (* t_of_* is O(1), *_of_t is O(N), N being the length *)
 include Stringable.S with type t := t
-include Bigstringable.S with type t := t
+val of_bigstring : Bigstring.t -> t
+val to_bigstring : t -> Bigstring.t
 
 val of_char : char -> t
 
@@ -32,4 +33,3 @@ val of_char : char -> t
 *)
 val output_unix : t -> Async.Std.Writer.t -> unit
 val output_channel : t -> Out_channel.t -> unit
-

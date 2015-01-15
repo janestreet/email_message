@@ -11,11 +11,12 @@ module RFC2045 : sig
   end
 end
 
+(*
 module RFC2822 : sig
   (** Adds EOL and WSP to a string so it can be safely inserted as a header
-    field. 
-    Currently it doesn't ensure that lines are only 998 
-    characters long; thats the user's responsibility. It might be an 
+    field.
+    Currently it doesn't ensure that lines are only 998
+    characters long; thats the user's responsibility. It might be an
     interesting feature to add, though.
   *)
   val fold : string -> string
@@ -24,3 +25,4 @@ module RFC2822 : sig
   val unfold : string -> string
 end
 
+*)

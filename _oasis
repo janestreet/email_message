@@ -2,14 +2,14 @@ OASISFormat:      0.3
 OCamlVersion:     >= 4.00.0
 FindlibVersion:   >= 1.3.2
 Name:             email_message
-Version:          109.42.alpha1
+Version:          112.17.00
 Synopsis:         E-mail message parser
 Authors:          Jane Street Capital LLC <opensource@janestreet.com>
 Copyrights:       (C) 2005-2013 Jane Street Capital LLC <opensource@janestreet.com>
 Maintainers:      Jane Street Capital LLC <opensource@janestreet.com>
 License:          Apache-2.0
 LicenseFile:      LICENSE.txt
-Homepage:         https://github.com/janestreet-alpha/email_message
+Homepage:         https://github.com/janestreet/email_message
 Plugins:          StdFiles (0.3), DevFiles (0.3), META (0.3)
 XStdFilesAUTHORS: false
 XStdFilesREADME:  false
@@ -19,17 +19,18 @@ Library email_message
   Path:               lib
   Pack:               true
   Modules:            Bigstringable,
-                      Bigstring_extended,
+                      Bigstring_shared,
                       Boundary,
+                      Common,
                       Debug,
                       Email,
                       Email_regex,
-                      Encoding,
                       Error_handling,
+                      Field_list,
                       Field_name,
                       Grammar,
                       Grammar_types,
-                      Header,
+                      Headers,
                       Lexable,
                       Lexer,
                       Lexer_state,
@@ -39,28 +40,58 @@ Library email_message
                       Octet_stream,
                       Parser_intf,
                       Rfc,
+                      Std,
                       String_monoidable,
                       String_monoid
   BuildDepends:       async,
                       core,
+                      core.syntax,
                       core_extended,
                       re2,
-                      oUnit,
-                      sexplib.syntax,
-                      fieldslib.syntax,
+                      pa_ounit,
                       pa_ounit.syntax,
+                      pa_test,
+                      pa_test.syntax,
                       threads
   XMETARequires:      async,
                       core,
                       core_extended,
                       re2,
-                      oUnit,
+                      pa_test,
+                      pa_ounit,
                       threads
 
-Document "email_message"
-  Title:                E-mail message parser
-  Type:                 ocamlbuild (0.3)
-  BuildTools+:          ocamldoc
-  XOCamlbuildPath:      lib
-  XOCamlbuildLibraries: email_message
+Executable "find-destination-domains"
+  Path:               bin
+  MainIs:             find_destination_domains.ml
+  CompiledObject:     best
+  Install:            false
+  BuildDepends:       email_message
 
+Executable "mailbox-test"
+  Path:               bin
+  MainIs:             mailbox_test.ml
+  CompiledObject:     best
+  Install:            false
+  BuildDepends:       email_message
+
+Executable "mailbox-test-pipe"
+  Path:               bin
+  MainIs:             mailbox_test_pipe.ml
+  CompiledObject:     best
+  Install:            false
+  BuildDepends:       email_message
+
+Executable "mailbox-wc"
+  Path:               bin
+  MainIs:             mailbox_wc.ml
+  CompiledObject:     best
+  Install:            false
+  BuildDepends:       email_message
+
+Executable "test"
+  Path:               bin
+  MainIs:             test.ml
+  CompiledObject:     best
+  Install:            false
+  BuildDepends:       email_message

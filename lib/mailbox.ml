@@ -79,7 +79,7 @@ module Postmark = struct
   ;;
 
   let to_string t =
-    let date, ofday = Time.to_date_ofday t.time Time.Zone.utc in
+    let date, ofday = Time.to_date_ofday t.time ~zone:Time.Zone.utc in
     let parts = Core.Ofday.to_parts ofday in
 
     sprintf "From %s %s %s %2d %02d:%02d:%02d %4d"
@@ -115,7 +115,7 @@ module Postmark = struct
         let sec = Int.of_string (Match.by_name m "s") in
         let ofday = Core.Ofday.create ~hr ~min ~sec () in
 
-        let time = Time.of_date_ofday Time.Zone.utc date ofday  in
+        let time = Time.of_date_ofday ~zone:Time.Zone.utc date ofday  in
         Result.Ok { from = from; time = time }
       with
       e -> Result.Error (Exn.to_string e))
@@ -174,14 +174,13 @@ module Parser' = struct
     let message_of_t ~next_t = function
       | (current, Some postmark) ->
         let text = String.concat ~sep:"\n" (List.rev current) in
-        begin
-        try
-          let email = Email.of_octet_stream (Octet_stream.of_string text)
-        in
+        begin match Email.of_bigstring (Bigstring.of_string text) with
+        | Ok email ->
           C.put next_t { Message. postmark = postmark; email = email; }
-        with
-        Failure s -> C.warning next_t
-          ~msg:(sprintf "ERROR %s in message %s." s (Postmark.to_string postmark))
+        | Error e ->
+          C.warning next_t
+            ~msg:(sprintf "ERROR %s in message %s."
+                    (Error.to_string_hum e) (Postmark.to_string postmark))
         end
       | _ -> C.continue next_t
     in

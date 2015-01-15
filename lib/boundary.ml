@@ -4,9 +4,10 @@ open Core_extended.Std
 module Debug = Debug_in_this_directory
 
 
-type t = string with sexp
-let create = Fn.id;;
+type t = string with sexp, bin_io, compare
+let create = Fn.id
 
+let hash = String.hash
 
 module Generator = struct
   let bcharnospace =
@@ -109,12 +110,13 @@ let to_string = Fn.id;;
 
 let __UNUSED_VALUE__of_octet_streams _l = generate ();;
 
-let split_octet_stream t ~octet_stream =
-  let lexbuf = Octet_stream.to_lexbuf octet_stream in
+let split t bstr =
+  let lexbuf = Bigstring_shared.to_lexbuf bstr in
   let rec loop pos acc has_prologue =
     let sub ?stop () =
       let len = Option.map stop ~f:(fun stop -> stop - pos) in
-      Octet_stream.sub ~pos ?len octet_stream in
+      Bigstring_shared.sub ~pos ?len bstr
+    in
     match Lexer.find_boundary t lexbuf with
     | `Open_boundary_first pos ->
       loop pos acc false
@@ -123,8 +125,13 @@ let split_octet_stream t ~octet_stream =
       loop pos (chunk :: acc) has_prologue
     | `Close_boundary (stop, pos) ->
       let chunk = sub ~stop () in
-      let epilogue = Octet_stream.sub ~pos octet_stream in
-      (chunk :: acc, Some epilogue, has_prologue)
+      let epilogue =
+        if pos < Bigstring_shared.length bstr then
+          Some (Bigstring_shared.sub ~pos bstr)
+        else
+          None
+      in
+      (chunk :: acc, epilogue, has_prologue)
     | `Eof ->
       Debug.run_debug (fun () -> eprintf "Warning: No close boundary found\n");
       let chunk = sub () in (chunk :: acc, None, has_prologue)
@@ -132,11 +139,9 @@ let split_octet_stream t ~octet_stream =
   (* RFC 2046: A multipart body may have a prologue and an epilogue *)
   let parts, epilogue, has_prologue = (loop 0 [] true) in
   match List.rev parts with
-  | [] -> (Some octet_stream, [], epilogue)
-  | (prologue :: parts) as parts' ->
-      if has_prologue then
-        (Some prologue, parts, epilogue)
-      else
-        (None, parts', epilogue)
+  | [] -> (Some bstr, [], epilogue)
+  | (prologue :: parts) when has_prologue ->
+    (Some prologue, parts, epilogue)
+  | parts ->
+    (None, parts, epilogue)
 ;;
-

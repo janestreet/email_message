@@ -3,7 +3,7 @@
 type header = (Field_name.t * string) list;;
 
 
-type content_offset = [`Content_offset of int | `Truncated];;
+type content_offset = [`Content_offset of int | `Bad_headers of int | `Truncated];;
 type message = [`Message of (header * content_offset)];;
 
 (* Field types *)

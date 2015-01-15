@@ -12,18 +12,18 @@ open Core.Std
 module type S = sig
   type t
 
-  (** 
-    Creates an object of type t from a Bigstring.t. The source Bigstring
-    might not be copied, so it should be copied if the need to mutate it 
-    arises. The latter does not apply if the implementation of to_bigstring
-    explicitly says that this is unnecessary.
+  (**
+     Creates an object of type t from a Bigstring.t. The source Bigstring
+     might not be copied, so it should be copied if the need to mutate it
+     arises. The latter does not apply if the implementation of to_bigstring
+     explicitly says that this is unnecessary.
   *)
-  val of_bigstring : Bigstring.t -> t
+  val of_bigstring : Bigstring.t -> t Or_error.t
 
   (** Bigstring representation of an object of type t. t may hold references
     to the resulting Bigstring, so it should be copied if the need to
     mutate it arises. The latter does not apply if the implementation
-    explicitly says that it is unnecessary. 
+    explicitly says that it is unnecessary.
     *)
   val to_bigstring : t -> Bigstring.t
 end

@@ -1,23 +1,22 @@
 open Core.Std
 
 module Params = struct
-  module Assoc = Field_name.Assoc_concrete (String);;
-  include Assoc.Make;;
+  type t = string Field_list.t with sexp
 
   let to_string_monoid t =
-    let field_to_string_monoid (name, body) =
+    let field_to_string_monoid ((name : Field_name.t), body) =
       let body = Rfc.RFC2045.Token.is_valid_or_quote body in
-      String_monoid.concat_string [name; "="; body]
+      String_monoid.concat_string [(name :> string); "="; body]
     in
     String_monoid.concat
       ~sep:(String_monoid.of_string "; ")
-        (map_to_list t ~f:field_to_string_monoid)
+      (List.map t ~f:field_to_string_monoid)
   ;;
 end
 
 type t = {
-  mime_type : string;
-  mime_subtype : string;
+  mime_type : Rfc.RFC2045.Token.t;
+  mime_subtype : Rfc.RFC2045.Token.t;
   params : Params.t;
 } with fields, sexp
 
@@ -25,10 +24,12 @@ let __UNUSED_VALUE__field_name = "content-type";;
 
 let is ?a ?b t =
   Option.value_map a ~default:true
-    ~f:(Rfc.RFC2045.Token.equal t.mime_type)
+    ~f:(fun a ->
+      Rfc.RFC2045.Token.equal t.mime_type (Rfc.RFC2045.Token.of_string a))
   &&
   Option.value_map b ~default:true
-    ~f:(Rfc.RFC2045.Token.equal t.mime_subtype)
+    ~f:(fun b ->
+      Rfc.RFC2045.Token.equal t.mime_subtype (Rfc.RFC2045.Token.of_string b))
 ;;
 
 (* Some convenience functions for working with mime types *)
@@ -45,22 +46,21 @@ let mode t =
     `Text
   else
     (* Unrecognized types are treated as application/octet-stream,
-      that is, binary *)
+       that is, binary *)
     `Binary
 ;;
 
 let multipart_boundary t =
-  if is_multipart t then
-    Option.map ~f:Boundary.create (Params.last t.params "boundary")
-  else
-    None
+  if is_multipart t
+  then Option.map ~f:Boundary.create
+         (Field_list.last t.params "boundary")
+  else None
 ;;
 
 let of_grammar (mime_type, mime_subtype, params) =
-  {
-    mime_type = mime_type;
-    mime_subtype = mime_subtype;
-    params = Field_name.Assoc.of_rev_list params;
+  { mime_type    = Rfc.RFC2045.Token.of_string mime_type
+  ; mime_subtype = Rfc.RFC2045.Token.of_string mime_subtype
+  ; params
   }
 ;;
 
@@ -70,9 +70,11 @@ let of_string x =
 ;;
 
 let to_string_monoid t =
+  let mime_type = (t.mime_type :> string) in
+  let mime_subtype = (t.mime_subtype :> string) in
   String_monoid.plus
-    (String_monoid.concat_string [t.mime_type; "/"; t.mime_subtype; " "])
-    (if Params.is_empty t.params then
+    (String_monoid.concat_string [mime_type; "/"; mime_subtype; " "])
+    (if List.is_empty t.params then
       String_monoid.empty
     else
       String_monoid.plus
@@ -81,5 +83,3 @@ let to_string_monoid t =
 ;;
 
 let to_string t = String_monoid.to_string (to_string_monoid t);;
-
-

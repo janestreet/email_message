@@ -1,7 +1,9 @@
 open Core.Std
 open Core_extended.Std
 
-type t with sexp
+type t with sexp, bin_io, compare
+
+val hash : t -> int
 
 (** Creates a boundary from the value of the "boundary" parameter in a
   Content-type header (RFC2046, p.19)
@@ -10,22 +12,22 @@ type t with sexp
 val create : string -> t
 
 (** Splits an multipart body into a list of messages, and, if there are,
-  an optional prologue and epilogue. *)
-val split_octet_stream : t -> octet_stream:Octet_stream.t -> 
-  ( Octet_stream.t option *
-    Octet_stream.t list * 
-    Octet_stream.t option)
+    an optional prologue and epilogue. *)
+val split : t -> Bigstring_shared.t ->
+  ( Bigstring_shared.t option *
+    Bigstring_shared.t list *
+    Bigstring_shared.t option)
 
-(** Creates a valid boundaries for an octet stream. *)
-val generate : ?text:Octet_stream.t -> ?suggest:t -> unit -> t
-val generate_list : ?text:Octet_stream.t -> unit -> t Lazy_sequence.t
+(** Creates valid boundaries for given text. *)
+val generate : ?text:Bigstring_shared.t -> ?suggest:t -> unit -> t
+val generate_list : ?text:Bigstring_shared.t -> unit -> t Lazy_sequence.t
 
 (** Open an close boundaries *)
 
 (** Used when the boundary indicates a new part *)
 module Open : String_monoidable.S with type t := t
 
-(** Used when the boundary indicates that there are no more parts *) 
+(** Used when the boundary indicates that there are no more parts *)
 module Close : String_monoidable.S with type t := t
 
 (** Used when the boundary indicates the beginning of the first
@@ -33,5 +35,3 @@ module Close : String_monoidable.S with type t := t
 module Open_first : String_monoidable.S with type t := t
 
 include Stringable.S with type t := t
-
-

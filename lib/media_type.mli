@@ -1,9 +1,9 @@
 open Core.Std
 
 type t = {
-  mime_type : string;
-  mime_subtype : string;
-  params : string Field_name.Assoc.t;
+  mime_type : Rfc.RFC2045.Token.t;
+  mime_subtype : Rfc.RFC2045.Token.t;
+  params : (Field_name.t * string) list;
 } with fields, sexp
 
 val is_multipart : t -> bool
@@ -21,4 +21,3 @@ val mode : t -> [ `Text | `Binary ]
 val multipart_boundary : t -> Boundary.t option
 
 include Stringable.S with type t := t
-

@@ -67,10 +67,9 @@ let of_string s =
 ;;
 
 let of_bigstring bs =
-  if 0 = Bigstring.length bs then
-    empty
-  else
-    Leaf (Underlying.Bigstring bs)
+  if 0 = Bigstring.length bs
+  then empty
+  else Leaf (Underlying.Bigstring bs)
 ;;
 
 let of_char c = Leaf (Underlying.Char c);;
@@ -117,7 +116,10 @@ let concat_underlying ~of_underlying ?sep strs =
 ;;
 
 let concat_string = concat_underlying ~of_underlying:of_string;;
-let __UNUSED_VALUE__concat_bigstring = concat_underlying ~of_underlying:of_bigstring;;
+(*
+let __UNUSED_VALUE__concat_bigstring =
+  concat_underlying ~of_underlying:of_bigstring;;
+*)
 
 type blitter =
   src:Underlying.t -> ?src_pos:int -> ?src_len:int -> ?dst_pos:int -> unit -> unit

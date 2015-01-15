@@ -32,7 +32,7 @@ end
 
 module With_lazy_list : With_container with type t = Message.t Lazy_list.t;;
 
-(**
+(** 
   Warning: When created from a file descriptor, the resulting mailbox can
   only be traversed once.
 *)

@@ -1,104 +1,101 @@
-(** Immutable sequences of bytes which can be windowed efficiently. *)
 open Core.Std
 
+module Encoding = struct
+  (** Text or binary are the type of the plaintext. For Base64, if the mode is
+      text, '\n' is turned into '\r\n' when encoding, and viceversa. *)
+  type known =
+    [ `Base64 of [ `Text | `Binary ]
+    | `Bit7
+    | `Bit8
+    | `Binary
+    | `Quoted_printable of [ `Text | `Binary ]
+    ]
+  with sexp, bin_io, compare
+
+  type t =
+    [ known
+    | `Unknown of string
+    ] with sexp, bin_io, compare
+  ;;
+
+  let default = `Bit7
+
+  let of_headers headers =
+    let open Option.Monad_infix in
+    let mode =
+      begin
+        Headers.Content_type.last headers
+        >>= fun media_type ->
+        Some (Media_type.mode media_type)
+      end
+      |> Option.value ~default:`Binary
+    in
+    Field_list.last headers "content-transfer-encoding"
+    >>| fun encoding ->
+    match String.strip encoding |> String.lowercase with
+    | "base64"           -> `Base64 mode
+    | "7bit"             -> `Bit7
+    | "8bit"             -> `Bit8
+    | "binary"           -> `Binary
+    | "quoted-printable" -> `Quoted_printable mode
+    | unknown            -> `Unknown unknown
+
+  let of_headers_or_default headers =
+    match of_headers headers with
+    | Some t -> t
+    | None   -> default
+end
+
 type t =
-  {
-    text    : bool;
-    content : Bigstring.t
-  } with sexp;;
+  { encoding : Encoding.t
+  ; content  : Bigstring_shared.t
+  } with sexp, bin_io, compare
 
+let create ?(encoding = Encoding.default) content =
+  { encoding; content }
 
-let fix_eol_in_place bstr =
-  let len =
-    let len = Bigstring.length bstr in
-    Bigstring_extended.foldi bstr
-      ~init:0
-      ~f:(fun pos_src pos_dst c ->
-        let next = pos_src + 1 in
-        if c <> '\r' || next >= len || bstr.{next} <> '\n' then
-        begin
-          bstr.{pos_dst} <- c;
-          pos_dst + 1
-        end
-        else
-          pos_dst)
+let encoding t = t.encoding
+let encoded_contents t = t.content
+
+let empty = create Bigstring_shared.empty
+
+let to_string_monoid t = Bigstring_shared.to_string_monoid (encoded_contents t)
+
+let of_string str = create (Bigstring_shared.of_string str)
+let to_string t = Bigstring_shared.to_string (encoded_contents t)
+
+let hash { encoding; content } =
+  let x =
+    Hashtbl.hash encoding,
+    Bigstring_shared.hash content
   in
-  Bigstring.sub_shared ~len bstr
-;;
+  Hashtbl.hash x
 
-let create ?(mode=`Text) ?(fix_win_eol=false) bstr =
-  match mode with
-  | `Text           ->
-    {
-      text = true;
-      content =
-        if fix_win_eol then
-          fix_eol_in_place bstr
-        else
-          bstr
-    }
-  | `Binary         -> { text = false; content = bstr }
-;;
+(*
+let length t  = Bigstring_shared.length t.content
 
-let contents t = t.content
+let to_lexbuf t = Bigstring_shared.to_lexbuf t.content;;
+*)
 
-let mode_set t mode =
-  { t with text =
-    match mode with
-    | `Text -> true
-    | `Binary -> false
-  }
-;;
-
-let mode t = if t.text then `Text else `Binary
-
-let is_text t = t.text
-let is_binary t = not (is_text t)
-
-let empty = create Bigstring_extended.empty
-
-let of_string str = create (Bigstring.of_string str)
-let to_string t = Bigstring.to_string (contents t)
-
+(*
 (** Bigstring.sub creates copies of the Bigstring *)
 let of_bigstring bstr = create (Bigstring.subo bstr)
 let to_bigstring t = Bigstring.subo (contents t)
 
 let of_string_monoid mon = of_bigstring (String_monoid.to_bigstring mon)
-let to_string_monoid t = String_monoid.of_bigstring (contents t)
-
-let length t  = Bigstring.length t.content
-
-let sub ?pos ?len t =
-  let pos, len = match pos, len with
-  | None, None         -> 0, length t
-  | None, Some len     -> 0, len
-  | Some pos, None     -> pos, ((length t) - pos)
-  | Some pos, Some len -> pos, len
-  in
-  { t with content = Bigstring.sub_shared ~pos ~len t.content }
-;;
-
-let to_lexbuf t = Bigstring_extended.to_lexbuf t.content;;
-
-
-TEST_MODULE "octet_stream" = struct
-  open OUnit
-
-  TEST "eol-fixing" = assert_equal ~printer:to_string
-    (create ~mode:`Text ~fix_win_eol:true
-      (Bigstring.of_string "aaa\r\naaa\naa\ra\r\r\na\r"))
-    (create ~mode:`Text
-      (Bigstring.of_string "aaa\naaa\naa\ra\r\na\r"));
-    true
-end
+ *)
 
 (********)
+
+module Identity = struct
+  let encode bstr = bstr
+  let decode bstr = bstr
+end
 
 module Base64 = struct
   open OUnit
 
-  let decode ?(mode=`Binary) t =
+  let decode ~mode bstr =
     (* Depending on encoding:
       If encoding is text, CRLF sequences are turned into LF.
       If encoding is binary, CRLF sequences are considered regular byte
@@ -107,25 +104,31 @@ module Base64 = struct
     let bigbuffer, _ =
       Lexer.decode_base64
         ~is_text:(mode = `Text)
-      (length t) (to_lexbuf t)
+        (Bigstring_shared.length bstr)
+        (Bigstring_shared.to_lexbuf bstr)
     in
-    create ~mode (Bigstring_extended.of_bigbuffer_volatile bigbuffer)
+    Bigstring_shared.of_bigbuffer_volatile bigbuffer
   ;;
 
-  let encode t =
+  let encode ~mode bstr =
     (* Depending on encoding:
-      If t is text, all LF line endings are written as CRLF.
-      If t is binary, do nothing.
+       If t is text, all LF line endings are written as CRLF.
+       If t is binary, do nothing.
     *)
     let bigbuffer =
-      Lexer.encode_base64 ~is_text:(is_text t) (length t) (to_lexbuf t)
+      Lexer.encode_base64
+        ~is_text:(mode = `Text)
+        (Bigstring_shared.length bstr)
+        (Bigstring_shared.to_lexbuf bstr)
     in
-    create ~mode:`Text
-      (Bigstring_extended.of_bigbuffer_volatile bigbuffer)
+    Bigstring_shared.of_bigbuffer_volatile bigbuffer
   ;;
 
   TEST_MODULE "Octet_stream.Base64" = struct
-    let pleasure = List.map ~f:(fun (x,y) -> (of_string x, of_string y))
+    open Bigstring_shared
+
+    let pleasure = List.map ~f:(fun (x,y) ->
+      (of_string x, of_string y))
       [
       ("YW55IGNhcm5hbCBwbGVhc3VyZS4=", "any carnal pleasure.");
       ("YW55IGNhcm5hbCBwbGVhc3VyZQ==", "any carnal pleasure" );
@@ -133,7 +136,6 @@ module Base64 = struct
       ("YW55IGNhcm5hbCBwbGVhc3U="    , "any carnal pleasu"   );
       ("YW55IGNhcm5hbCBwbGVhcw=="    , "any carnal pleas"    );
     ];;
-
 
     let test_decode pos l =
       let coded, plaintext = List.nth_exn l pos in
@@ -143,8 +145,15 @@ module Base64 = struct
 
     let test_encode pos l =
       let coded, plaintext = List.nth_exn l pos in
-      let coded' = encode plaintext in
-      assert_equal ~printer:to_string coded coded'
+      let coded' = encode ~mode:`Text plaintext in
+      assert_equal ~printer:to_string coded coded';
+      let plaintext' = decode ~mode:`Text coded' in
+      assert_equal ~printer:to_string plaintext plaintext';
+      (* The binary encoding may differ from string encoding, however the
+         roundtrip should be the same. *)
+      let coded' = encode ~mode:`Binary plaintext in
+      let plaintext' = decode ~mode:`Binary coded' in
+      assert_equal ~printer:to_string plaintext plaintext';
     ;;
 
     (** Exhaustive check of boundaries *)
@@ -159,36 +168,38 @@ module Base64 = struct
     TEST_UNIT = test_encode 2 pleasure;;
     TEST_UNIT = test_encode 3 pleasure;;
     TEST_UNIT = test_encode 4 pleasure;;
-
   end
-
 end
 
 module Quoted_printable = struct
   open OUnit
 
-  let decode ?mode t =
+  let decode bstr =
     (* The RFC2045 says that newlines can be converted to the platforms native
-      format, so that's what we'll do.
-      It's the same for both binary data and text data.
-      If a CRLF sequence appears in the decoded data, that's because it
-      was encoded as =0D=0A, which means the characters shouldn't be interpreted
-      as EOL.
-    *)
-    let bigbuffer, _ = Lexer.decode_quoted_printable (length t) (to_lexbuf t) in
-    create ?mode (Bigstring_extended.of_bigbuffer_volatile bigbuffer)
+       format, so that's what we'll do. It's the same for both binary data and
+       text data. If a CRLF sequence appears in the decoded data, that's because
+       it was encoded as =0D=0A, which means the characters shouldn't be
+       interpreted as EOL.  *)
+    let bigbuffer, _ =
+      Lexer.decode_quoted_printable
+        (Bigstring_shared.length bstr) (Bigstring_shared.to_lexbuf bstr)
+    in
+    Bigstring_shared.of_bigbuffer_volatile bigbuffer
   ;;
 
-  let encode t =
+  let encode ~mode bstr =
     let bigbuffer =
-      Lexer.encode_quoted_printable (length t) ~is_text:(is_text t) (to_lexbuf t)
+      Lexer.encode_quoted_printable
+        ~is_text:(mode = `Text)
+        (Bigstring_shared.length bstr)
+        (Bigstring_shared.to_lexbuf bstr)
     in
-    (* Even if the original string was binary content, it turns into text
-      when quoted-printable-encoded. *)
-    create ~mode:`Text (Bigstring_extended.of_bigbuffer_volatile bigbuffer)
+    Bigstring_shared.of_bigbuffer_volatile bigbuffer
   ;;
 
   TEST_MODULE "quoted-printable" = struct
+    open Bigstring_shared
+
     let mathematics = List.map ~f:(fun (x,y) -> (of_string x, of_string y))
       [("If you believe that truth=3Dbeauty, then surely =\n\
       mathematics is the most beautiful branch of philosophy.",
@@ -221,8 +232,15 @@ module Quoted_printable = struct
 
     let test_encode pos l =
       let coded, plaintext = List.nth_exn l pos in
-      let coded' = encode plaintext in
-      assert_equal ~printer:to_string coded coded'
+      let coded' = encode ~mode:`Text plaintext in
+      assert_equal ~printer:to_string coded coded';
+      let plaintext' = decode coded' in
+      assert_equal ~printer:to_string plaintext plaintext';
+      (* The binary encoding may differ from string encoding, however the
+         roundtrip should be the same. *)
+      let coded' = encode ~mode:`Binary plaintext in
+      let plaintext' = decode coded' in
+      assert_equal ~printer:to_string plaintext plaintext';
     ;;
 
     TEST_UNIT = test_decode 0 mathematics
@@ -231,14 +249,25 @@ module Quoted_printable = struct
     TEST_UNIT = test_encode 2 encoding
     TEST_UNIT = test_encode 3 encoding
   end
-
 end
 
-module Identity = struct
-  let encode t = t
-  let decode ?mode t =
-    match mode with
-    | Some mode -> mode_set t mode
-    | None      -> t
-end
+let decode t =
+  match t.encoding with
+  | `Base64 mode            -> Some (Base64.decode ~mode t.content)
+  | `Quoted_printable _mode -> Some (Quoted_printable.decode t.content)
+  | `Bit7                   -> Some (Identity.decode t.content)
+  | `Bit8                   -> Some (Identity.decode t.content)
+  | `Binary                 -> Some (Identity.decode t.content)
+  | `Unknown _              -> None
 
+let encode bstr encoding =
+  let bstr =
+    match encoding with
+    | `Base64 mode           -> Base64.encode ~mode bstr
+    | `Quoted_printable mode -> Quoted_printable.encode ~mode bstr
+    | `Bit7                  -> Identity.encode bstr
+    | `Bit8                  -> Identity.encode bstr
+    | `Binary                -> Identity.encode bstr
+  in
+  let encoding = (encoding :> Encoding.t) in
+  create ~encoding bstr

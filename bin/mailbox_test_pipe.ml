@@ -27,13 +27,6 @@ let () =
               return ())
         else
         begin
-          let mailbox = Pipe.map mailbox
-            ~f:(fun message ->
-              {  message with
-                  Mailbox.Message.email =
-                    (Email.remove_raw_content message.Mailbox.Message.email)
-              })
-          in
           Pipe.iter mailbox
             ~f:(fun message ->
               Print.fprintf ofd "%s" (Mailbox.Message.to_string message);

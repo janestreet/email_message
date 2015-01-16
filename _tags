@@ -1,3 +1,126 @@
 # OASIS_START
+# DO NOT EDIT (digest: 1d584ba6760d0c383847a27d82eeb6ec)
+# Ignore VCS directories, you can use the same kind of rule outside
+# OASIS_START/STOP if you want to exclude directories that contains
+# useless stuff for the build process
+true: annot, bin_annot
+<**/.svn>: -traverse
+<**/.svn>: not_hygienic
+".bzr": -traverse
+".bzr": not_hygienic
+".hg": -traverse
+".hg": not_hygienic
+".git": -traverse
+".git": not_hygienic
+"_darcs": -traverse
+"_darcs": not_hygienic
+# Library email_message
+"lib/email_message.cmxs": use_email_message
+"lib/bigstringable.cmx": for-pack(Email_message)
+"lib/bigstring_shared.cmx": for-pack(Email_message)
+"lib/boundary.cmx": for-pack(Email_message)
+"lib/common.cmx": for-pack(Email_message)
+"lib/debug.cmx": for-pack(Email_message)
+"lib/email.cmx": for-pack(Email_message)
+"lib/email_regex.cmx": for-pack(Email_message)
+"lib/error_handling.cmx": for-pack(Email_message)
+"lib/field_list.cmx": for-pack(Email_message)
+"lib/field_name.cmx": for-pack(Email_message)
+"lib/grammar.cmx": for-pack(Email_message)
+"lib/grammar_types.cmx": for-pack(Email_message)
+"lib/headers.cmx": for-pack(Email_message)
+"lib/lexable.cmx": for-pack(Email_message)
+"lib/lexer.cmx": for-pack(Email_message)
+"lib/lexer_state.cmx": for-pack(Email_message)
+"lib/mailbox.cmx": for-pack(Email_message)
+"lib/media_type.cmx": for-pack(Email_message)
+"lib/mimestring.cmx": for-pack(Email_message)
+"lib/octet_stream.cmx": for-pack(Email_message)
+"lib/parser_intf.cmx": for-pack(Email_message)
+"lib/rfc.cmx": for-pack(Email_message)
+"lib/std.cmx": for-pack(Email_message)
+"lib/string_monoidable.cmx": for-pack(Email_message)
+"lib/string_monoid.cmx": for-pack(Email_message)
+<lib/*.ml{,i,y}>: package(async)
+<lib/*.ml{,i,y}>: package(core)
+<lib/*.ml{,i,y}>: package(core.syntax)
+<lib/*.ml{,i,y}>: package(core_extended)
+<lib/*.ml{,i,y}>: package(pa_ounit)
+<lib/*.ml{,i,y}>: package(pa_ounit.syntax)
+<lib/*.ml{,i,y}>: package(pa_test)
+<lib/*.ml{,i,y}>: package(pa_test.syntax)
+<lib/*.ml{,i,y}>: package(re2)
+<lib/*.ml{,i,y}>: package(threads)
+# Executable find-destination-domains
+<bin/find_destination_domains.{native,byte}>: package(async)
+<bin/find_destination_domains.{native,byte}>: package(core)
+<bin/find_destination_domains.{native,byte}>: package(core.syntax)
+<bin/find_destination_domains.{native,byte}>: package(core_extended)
+<bin/find_destination_domains.{native,byte}>: package(pa_ounit)
+<bin/find_destination_domains.{native,byte}>: package(pa_ounit.syntax)
+<bin/find_destination_domains.{native,byte}>: package(pa_test)
+<bin/find_destination_domains.{native,byte}>: package(pa_test.syntax)
+<bin/find_destination_domains.{native,byte}>: package(re2)
+<bin/find_destination_domains.{native,byte}>: package(threads)
+<bin/find_destination_domains.{native,byte}>: use_email_message
+# Executable mailbox-test
+<bin/mailbox_test.{native,byte}>: package(async)
+<bin/mailbox_test.{native,byte}>: package(core)
+<bin/mailbox_test.{native,byte}>: package(core.syntax)
+<bin/mailbox_test.{native,byte}>: package(core_extended)
+<bin/mailbox_test.{native,byte}>: package(pa_ounit)
+<bin/mailbox_test.{native,byte}>: package(pa_ounit.syntax)
+<bin/mailbox_test.{native,byte}>: package(pa_test)
+<bin/mailbox_test.{native,byte}>: package(pa_test.syntax)
+<bin/mailbox_test.{native,byte}>: package(re2)
+<bin/mailbox_test.{native,byte}>: package(threads)
+<bin/mailbox_test.{native,byte}>: use_email_message
+# Executable mailbox-test-pipe
+<bin/mailbox_test_pipe.{native,byte}>: package(async)
+<bin/mailbox_test_pipe.{native,byte}>: package(core)
+<bin/mailbox_test_pipe.{native,byte}>: package(core.syntax)
+<bin/mailbox_test_pipe.{native,byte}>: package(core_extended)
+<bin/mailbox_test_pipe.{native,byte}>: package(pa_ounit)
+<bin/mailbox_test_pipe.{native,byte}>: package(pa_ounit.syntax)
+<bin/mailbox_test_pipe.{native,byte}>: package(pa_test)
+<bin/mailbox_test_pipe.{native,byte}>: package(pa_test.syntax)
+<bin/mailbox_test_pipe.{native,byte}>: package(re2)
+<bin/mailbox_test_pipe.{native,byte}>: package(threads)
+<bin/mailbox_test_pipe.{native,byte}>: use_email_message
+# Executable mailbox-wc
+<bin/mailbox_wc.{native,byte}>: package(async)
+<bin/mailbox_wc.{native,byte}>: package(core)
+<bin/mailbox_wc.{native,byte}>: package(core.syntax)
+<bin/mailbox_wc.{native,byte}>: package(core_extended)
+<bin/mailbox_wc.{native,byte}>: package(pa_ounit)
+<bin/mailbox_wc.{native,byte}>: package(pa_ounit.syntax)
+<bin/mailbox_wc.{native,byte}>: package(pa_test)
+<bin/mailbox_wc.{native,byte}>: package(pa_test.syntax)
+<bin/mailbox_wc.{native,byte}>: package(re2)
+<bin/mailbox_wc.{native,byte}>: package(threads)
+<bin/mailbox_wc.{native,byte}>: use_email_message
+# Executable test
+<bin/test.{native,byte}>: package(async)
+<bin/test.{native,byte}>: package(core)
+<bin/test.{native,byte}>: package(core.syntax)
+<bin/test.{native,byte}>: package(core_extended)
+<bin/test.{native,byte}>: package(pa_ounit)
+<bin/test.{native,byte}>: package(pa_ounit.syntax)
+<bin/test.{native,byte}>: package(pa_test)
+<bin/test.{native,byte}>: package(pa_test.syntax)
+<bin/test.{native,byte}>: package(re2)
+<bin/test.{native,byte}>: package(threads)
+<bin/test.{native,byte}>: use_email_message
+<bin/*.ml{,i,y}>: package(async)
+<bin/*.ml{,i,y}>: package(core)
+<bin/*.ml{,i,y}>: package(core.syntax)
+<bin/*.ml{,i,y}>: package(core_extended)
+<bin/*.ml{,i,y}>: package(pa_ounit)
+<bin/*.ml{,i,y}>: package(pa_ounit.syntax)
+<bin/*.ml{,i,y}>: package(pa_test)
+<bin/*.ml{,i,y}>: package(pa_test.syntax)
+<bin/*.ml{,i,y}>: package(re2)
+<bin/*.ml{,i,y}>: package(threads)
+<bin/*.ml{,i,y}>: use_email_message
 # OASIS_STOP
 <lib/*.ml{,i}>: syntax_camlp4o

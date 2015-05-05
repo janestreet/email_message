@@ -16,7 +16,7 @@ XStdFilesREADME:  false
 BuildTools:       ocamlbuild, camlp4o
 
 Library email_message
-  Path:               lib
+  Path:               src
   Pack:               true
   Modules:            Bigstringable,
                       Bigstring_shared,

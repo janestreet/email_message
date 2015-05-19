@@ -360,10 +360,9 @@ end
 include Message
 include Comparable.Make(Message)
 
-include Bin_prot.Utils.Make_binable
+include Binable.Of_binable (Bigstring)
           (struct
             type nonrec t = t
-            module Binable = Bigstring
             let to_binable = to_bigstring
             let of_binable bs = of_bigstring bs |> Or_error.ok_exn
           end)

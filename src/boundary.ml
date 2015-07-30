@@ -10,38 +10,6 @@ let create = Fn.id
 let hash = String.hash
 
 module Generator = struct
-  let bcharnospace =
-    "abcdefghijklmnopqrstuvwxyz" ^
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ" ^
-    "0123456789" ^
-    "'()+_,-./:=?"
-  ;;
-  let bcharnospace_len = String.length bcharnospace
-
-  let __UNUSED_VALUE__min_len = 1
-  let max_len = 70
-  let suffix_len = 20
-  let base_len = max_len - suffix_len
-
-  let __UNUSED_VALUE__max_tries = 1000
-
-  let init_random_once = Lazy_m.of_fun (fun () -> Random.self_init ())
-
-  let random_seq len =
-    Lazy_m.force init_random_once;
-    let str = String.create len in
-    let rec loop pos =
-      if pos < len then
-      begin
-        str.[pos] <- bcharnospace.[Random.int bcharnospace_len];
-        loop (pos + 1)
-      end
-      else
-        str
-    in
-    loop 0
-  ;;
-
   (* This prefix guarantees that the boundary will not apear in
     - Headers
     - Quoted-printable text
@@ -51,16 +19,13 @@ module Generator = struct
     that would be incredibly rare when using a good random number
     generator.
     *)
-  let prefix = "--=_::"
-  let prefix_len = String.length prefix
-
-  let generate_raw ?(validate=(Fn.const true)) len =
+  let generate_raw ?(validate=(Fn.const true)) () =
     let rec generate () =
-      let boundary = prefix ^ (random_seq (len - prefix_len)) in
+      let boundary = sprintf !"--=_::%{Uuid}::_=--" (Uuid.create ()) in
       if validate boundary then
-        generate ()
-      else
         boundary
+      else
+        generate ()
     in
     generate ()
   ;;
@@ -69,20 +34,12 @@ module Generator = struct
     ignore text;
     match suggest with
     | Some suggestion -> suggestion
-    | None -> create (generate_raw max_len)
+    | None -> create (generate_raw ())
   ;;
 
-  let generate_list ?text () =
-    ignore text;
-    let base = generate_raw base_len in
-    Lazy_sequence.init
-      (fun i -> Some (create (sprintf "%s::%016x" base i)))
-  ;;
 end
 
 let generate = Generator.generate;;
-let generate_list = Generator.generate_list;;
-
 
 module Open = struct
 

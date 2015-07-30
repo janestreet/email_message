@@ -14,13 +14,13 @@ let to_string_monoid t =
 
 let empty = []
 
-let add t ~name value =
+let add t ~name ~value =
   add t ~name (" " ^ value)
-let add_at_bottom t ~name value =
+let add_at_bottom t ~name ~value =
   add_at_bottom t ~name (" " ^ value)
-let set t ~name value =
+let set t ~name ~value =
   set t ~name (" " ^ value)
-let set_at_bottom t ~name value =
+let set_at_bottom t ~name ~value =
   set_at_bottom t ~name (" " ^ value)
 
 module Content_type = struct

@@ -6,11 +6,11 @@ module Encoding : sig
   (** Text or binary are the type of the plaintext. For Base64, if the mode is
       text, '\n' is turned into '\r\n' when encoding, and vice versa. *)
   type known =
-    [ `Base64 of [ `Text | `Binary ]
+    [ `Base64
     | `Bit7
     | `Bit8
     | `Binary
-    | `Quoted_printable of [ `Text | `Binary ]
+    | `Quoted_printable
     ]
   with sexp, bin_io, compare
 
@@ -25,6 +25,8 @@ module Encoding : sig
   val default : known
 
   val of_headers_or_default : Headers.t -> t
+
+  include Stringable.S with type t:=t
 end
 
 type t with sexp, bin_io, compare
@@ -47,7 +49,7 @@ val encoding : t -> Encoding.t
 val encoded_contents : t -> Bigstring_shared.t
 
 (* These are the expensive operation. *)
-val encode : Bigstring_shared.t -> Encoding.known -> t
+val encode : encoding:Encoding.known -> Bigstring_shared.t -> t
 (* None if encoding is `Unknown. *)
 val decode : t -> Bigstring_shared.t option
 

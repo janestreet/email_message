@@ -11,49 +11,6 @@ let force_token token _lexbuf = token
 let unescape_staged = Core.Std.String.Escaping.unescape ~escape_char:'\\';;
 let unescape = C.unstage unescape_staged;;
 
-module Decode_buffer = struct
-  type text =
-    {
-      mutable hold_cr : bool;
-      buffer  : C.Bigbuffer.t;
-    }
-  ;;
-
-  type t = Binary of C.Bigbuffer.t | Text of text
-
-  let create_text len =
-    Text {
-      hold_cr = false;
-      buffer = C.Bigbuffer.create len
-    }
-  ;;
-
-  let create_binary len = Binary (C.Bigbuffer.create len);;
-
-  let add_char t c = match t with
-  | Binary buffer -> C.Bigbuffer.add_char buffer c
-  | Text text ->
-    match text.hold_cr, c with
-    | false , '\r'        -> text.hold_cr <- true
-    | false , c           -> C.Bigbuffer.add_char text.buffer c
-    | true  , ('\r' as c) -> C.Bigbuffer.add_char text.buffer c
-    | true  , ('\n' as c) ->
-        text.hold_cr <- false;
-        C.Bigbuffer.add_char text.buffer c
-    | true  , c ->
-      text.hold_cr <- false;
-      C.Bigbuffer.add_char text.buffer '\r';
-      C.Bigbuffer.add_char text.buffer c
-  ;;
-
-  let to_bigbuffer = function
-    | Binary buffer -> buffer
-    | Text text ->
-      if text.hold_cr then C.Bigbuffer.add_char text.buffer '\r';
-      text.buffer
-  ;;
-end
-
 module Quantum
 = struct
 
@@ -89,9 +46,9 @@ module Quantum
       let a = (quantum lsr 10) land 255 in
       let b = (quantum lsr 2) land 255 in
       let c = ((quantum lsl 6) lor code) land 255 in
-      Decode_buffer.add_char buffer (Char.chr a);
-      Decode_buffer.add_char buffer (Char.chr b);
-      Decode_buffer.add_char buffer (Char.chr c);
+      C.Bigbuffer.add_char buffer (Char.chr a);
+      C.Bigbuffer.add_char buffer (Char.chr b);
+      C.Bigbuffer.add_char buffer (Char.chr c);
       (0, 0)
     | _ -> assert false
   ;;
@@ -103,13 +60,13 @@ module Quantum
     | 2 ->
       let quantum = quantum lsr 4 in
       let a = quantum land 255 in
-      Decode_buffer.add_char buffer (Char.chr a)
+      C.Bigbuffer.add_char buffer (Char.chr a)
     | 3 ->
       let quantum = (quantum lsr 2) in
       let a = (quantum lsr 8) land 255 in
       let b = quantum land 255 in
-      Decode_buffer.add_char buffer (Char.chr a);
-      Decode_buffer.add_char buffer (Char.chr b)
+      C.Bigbuffer.add_char buffer (Char.chr a);
+      C.Bigbuffer.add_char buffer (Char.chr b)
     | _ -> assert false
   ;;
 
@@ -137,7 +94,6 @@ module Encode_buffer = struct
   type t =
     {
       char_buffer     : string;
-
       (* Invariant: 0 < char_buffer_pos < 3 *)
       mutable char_buffer_pos : int;
       buffer          : C.Bigbuffer.t;
@@ -856,41 +812,6 @@ encode_quoted_printable buffer = parse
     {
       ()
     }
-and
-
-(* Quoted-printable encoding for binaries, with wrapping.
-  There are two main differences:
-    - Tabs are not encoded as themselves, but as =09. This
-      helps protect them against MTAs which may replace tabs
-      with some amount of spaces.
-    - Newline characters CR and LF are encoded as =0D and
-      =0A.
-*)
-encode_quoted_printable_binary buffer = parse
-  | ' ' as c
-    {
-      Quoted_printable.Buffer.add_wsp buffer c;
-      encode_quoted_printable_binary buffer lexbuf
-    }
-  | [ '\t' '\n' '\r' ] as c
-    {
-      Quoted_printable.Buffer.add_quoted_char buffer c;
-      encode_quoted_printable_binary buffer lexbuf
-    }
-  | qp_allowed as c
-    {
-      Quoted_printable.Buffer.add_char buffer c;
-      encode_quoted_printable_binary buffer lexbuf
-    }
-  | _ as c
-    {
-      Quoted_printable.Buffer.add_quoted_char buffer c;
-      encode_quoted_printable_binary buffer lexbuf
-    }
-  | eof
-    {
-      ()
-    }
 
 {
 
@@ -901,20 +822,15 @@ let find_boundary reference lexbuf =
     find_boundary_inner reference lexbuf
 ;;
 
-let decode_base64 len ~is_text lexbuf =
-  let buffer =
-    if is_text then
-      Decode_buffer.create_text len
-    else
-      Decode_buffer.create_binary len
-  in
+let decode_base64 len lexbuf =
+  let buffer = C.Bigbuffer.create len in
   let warnings = decode_base64 buffer 0 0 `Ok 0 lexbuf in
-  let bigbuffer = Decode_buffer.to_bigbuffer buffer in
+  let bigbuffer = buffer in
   (bigbuffer, warnings)
 ;;
 
-let encode_base64 len ~is_text lexbuf =
-  let buffer = Encode_buffer.create ~is_text len in
+let encode_base64 len lexbuf =
+  let buffer = Encode_buffer.create ~is_text:false len in
   encode_base64 buffer lexbuf;
   let bigbuffer = Encode_buffer.to_bigbuffer buffer in
   bigbuffer
@@ -927,14 +843,10 @@ let decode_quoted_printable len lexbuf =
   (bigbuffer, warnings)
 ;;
 
-let encode_quoted_printable len ~is_text lexbuf =
+let encode_quoted_printable len lexbuf =
   let length_estimate = len in
   let buffer = Quoted_printable.Buffer.create length_estimate in
-
-  if is_text then
-    encode_quoted_printable buffer lexbuf
-  else
-    encode_quoted_printable_binary buffer lexbuf
+  encode_quoted_printable buffer lexbuf
   ;
 
   Quoted_printable.Buffer.to_bigbuffer buffer

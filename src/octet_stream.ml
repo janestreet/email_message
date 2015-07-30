@@ -4,11 +4,11 @@ module Encoding = struct
   (** Text or binary are the type of the plaintext. For Base64, if the mode is
       text, '\n' is turned into '\r\n' when encoding, and viceversa. *)
   type known =
-    [ `Base64 of [ `Text | `Binary ]
+    [ `Base64
     | `Bit7
     | `Bit8
     | `Binary
-    | `Quoted_printable of [ `Text | `Binary ]
+    | `Quoted_printable
     ]
   with sexp, bin_io, compare
 
@@ -18,27 +18,28 @@ module Encoding = struct
     ] with sexp, bin_io, compare
   ;;
 
-  let default = `Bit7
-
-  let of_headers headers =
-    let open Option.Monad_infix in
-    let mode =
-      begin
-        Headers.Content_type.last headers
-        >>= fun media_type ->
-        Some (Media_type.mode media_type)
-      end
-      |> Option.value ~default:`Binary
-    in
-    Field_list.last headers "content-transfer-encoding"
-    >>| fun encoding ->
-    match String.strip encoding |> String.lowercase with
-    | "base64"           -> `Base64 mode
+  let of_string encoding =
+    match encoding |> String.strip |> String.lowercase with
+    | "base64"           -> `Base64
     | "7bit"             -> `Bit7
     | "8bit"             -> `Bit8
     | "binary"           -> `Binary
-    | "quoted-printable" -> `Quoted_printable mode
+    | "quoted-printable" -> `Quoted_printable
     | unknown            -> `Unknown unknown
+
+  let to_string = function
+    | `Base64 -> "base64"
+    | `Bit7 -> "7bit"
+    | `Bit8 -> "8bit"
+    | `Binary -> "binary"
+    | `Quoted_printable -> "quoted-printable"
+    | `Unknown unknown -> unknown
+
+  let default = `Bit7
+
+  let of_headers headers =
+    Field_list.last headers "content-transfer-encoding"
+    |> Option.map ~f:of_string
 
   let of_headers_or_default headers =
     match of_headers headers with
@@ -95,7 +96,7 @@ end
 module Base64 = struct
   open OUnit
 
-  let decode ~mode bstr =
+  let decode bstr =
     (* Depending on encoding:
       If encoding is text, CRLF sequences are turned into LF.
       If encoding is binary, CRLF sequences are considered regular byte
@@ -103,21 +104,19 @@ module Base64 = struct
     *)
     let bigbuffer, _ =
       Lexer.decode_base64
-        ~is_text:(mode = `Text)
         (Bigstring_shared.length bstr)
         (Bigstring_shared.to_lexbuf bstr)
     in
     Bigstring_shared.of_bigbuffer_volatile bigbuffer
   ;;
 
-  let encode ~mode bstr =
+  let encode bstr =
     (* Depending on encoding:
        If t is text, all LF line endings are written as CRLF.
        If t is binary, do nothing.
     *)
     let bigbuffer =
       Lexer.encode_base64
-        ~is_text:(mode = `Text)
         (Bigstring_shared.length bstr)
         (Bigstring_shared.to_lexbuf bstr)
     in
@@ -139,21 +138,16 @@ module Base64 = struct
 
     let test_decode pos l =
       let coded, plaintext = List.nth_exn l pos in
-      let plaintext' = decode ~mode:`Text coded in
+      let plaintext' = decode coded in
       assert_equal ~printer:to_string plaintext plaintext'
     ;;
 
     let test_encode pos l =
       let coded, plaintext = List.nth_exn l pos in
-      let coded' = encode ~mode:`Text plaintext in
+      let coded' = encode plaintext in
       assert_equal ~printer:to_string coded coded';
-      let plaintext' = decode ~mode:`Text coded' in
-      assert_equal ~printer:to_string plaintext plaintext';
-      (* The binary encoding may differ from string encoding, however the
-         roundtrip should be the same. *)
-      let coded' = encode ~mode:`Binary plaintext in
-      let plaintext' = decode ~mode:`Binary coded' in
-      assert_equal ~printer:to_string plaintext plaintext';
+      let plaintext' = decode coded' in
+      assert_equal ~printer:to_string plaintext plaintext'
     ;;
 
     (** Exhaustive check of boundaries *)
@@ -187,10 +181,9 @@ module Quoted_printable = struct
     Bigstring_shared.of_bigbuffer_volatile bigbuffer
   ;;
 
-  let encode ~mode bstr =
+  let encode bstr =
     let bigbuffer =
       Lexer.encode_quoted_printable
-        ~is_text:(mode = `Text)
         (Bigstring_shared.length bstr)
         (Bigstring_shared.to_lexbuf bstr)
     in
@@ -232,13 +225,8 @@ module Quoted_printable = struct
 
     let test_encode pos l =
       let coded, plaintext = List.nth_exn l pos in
-      let coded' = encode ~mode:`Text plaintext in
+      let coded' = encode plaintext in
       assert_equal ~printer:to_string coded coded';
-      let plaintext' = decode coded' in
-      assert_equal ~printer:to_string plaintext plaintext';
-      (* The binary encoding may differ from string encoding, however the
-         roundtrip should be the same. *)
-      let coded' = encode ~mode:`Binary plaintext in
       let plaintext' = decode coded' in
       assert_equal ~printer:to_string plaintext plaintext';
     ;;
@@ -253,21 +241,21 @@ end
 
 let decode t =
   match t.encoding with
-  | `Base64 mode            -> Some (Base64.decode ~mode t.content)
-  | `Quoted_printable _mode -> Some (Quoted_printable.decode t.content)
-  | `Bit7                   -> Some (Identity.decode t.content)
-  | `Bit8                   -> Some (Identity.decode t.content)
-  | `Binary                 -> Some (Identity.decode t.content)
-  | `Unknown _              -> None
+  | `Base64           -> Some (Base64.decode t.content)
+  | `Quoted_printable -> Some (Quoted_printable.decode t.content)
+  | `Bit7             -> Some (Identity.decode t.content)
+  | `Bit8             -> Some (Identity.decode t.content)
+  | `Binary           -> Some (Identity.decode t.content)
+  | `Unknown _        -> None
 
-let encode bstr encoding =
+let encode ~encoding bstr =
   let bstr =
     match encoding with
-    | `Base64 mode           -> Base64.encode ~mode bstr
-    | `Quoted_printable mode -> Quoted_printable.encode ~mode bstr
-    | `Bit7                  -> Identity.encode bstr
-    | `Bit8                  -> Identity.encode bstr
-    | `Binary                -> Identity.encode bstr
+    | `Base64           -> Base64.encode bstr
+    | `Quoted_printable -> Quoted_printable.encode bstr
+    | `Bit7             -> Identity.encode bstr
+    | `Bit8             -> Identity.encode bstr
+    | `Binary           -> Identity.encode bstr
   in
   let encoding = (encoding :> Encoding.t) in
   create ~encoding bstr

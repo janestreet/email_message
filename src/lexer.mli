@@ -15,14 +15,16 @@ val field_unstructured_fold : Bigbuffer.t -> Lexing.lexbuf -> unit
 val field_unstructured_unfold : Bigbuffer.t -> Lexing.lexbuf -> unit
 *)
 
-val decode_base64 : int -> is_text:bool -> Lexing.lexbuf ->
+(* base64 is always encoded as binary. *)
+val decode_base64 : int -> Lexing.lexbuf ->
   (Bigbuffer.t * [`Ok | `Unexpected_characters | `Wrong_padding ])
 ;;
 
-val encode_base64 : int -> is_text:bool -> Lexing.lexbuf -> Bigbuffer.t
+val encode_base64 : int -> Lexing.lexbuf -> Bigbuffer.t
 
 val decode_quoted_printable : int -> Lexing.lexbuf ->
   (Bigbuffer.t * [`Ok | `Unexpected_characters ])
 ;;
 
-val encode_quoted_printable : int -> is_text:bool -> Lexing.lexbuf -> Bigbuffer.t
+(* quoted printable is ALWAYS encoded as text *)
+val encode_quoted_printable : int -> Lexing.lexbuf -> Bigbuffer.t

@@ -1,3 +1,3 @@
 (* Case-insensitive. *)
 
-include Mimestring.S
+include Mimestring.S with type t = string

@@ -20,7 +20,6 @@ val split : t -> Bigstring_shared.t ->
 
 (** Creates valid boundaries for given text. *)
 val generate : ?text:Bigstring_shared.t -> ?suggest:t -> unit -> t
-val generate_list : ?text:Bigstring_shared.t -> unit -> t Lazy_sequence.t
 
 (** Open an close boundaries *)
 

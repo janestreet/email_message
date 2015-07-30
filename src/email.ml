@@ -140,6 +140,9 @@ and Content : sig
        | `Data of Octet_stream.t
        | `Multipart of Message.t list ]
 
+  val of_data : Octet_stream.t -> t
+  val of_multipart : boundary:Boundary.t -> Message.t list -> t
+
   val hash : t -> int
 
   include String_monoidable.S with type t := t
@@ -218,6 +221,10 @@ end
     | Data octet_stream -> `Data octet_stream
   ;;
 
+  let of_data octet_stream = Data octet_stream
+  let of_multipart ~boundary parts =
+    Multipart { boundary; prologue=None; epilogue=None; parts }
+
   let hash = function
     | Multipart m ->
       Hashtbl.hash (0, Multipart.hash m)
@@ -231,10 +238,7 @@ and Message : sig
 
   val empty : unit -> t
 
-  val of_raw_content
-    :  headers: Headers.t
-    -> raw_content : Bigstring_shared.t
-    -> t Or_error.t
+  val create : headers:Headers.t -> content:Content.t -> t
 
   val of_bigstring_shared
     :  parent:(Media_type.t option)
@@ -253,6 +257,8 @@ and Message : sig
   ;;
 
   val set_headers : t -> Headers.t -> t
+  val add_headers : t -> Headers.t -> t
+  val add_headers_at_bottom : t -> Headers.t -> t
 
   val map_data
     : t -> f:(Octet_stream.t -> Octet_stream.t) -> t
@@ -270,11 +276,8 @@ end = struct
 
   open Or_error.Monad_infix
 
-  let of_raw_content ~headers ~raw_content =
-    Content.of_bigstring_shared ~headers ~parent:None raw_content
-    >>= fun content ->
-    Ok { headers; line_break=true; content }
-  ;;
+  let create ~headers ~content =
+    { headers; line_break=true; content }
 
   let empty () =
     { headers = Headers.empty
@@ -348,6 +351,8 @@ end = struct
   let headers t = t.headers;;
   let content t = Content.simple t.content;;
   let set_headers t headers = { t with headers };;
+  let add_headers t headers = { t with headers = headers @ t.headers }
+  let add_headers_at_bottom t headers = { t with headers = t.headers @ headers }
 
   let hash { headers; line_break=_; content } =
     let x =
@@ -370,18 +375,173 @@ include Binable.Of_binable (Bigstring)
 let of_bigbuffer buffer =
   of_bigstring (Bigbuffer.big_contents buffer)
 
-module Simple = struct
-  let create ~headers ~body =
-    let headers = List.map headers ~f:(fun (name, value) ->
-      (Field_name.of_string name, value))
-    in
-    let raw_content = Bigstring_shared.of_string body in
-    of_raw_content ~headers ~raw_content
+type email = t
 
-  let create_exn ~headers ~body =
-    create ~headers ~body |> Or_error.ok_exn
-  ;;
+module Simple = struct
+  module Expert = struct
+    let content ~extra_headers ~encoding body =
+      let headers =
+        [ "Content-Transfer-Encoding", (Octet_stream.Encoding.to_string (encoding:>Octet_stream.Encoding.t))
+        ] @ extra_headers
+      in
+      let content =
+        body
+        |> Bigstring_shared.of_string
+        |> Octet_stream.encode ~encoding
+        |> Content.of_data
+      in
+      Message.create ~headers ~content
+
+    let multipart ~content_type ~extra_headers parts =
+      let boundary = Boundary.generate () in
+      let headers =
+        [ "Content-Type", (sprintf !"%s; boundary=%{Boundary}" content_type boundary)
+        ] @ extra_headers
+      in
+      let content = Content.of_multipart ~boundary parts in
+      Message.create ~headers ~content
+
+    TEST_UNIT =
+      let t =
+        content
+          ~encoding:`Quoted_printable
+          ~extra_headers:[ "header1", "value1"
+                         ; "header2", "value2"]
+          "x"
+      in
+      <:test_result<string>> (to_string t)
+        ~expect:"Content-Transfer-Encoding:quoted-printable\
+                 \nheader1:value1\
+                 \nheader2:value2\
+                 \n\nx"
+
+    TEST_UNIT =
+      let t =
+        content
+          ~encoding:`Quoted_printable
+          ~extra_headers:[]
+          "x\n"
+      in
+      <:test_result<string>> (to_string t)
+        ~expect:"Content-Transfer-Encoding:quoted-printable\n\nx\n"
+  end
+
+  module Mimetype = struct
+    type t = string
+    let text = "text/plain"
+    let html = "text/html"
+    let pdf = "application/pdf"
+    let jpg = "image/jpeg"
+    let png = "image/png"
+
+    let multipart_mixed = "multipart/mixed"
+    let multipart_alternative = "multipart/alternative"
+    let multipart_related = "multipart/related"
+
+    let from_extension ext =
+      Mime_types.map_extension ext
+
+    let from_filename file =
+      Magic_mime.lookup file
+
+    let guess_encoding : t -> Octet_stream.Encoding.known = function
+      | "text/plain"
+      | "text/html" -> `Quoted_printable
+      | _ -> `Base64
+  end
+
+  module Content = struct
+    type t = email
+    let of_email = ident
+
+    let create ~content_type ?(encoding=Mimetype.guess_encoding content_type) ?(extra_headers=[]) content =
+      Expert.content
+        ~extra_headers:(extra_headers
+                  @ [ "Content-Type", content_type ])
+        ~encoding
+        content
+
+    let of_file ?content_type ?encoding ?extra_headers file =
+      let open Async.Std in
+      Reader.file_contents file
+      >>| fun content ->
+      let content_type = match content_type with
+        | None -> Mimetype.from_filename file
+        | Some content_type -> content_type
+      in
+      create ~content_type ?encoding ?extra_headers content
+
+    let html = create ~content_type:Mimetype.html ~encoding:`Quoted_printable
+    let text = create ~content_type:Mimetype.text ~encoding:`Quoted_printable
+
+    let alternatives ?(extra_headers=[]) = function
+      | [] -> failwith "at least one alternative is required"
+      | [content] -> add_headers content extra_headers
+      | alternatives ->
+        Expert.multipart
+          ~content_type:Mimetype.multipart_alternative
+          ~extra_headers
+          alternatives
+
+    let with_related ?(extra_headers=[]) ~resources t =
+      Expert.multipart
+        ~content_type:Mimetype.multipart_related
+        ~extra_headers
+        (add_headers t
+           [ "Content-Disposition", "inline" ]
+         :: List.map resources ~f:(fun (name,content) ->
+             add_headers content
+               [ "Content-Id", sprintf "<%s>" name ]))
+  end
+
+  type attachment_name = string
+
+  type t = email
+
+  let create
+      ?(from=Email_address.local_address ())
+      ~to_
+      ?(cc=[])
+      ~subject
+      ?(extra_headers=[])
+      ?attachments
+      content
+    =
+    let headers =
+      [ "From", (from |> Email_address.to_string)
+      ; "To", (List.map to_ ~f:Email_address.to_string |> String.concat ~sep:", ")
+      ; "Cc", (List.map cc ~f:Email_address.to_string |> String.concat ~sep:", ")
+      ; "Subject", subject
+      ] @ extra_headers
+    in
+    let headers =
+      match Headers.last headers "Message-Id" with
+      | None ->
+        headers
+        @ [ "Message-Id",
+            sprintf !"<%s/%s+%{Uuid}@%s>"
+              (Unix.getlogin ())
+              (Sys.executable_name |> Filename.basename)
+              (Uuid.create ())
+              (Unix.gethostname ())
+          ]
+      | Some _ -> headers
+    in
+    match attachments with
+    | None ->
+      add_headers content headers
+    | Some attachments ->
+      Expert.multipart
+        ~content_type:"multipart/mixed"
+        ~extra_headers
+        ((add_headers content
+            [ "Content-Disposition", "inline"])
+         :: List.map attachments ~f:(fun (name,content) ->
+             add_headers content
+               [ "Content-Disposition",
+                 sprintf "attachment; filename=%s" (Mimestring.quote name) ]))
 end
+
 
 TEST_MODULE = struct
   let check s =
@@ -395,7 +555,7 @@ TEST_MODULE = struct
     in
     <:test_result<string>> ~expect:s result
 
-  (* A message without headers must start with an empty line. *)
+      (* A message without headers must start with an empty line. *)
   TEST_UNIT = check "\n"
   TEST_UNIT = check "\nhello world"
   TEST_UNIT = check "\nhello world\n hello again\n"

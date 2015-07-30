@@ -10,10 +10,10 @@ include String_monoidable.S with type t := t
 val empty : t
 
 (* Same as functions in Field_list, except they add a space before the value. *)
-val add : t -> name:string -> string -> t
-val add_at_bottom : t -> name:string -> string -> t
-val set : t -> name:string -> string -> t
-val set_at_bottom : t -> name:string -> string -> t
+val add : t -> name:string -> value:string -> t
+val add_at_bottom : t -> name:string -> value:string -> t
+val set : t -> name:string -> value:string -> t
+val set_at_bottom : t -> name:string -> value:string -> t
 
 (** Accesses "Content-type" fields *)
 module Content_type : sig

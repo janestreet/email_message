@@ -1,3 +1,7 @@
+
+(* This is used in stable code, think whether you need to mint a new version if
+   you change this. *)
+
 {
 type email =
   { prefix : string option

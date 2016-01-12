@@ -1,11 +1,11 @@
 open Core.Std
 
-type t with bin_io, sexp, compare
+type t [@@deriving bin_io, sexp, compare]
 
 (* Case-insensitive. *)
 module Domain : Mimestring.S with type t=string
 
-val create : ?prefix:string -> ?domain:Domain.t ->  string -> t
+val create : ?prefix:string -> ?domain:Domain.t -> string -> t
 
 val of_string : ?default_domain:string -> string -> t Or_error.t
 val of_string_exn : ?default_domain:string -> string -> t
@@ -14,12 +14,11 @@ val list_of_string_exn : ?default_domain:string -> string -> t list
 val to_string : t -> string
 val list_to_header_value : t list -> string
 
-
 val local_part : t -> string
 
 val domain : t -> Domain.t option
 
-    (* local@domain, default brackets = false *)
+(* local@domain, default brackets = false *)
 val address_part
   : ?brackets:bool -> ?lowercase_domain:bool -> t -> t
 val address_part_string
@@ -34,6 +33,12 @@ val set_prefix : t -> string option -> t
 val local_address : unit -> t
 
 (* Hash and comparisons are based on the address part (local_part + domain)
-     only. *)
+   only. *)
 include Comparable.S with type t := t
 include Hashable.S with type t := t
+
+module Stable : sig
+  module V1 : sig
+    type nonrec t = t [@@deriving bin_io, sexp]
+  end
+end

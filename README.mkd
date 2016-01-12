@@ -1,4 +1,0 @@
-This library implements parsers and encoders for email messages
-([RFC 2045](http://www.ietf.org/rfc/rfc2045.txt) and
-[RFC 2822](http://www.ietf.org/rfc/rfc2822.txt)), as well as mbox
-files ([RFC 4155](http://www.ietf.org/rfc/rfc4155.txt)).

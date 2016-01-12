@@ -9,7 +9,7 @@ module rec Multipart : sig
     ; prologue : Bigstring_shared.t option
     ; epilogue : Bigstring_shared.t option
     ; parts    : Message.t list
-    } with sexp, compare
+    } [@@deriving sexp, compare]
 
   (* Returns none if this is not a multipart message. *)
   val of_bigstring_shared
@@ -32,7 +32,7 @@ end = struct
     prologue : Bigstring_shared.t sexp_option;
     epilogue : Bigstring_shared.t sexp_option;
     parts    : Message.t list;
-  } with sexp, compare
+  } [@@deriving sexp, compare]
 
   let of_bigstring_shared ~media_type ~boundary bstr =
     let open Or_error.Monad_infix in
@@ -118,7 +118,7 @@ and Content : sig
       Multipart of Multipart.t
     | Data of Octet_stream.t
     | Message of Message.t
-  with sexp, compare
+  [@@deriving sexp, compare]
   ;;
 
   val empty : unit -> t
@@ -134,12 +134,6 @@ and Content : sig
     -> f:(Octet_stream.t -> Octet_stream.t)
     -> t
 
-  val simple
-    :  t
-    -> [ `Message of Message.t
-       | `Data of Octet_stream.t
-       | `Multipart of Message.t list ]
-
   val of_data : Octet_stream.t -> t
   val of_multipart : boundary:Boundary.t -> Message.t list -> t
 
@@ -153,7 +147,7 @@ end
   type t = Multipart of Multipart.t
          | Data of Octet_stream.t
          | Message of Message.t
-  with sexp, compare
+  [@@deriving sexp, compare]
   ;;
 
   let empty () = Data Octet_stream.empty
@@ -215,12 +209,6 @@ end
       Octet_stream.to_string_monoid octet_stream
   ;;
 
-  let simple = function
-    | Message message -> `Message message
-    | Multipart multipart -> `Multipart multipart.Multipart.parts
-    | Data octet_stream -> `Data octet_stream
-  ;;
-
   let of_data octet_stream = Data octet_stream
   let of_multipart ~boundary parts =
     Multipart { boundary; prologue=None; epilogue=None; parts }
@@ -234,7 +222,7 @@ end
       Hashtbl.hash (2, Message.hash m)
 end
 and Message : sig
-  type t with sexp, compare
+  type t [@@deriving sexp, compare]
 
   val empty : unit -> t
 
@@ -252,9 +240,7 @@ and Message : sig
   include Bigstringable.S with type t := t
 
   val headers : t -> Headers.t
-  val content : t ->
-    [ `Message of t | `Data of Octet_stream.t | `Multipart of (t list) ]
-  ;;
+  val content : t -> Content.t
 
   val set_headers : t -> Headers.t -> t
   val add_headers : t -> Headers.t -> t
@@ -271,7 +257,7 @@ end = struct
     { headers    : Headers.t
     ; line_break : bool
     ; content    : Content.t
-    } with sexp, compare
+    } [@@deriving sexp, compare]
   ;;
 
   open Or_error.Monad_infix
@@ -349,7 +335,7 @@ end = struct
     Bigstring_shared.of_string_monoid (to_string_monoid t);;
 
   let headers t = t.headers;;
-  let content t = Content.simple t.content;;
+  let content t = t.content;;
   let set_headers t headers = { t with headers };;
   let add_headers t headers = { t with headers = headers @ t.headers }
   let add_headers_at_bottom t headers = { t with headers = t.headers @ headers }
@@ -395,13 +381,13 @@ module Simple = struct
     let multipart ~content_type ~extra_headers parts =
       let boundary = Boundary.generate () in
       let headers =
-        [ "Content-Type", (sprintf !"%s; boundary=%{Boundary}" content_type boundary)
+        [ "Content-Type", (sprintf !"%s; boundary=\"%{Boundary}\"" content_type boundary)
         ] @ extra_headers
       in
       let content = Content.of_multipart ~boundary parts in
       Message.create ~headers ~content
 
-    TEST_UNIT =
+    let%test_unit _ =
       let t =
         content
           ~encoding:`Quoted_printable
@@ -409,20 +395,20 @@ module Simple = struct
                          ; "header2", "value2"]
           "x"
       in
-      <:test_result<string>> (to_string t)
+      [%test_result: string] (to_string t)
         ~expect:"Content-Transfer-Encoding:quoted-printable\
                  \nheader1:value1\
                  \nheader2:value2\
                  \n\nx"
 
-    TEST_UNIT =
+    let%test_unit _ =
       let t =
         content
           ~encoding:`Quoted_printable
           ~extra_headers:[]
           "x\n"
       in
-      <:test_result<string>> (to_string t)
+      [%test_result: string] (to_string t)
         ~expect:"Content-Transfer-Encoding:quoted-printable\n\nx\n"
   end
 
@@ -439,10 +425,10 @@ module Simple = struct
     let multipart_related = "multipart/related"
 
     let from_extension ext =
-      Mime_types.map_extension ext
+      Magic_mime_external.Mime_types.map_extension ext
 
     let from_filename file =
-      Magic_mime.lookup file
+      Magic_mime_external.Magic_mime.lookup file
 
     let guess_encoding : t -> Octet_stream.Encoding.known = function
       | "text/plain"
@@ -498,34 +484,63 @@ module Simple = struct
 
   type t = email
 
-  let create
-      ?(from=Email_address.local_address ())
-      ~to_
-      ?(cc=[])
-      ~subject
-      ?(extra_headers=[])
-      ?attachments
-      content
-    =
-    let headers =
-      [ "From", (from |> Email_address.to_string)
-      ; "To", (List.map to_ ~f:Email_address.to_string |> String.concat ~sep:", ")
-      ; "Cc", (List.map cc ~f:Email_address.to_string |> String.concat ~sep:", ")
-      ; "Subject", subject
-      ] @ extra_headers
-    in
-    let headers =
-      match Headers.last headers "Message-Id" with
-      | None ->
-        headers
-        @ [ "Message-Id",
+  let make_id () =
             sprintf !"<%s/%s+%{Uuid}@%s>"
               (Unix.getlogin ())
               (Sys.executable_name |> Filename.basename)
               (Uuid.create ())
               (Unix.gethostname ())
-          ]
-      | Some _ -> headers
+
+  let utc_offset_string time ~zone =
+    let utc_offset   = Time.utc_offset time ~zone in
+    let is_utc       = Time.Span.(=) utc_offset Time.Span.zero in
+    if is_utc
+    then "Z"
+    else
+      String.concat
+        [ (if Time.Span.(<) utc_offset Time.Span.zero then "-" else "+");
+          Time.Ofday.to_string_trimmed
+            (Time.Ofday.of_span_since_start_of_day (Time.Span.abs utc_offset));
+        ]
+
+  let rfc822_date now =
+    let zone = Time.Zone.local in
+    let offset_string =
+      utc_offset_string ~zone now
+      |> String.filter ~f:(fun c -> Char.(<>) c ':')
+    in
+    let now_string = Time.format now "%a, %d %b %Y %H:%M:%S" ~zone in
+    sprintf "%s %s" now_string offset_string
+
+  let create
+      ?(from=Email_address.local_address ())
+      ~to_
+      ?(cc=[])
+      ~subject
+      ?id
+      ?date
+      ?(extra_headers=[])
+      ?attachments
+      content
+    =
+    let id = match id with
+      | None ->  make_id ()
+      | Some id -> id
+    in
+    let date = match date with
+      | None -> Time.now ()
+      | Some date -> date
+    in
+    let headers =
+      extra_headers
+      @ [ "From", (from |> Email_address.to_string) ]
+      @ (if List.is_empty to_ then []
+         else [ "To", List.map to_ ~f:Email_address.to_string |> String.concat ~sep:",\n\t" ])
+      @ (if List.is_empty cc then []
+         else [ "Cc", List.map cc ~f:Email_address.to_string |> String.concat ~sep:",\n\t" ])
+      @ [ "Subject", subject ]
+      @ [ "Message-Id", id ]
+      @ [ "Date", rfc822_date date ]
     in
     match attachments with
     | None ->
@@ -533,17 +548,29 @@ module Simple = struct
     | Some attachments ->
       Expert.multipart
         ~content_type:"multipart/mixed"
-        ~extra_headers
+        ~extra_headers:headers
         ((add_headers content
             [ "Content-Disposition", "inline"])
          :: List.map attachments ~f:(fun (name,content) ->
-             add_headers content
-               [ "Content-Disposition",
-                 sprintf "attachment; filename=%s" (Mimestring.quote name) ]))
+             let headers = Message.headers content in
+             let content_type =
+               Headers.last headers "Content-Type"
+               |> Option.value ~default:"application/x-octet-stream"
+             in
+             let headers =
+               headers
+               |> Headers.set_at_bottom
+                 ~name:"Content-Type"
+                 ~value:(sprintf "%s; name=%s" content_type (Mimestring.quote name))
+               |> Headers.set_at_bottom
+                 ~name:"Content-Disposition"
+                 ~value:(sprintf "attachment; filename=%s" (Mimestring.quote name))
+             in
+             set_headers content headers))
 end
 
 
-TEST_MODULE = struct
+let%test_module _ = (module struct
   let check s =
     let b = Bigbuffer.create 1000 in
     Bigbuffer.add_string b s;
@@ -553,10 +580,10 @@ TEST_MODULE = struct
       |> Or_error.ok_exn
       |> to_string
     in
-    <:test_result<string>> ~expect:s result
+    [%test_result: string] ~expect:s result
 
       (* A message without headers must start with an empty line. *)
-  TEST_UNIT = check "\n"
-  TEST_UNIT = check "\nhello world"
-  TEST_UNIT = check "\nhello world\n hello again\n"
-end
+  let%test_unit _ = check "\n"
+  let%test_unit _ = check "\nhello world"
+  let%test_unit _ = check "\nhello world\n hello again\n"
+end)

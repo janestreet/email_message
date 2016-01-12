@@ -6,6 +6,8 @@ module LS = Lexer_state
  * to be of type (int -> 'a -> 'a t), not (len:int -> 'a -> 'a t) *)
 module C = Core.Std
 
+module String = Bytes
+
 let force_token token _lexbuf = token
 
 let unescape_staged = Core.Std.String.Escaping.unescape ~escape_char:'\\';;

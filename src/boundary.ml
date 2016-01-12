@@ -4,7 +4,7 @@ open Core_extended.Std
 module Debug = Debug_in_this_directory
 
 
-type t = string with sexp, bin_io, compare
+type t = string [@@deriving sexp, bin_io, compare]
 let create = Fn.id
 
 let hash = String.hash
@@ -21,7 +21,7 @@ module Generator = struct
     *)
   let generate_raw ?(validate=(Fn.const true)) () =
     let rec generate () =
-      let boundary = sprintf !"--=_::%{Uuid}::_=--" (Uuid.create ()) in
+      let boundary = sprintf !"--_::%{Uuid}::_--" (Uuid.create ()) in
       if validate boundary then
         boundary
       else

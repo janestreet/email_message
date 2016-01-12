@@ -1,7 +1,7 @@
 open Core.Std
 
 module Params = struct
-  type t = string Field_list.t with sexp
+  type t = string Field_list.t [@@deriving sexp]
 
   let to_string_monoid t =
     let field_to_string_monoid ((name : Field_name.t), body) =
@@ -18,7 +18,7 @@ type t = {
   mime_type : Rfc.RFC2045.Token.t;
   mime_subtype : Rfc.RFC2045.Token.t;
   params : Params.t;
-} with fields, sexp
+} [@@deriving fields, sexp]
 
 let __UNUSED_VALUE__field_name = "content-type";;
 

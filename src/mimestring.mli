@@ -2,7 +2,7 @@ open Core.Std
 
 (* For usage in functors *)
 module type S = sig
-  type t = private string with sexp, bin_io;;
+  type t = private string [@@deriving sexp, bin_io];;
   val hash : t -> int
   val of_string : string -> t
   val to_lowercase_string : t -> string

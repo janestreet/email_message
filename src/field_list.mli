@@ -1,7 +1,7 @@
 
 (* Field names are case-insensitive. *)
 
-type 'a t = (Field_name.t * 'a) list with sexp, bin_io, compare
+type 'a t = (Field_name.t * 'a) list [@@deriving sexp, bin_io, compare]
 
 val hash : _ t -> int
 

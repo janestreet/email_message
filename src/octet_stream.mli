@@ -12,12 +12,12 @@ module Encoding : sig
     | `Binary
     | `Quoted_printable
     ]
-  with sexp, bin_io, compare
+  [@@deriving sexp, bin_io, compare]
 
   type t =
     [ known
     | `Unknown of string
-    ] with sexp, bin_io, compare
+    ] [@@deriving sexp, bin_io, compare]
   ;;
 
   (* RFC 2045 says 7bit should be assumed if the Content-Transfer-Encoding heading is
@@ -29,7 +29,7 @@ module Encoding : sig
   include Stringable.S with type t:=t
 end
 
-type t with sexp, bin_io, compare
+type t [@@deriving sexp, bin_io, compare]
 
 include String_monoidable.S with type t := t
 include Stringable.S with type t := t
@@ -50,6 +50,7 @@ val encoded_contents : t -> Bigstring_shared.t
 
 (* These are the expensive operation. *)
 val encode : encoding:Encoding.known -> Bigstring_shared.t -> t
+
 (* None if encoding is `Unknown. *)
 val decode : t -> Bigstring_shared.t option
 

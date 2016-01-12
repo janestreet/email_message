@@ -113,8 +113,7 @@ module Make (T : Basic_S) = struct
       ~f:(fun x ->
         if not (Pipe.is_closed dst) then
           Pipe.write dst x
-        else
-        begin
+        else begin
           Pipe.close_read src;
           Pipe.close dst;
           return ()

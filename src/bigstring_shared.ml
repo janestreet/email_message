@@ -88,16 +88,16 @@ let split_lines =
       sub t ~pos:0 ~len:!eol :: !ac
 ;;
 
-TEST_UNIT =
+let%test_unit _ =
   List.iter ~f:(fun s ->
     let actual = split_lines (of_string s) |> List.map ~f:to_string in
     let expect = String.split_lines s in
     if actual <> expect
     then failwiths "split_lines bug" (s, `actual actual , `expect expect)
-           <:sexp_of<
+           [%sexp_of:
              string *
              [ `actual of string list ] *
-             [ `expect of string list ] >>)
+             [ `expect of string list ]])
     [ "";
       "\n";
       "a";

@@ -1,6 +1,6 @@
 open Core.Std
 
-type 'a t = (Field_name.t * 'a) list with sexp, bin_io, compare
+type 'a t = (Field_name.t * 'a) list [@@deriving sexp, bin_io, compare]
 
 let hash t =
   Common.list_hash t ~hash:Hashtbl.hash
@@ -39,9 +39,9 @@ let set t ~name value =
 let set_at_bottom t ~name value =
   List.rev (set (List.rev t) ~name value)
 
-TEST_MODULE = struct
+let%test_module _ = (module struct
   type field_list = string t
-  type t = (string * string) list with sexp, compare
+  type t = (string * string) list [@@deriving sexp, compare]
 
   let of_strings =
     List.map ~f:(fun (name, value) -> (Field_name.of_string name, value))
@@ -62,46 +62,46 @@ TEST_MODULE = struct
   let t = [ "A", "a1" ; "B", "b1" ; "B", "b2" ]
           |> of_strings
 
-  TEST_UNIT =
-    <:test_result<t>> (add t ~name:"B" "b3")
+  let%test_unit _ =
+    [%test_result: t] (add t ~name:"B" "b3")
       ~expect:[ "A", "a1" ; "B", "b3"; "B", "b1" ; "B", "b2" ]
 
-  TEST_UNIT =
-    <:test_result<t>> (add t ~name:"C" "c1")
+  let%test_unit _ =
+    [%test_result: t] (add t ~name:"C" "c1")
       ~expect:[ "C", "c1"; "A", "a1" ; "B", "b1" ; "B", "b2" ]
 
-  TEST_UNIT =
-    <:test_result<t>> (set t ~name:"B" "b3")
+  let%test_unit _ =
+    [%test_result: t] (set t ~name:"B" "b3")
       ~expect:[ "A", "a1" ; "B", "b3"; "B", "b2" ]
 
-  TEST_UNIT =
-    <:test_result<t>> (set t ~name:"b" "b3")
+  let%test_unit _ =
+    [%test_result: t] (set t ~name:"b" "b3")
       ~expect:[ "A", "a1" ; "b", "b3"; "B", "b2" ]
 
-  TEST_UNIT =
-    <:test_result<t>> (set t ~name:"C" "c1")
+  let%test_unit _ =
+    [%test_result: t] (set t ~name:"C" "c1")
       ~expect:[ "C", "c1"; "A", "a1" ; "B", "b1" ; "B", "b2" ]
 
-  TEST_UNIT =
-    <:test_result<t>> (set t ~name:"c" "c1")
+  let%test_unit _ =
+    [%test_result: t] (set t ~name:"c" "c1")
       ~expect:[ "c", "c1"; "A", "a1" ; "B", "b1" ; "B", "b2" ]
 
-  TEST_UNIT =
-    <:test_result<t>> (add_at_bottom t ~name:"B" "b3")
+  let%test_unit _ =
+    [%test_result: t] (add_at_bottom t ~name:"B" "b3")
       ~expect:[ "A", "a1" ; "B", "b1" ; "B", "b2"; "B", "b3" ]
 
-  TEST_UNIT =
-    <:test_result<t>> (add_at_bottom t ~name:"C" "c1")
+  let%test_unit _ =
+    [%test_result: t] (add_at_bottom t ~name:"C" "c1")
       ~expect:[ "A", "a1" ; "B", "b1" ; "B", "b2"; "C", "c1" ]
 
-  TEST_UNIT =
-    <:test_result<t>> (set_at_bottom t ~name:"B" "b3")
+  let%test_unit _ =
+    [%test_result: t] (set_at_bottom t ~name:"B" "b3")
       ~expect:[ "A", "a1" ; "B", "b1"; "B", "b3" ]
 
-  TEST_UNIT =
-    <:test_result<t>> (set_at_bottom t ~name:"C" "c1")
+  let%test_unit _ =
+    [%test_result: t] (set_at_bottom t ~name:"C" "c1")
       ~expect:[ "A", "a1" ; "B", "b1" ; "B", "b2"; "C", "c1" ]
-end
+end)
 
 let find_all t name =
   let name = Field_name.of_string name in

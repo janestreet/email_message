@@ -10,12 +10,12 @@ module Encoding = struct
     | `Binary
     | `Quoted_printable
     ]
-  with sexp, bin_io, compare
+  [@@deriving sexp, bin_io, compare]
 
   type t =
     [ known
     | `Unknown of string
-    ] with sexp, bin_io, compare
+    ] [@@deriving sexp, bin_io, compare]
   ;;
 
   let of_string encoding =
@@ -50,7 +50,7 @@ end
 type t =
   { encoding : Encoding.t
   ; content  : Bigstring_shared.t
-  } with sexp, bin_io, compare
+  } [@@deriving sexp, bin_io, compare]
 
 let create ?(encoding = Encoding.default) content =
   { encoding; content }
@@ -123,7 +123,7 @@ module Base64 = struct
     Bigstring_shared.of_bigbuffer_volatile bigbuffer
   ;;
 
-  TEST_MODULE "Octet_stream.Base64" = struct
+  let%test_module "Octet_stream.Base64" = (module struct
     open Bigstring_shared
 
     let pleasure = List.map ~f:(fun (x,y) ->
@@ -151,18 +151,18 @@ module Base64 = struct
     ;;
 
     (** Exhaustive check of boundaries *)
-    TEST_UNIT = test_decode 0 pleasure;;
-    TEST_UNIT = test_decode 1 pleasure;;
-    TEST_UNIT = test_decode 2 pleasure;;
-    TEST_UNIT = test_decode 3 pleasure;;
-    TEST_UNIT = test_decode 4 pleasure;;
+    let%test_unit _ = test_decode 0 pleasure;;
+    let%test_unit _ = test_decode 1 pleasure;;
+    let%test_unit _ = test_decode 2 pleasure;;
+    let%test_unit _ = test_decode 3 pleasure;;
+    let%test_unit _ = test_decode 4 pleasure;;
 
-    TEST_UNIT = test_encode 0 pleasure;;
-    TEST_UNIT = test_encode 1 pleasure;;
-    TEST_UNIT = test_encode 2 pleasure;;
-    TEST_UNIT = test_encode 3 pleasure;;
-    TEST_UNIT = test_encode 4 pleasure;;
-  end
+    let%test_unit _ = test_encode 0 pleasure;;
+    let%test_unit _ = test_encode 1 pleasure;;
+    let%test_unit _ = test_encode 2 pleasure;;
+    let%test_unit _ = test_encode 3 pleasure;;
+    let%test_unit _ = test_encode 4 pleasure;;
+  end)
 end
 
 module Quoted_printable = struct
@@ -190,7 +190,7 @@ module Quoted_printable = struct
     Bigstring_shared.of_bigbuffer_volatile bigbuffer
   ;;
 
-  TEST_MODULE "quoted-printable" = struct
+  let%test_module "quoted-printable" = (module struct
     open Bigstring_shared
 
     let mathematics = List.map ~f:(fun (x,y) -> (of_string x, of_string y))
@@ -231,12 +231,12 @@ module Quoted_printable = struct
       assert_equal ~printer:to_string plaintext plaintext';
     ;;
 
-    TEST_UNIT = test_decode 0 mathematics
-    TEST_UNIT = test_encode 0 encoding
-    TEST_UNIT = test_encode 1 encoding
-    TEST_UNIT = test_encode 2 encoding
-    TEST_UNIT = test_encode 3 encoding
-  end
+    let%test_unit _ = test_decode 0 mathematics
+    let%test_unit _ = test_encode 0 encoding
+    let%test_unit _ = test_encode 1 encoding
+    let%test_unit _ = test_encode 2 encoding
+    let%test_unit _ = test_encode 3 encoding
+  end)
 end
 
 let decode t =

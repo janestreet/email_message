@@ -1,7 +1,7 @@
 open Core.Std
 
 module type S = sig
-  type t = private string with sexp, bin_io;;
+  type t = private string [@@deriving sexp, bin_io];;
   val hash : t -> int
   val of_string : string -> t
   val to_lowercase_string : t -> string
@@ -13,7 +13,7 @@ end
 (** Case-insensitive strings *)
 module Case_insensitive = struct
   module T = struct
-    type t = string with sexp, bin_io
+    type t = string [@@deriving sexp, bin_io]
 
     let compare x y = String.compare (String.lowercase x) (String.lowercase y)
     let hash x = String.hash (String.lowercase x)

@@ -25,17 +25,36 @@ val empty : unit -> t
 *)
 val of_bigbuffer : Bigbuffer.t -> t Or_error.t
 
+type email = t
+
+module Multipart : sig
+  type t =
+    { boundary : Boundary.t
+    ; prologue : Bigstring_shared.t option
+    ; epilogue : Bigstring_shared.t option
+    ; parts    : email list
+    }
+end
+
+module Content : sig
+  type t =
+    | Multipart of Multipart.t
+    | Data of Octet_stream.t
+    | Message of email
+end
+
 val headers     : t -> Headers.t
 val set_headers : t -> Headers.t -> t
 
 val add_headers : t -> Headers.t -> t
 val add_headers_at_bottom : t -> Headers.t -> t
 
-val content
-  :  t
-  -> [ `Message of t
-     | `Data of Octet_stream.t
-     | `Multipart of (t list)]
+val content : t -> Content.t
+
+val create
+  :  headers : Headers.t
+  -> content : Content.t
+  -> t
 
 (** Allow changing the message content to mask the actual data but retain the
     structure *)
@@ -58,8 +77,6 @@ include Comparable.S    with type t := t
 include Binable.S       with type t := t
 
 val hash : t -> int
-
-type email = t
 
 module Simple : sig
   module Mimetype : sig
@@ -103,16 +120,16 @@ module Simple : sig
       -> string
       -> t Async.Std.Deferred.t
 
-(* Combine 2 or more contents as alternative versions.
-   List should be sorted from worst to best. *)
+    (* Combine 2 or more contents as alternative versions.
+       List should be sorted from worst to best. *)
     val alternatives
       :  ?extra_headers:(Field_name.t * string) list
       -> t list
       -> t
 
-(* Add related resources (e.g. inline images).
-   reference them using 'cid:${attachment_name}' in the content.
-   To attach files you should use [create ~attachments] *)
+    (* Add related resources (e.g. inline images).
+       reference them using 'cid:${attachment_name}' in the content.
+       To attach files you should use [create ~attachments] *)
     val with_related
       :  ?extra_headers:(Field_name.t * string) list
       -> resources:(attachment_name * t) list
@@ -128,6 +145,8 @@ module Simple : sig
     -> to_:Email_address.t list
     -> ?cc:Email_address.t list
     -> subject:string
+    -> ?id:string
+    -> ?date:Time.t
     -> ?extra_headers:(Field_name.t * string) list
     -> ?attachments:(attachment_name * Content.t) list
     -> Content.t

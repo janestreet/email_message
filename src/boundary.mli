@@ -1,7 +1,7 @@
 open Core.Std
 open Core_extended.Std
 
-type t with sexp, bin_io, compare
+type t [@@deriving sexp, bin_io, compare]
 
 val hash : t -> int
 

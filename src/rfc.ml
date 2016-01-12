@@ -34,13 +34,13 @@ module RFC2045 = struct
       if is_valid str then str
       else Mimestring.quote str
 
-    TEST_MODULE "RFC2045.Token" = struct
+    let%test_module "RFC2045.Token" = (module struct
       let (=) = String.(=)
-      TEST = is_valid_or_quote "abcdefghijkl" = "abcdefghijkl"
-      TEST = is_valid_or_quote "abc=dka" = "\"abc=dka\""
-      TEST = is_valid_or_quote "" = "\"\""
-      TEST = is_valid_or_quote "\"" = "\"\\\"\""
-    end
+      let%test _ = is_valid_or_quote "abcdefghijkl" = "abcdefghijkl"
+      let%test _ = is_valid_or_quote "abc=dka" = "\"abc=dka\""
+      let%test _ = is_valid_or_quote "" = "\"\""
+      let%test _ = is_valid_or_quote "\"" = "\"\\\"\""
+    end)
   end
 end
 

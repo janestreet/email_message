@@ -1,9 +1,9 @@
 open Core.Std
 
-type 'a field_list = 'a Field_list.t with sexp, bin_io, compare
+type 'a field_list = 'a Field_list.t [@@deriving sexp, bin_io, compare]
 include (Field_list
          : module type of Field_list with type 'a t := 'a field_list)
-type t = string field_list with sexp, bin_io, compare
+type t = string field_list [@@deriving sexp, bin_io, compare]
 
 let to_string_monoid t =
   let field_to_string_monoid ((name : Field_name.t), body) =

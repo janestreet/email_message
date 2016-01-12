@@ -4,7 +4,7 @@ type t = {
   mime_type : Rfc.RFC2045.Token.t;
   mime_subtype : Rfc.RFC2045.Token.t;
   params : (Field_name.t * string) list;
-} with fields, sexp
+} [@@deriving fields, sexp]
 
 val is_multipart : t -> bool
 val is_digest : t -> bool

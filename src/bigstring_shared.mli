@@ -1,7 +1,7 @@
 open Core.Std
 
 (** Immutable sequences of bytes which can be windowed efficiently. *)
-type t = private Bigstring.t with sexp, bin_io, compare
+type t = private Bigstring.t [@@deriving sexp, bin_io, compare]
 
 val of_bigstring : Bigstring.t -> t
 val to_bigstring : t -> Bigstring.t

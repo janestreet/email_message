@@ -28,22 +28,22 @@ let x_js_compliance_to_hash astring =
   _returnme
 
 let destination_addresses message =
-  let headers = Email.headers message.Mailbox.Message.email in
   Option.Monad_infix.(
-    Field_list.last headers "x-js-compliance" >>= fun compliance_hdr ->
+    Email.last_header message.Mailbox.Message.email "x-js-compliance"
+    >>= fun compliance_hdr ->
     Hashtbl.find (x_js_compliance_to_hash compliance_hdr) "recipient" )
 
 let easy_get_header message header_name =
   let headers = Email.headers message.Mailbox.Message.email in
-  match Field_list.last headers header_name with
+  match Headers.last headers header_name with
   | Some data -> data
   | None -> ""
 ;;
 
 let print_all_header_names  message =
   let headers = Email.headers message.Mailbox.Message.email in
-  let _foo = Field_list.names headers in
-  let sexp = List.sexp_of_t Field_name.sexp_of_t _foo in
+  let _foo = Headers.names headers in
+  let sexp = List.sexp_of_t Headers.Name.sexp_of_t _foo in
   Sexp.to_string_hum ~indent:1 sexp
 
 

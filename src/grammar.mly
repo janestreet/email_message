@@ -8,7 +8,7 @@ open! Core.Std
 %token EOF
 
 /*(* Headers *)*/
-%token <Field_name.t * string> FIELD
+%token <string * string> FIELD
 %token HEADER_END
 /**/
 %token NO_HEADER_END
@@ -90,7 +90,7 @@ param_list_aux :
 ;
 
 parameter : attribute EQUALS value { ($1, $3) };
-attribute : ATOM { Field_name.of_string $1 };
+attribute : ATOM { $1 };
 value :
     ATOM { $1 }
   | STRING { $1 }

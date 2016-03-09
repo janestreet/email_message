@@ -520,7 +520,7 @@ field = parse
       (* This code is repeated to avoid cyclical dependencies. Effort has
        * been made to make it minimal.
        *)
-      LS.return [FIELD(Field_name.of_string name, body)]
+      LS.return [FIELD(name, body)]
     }
   | crlf { LS.return ~new_state:`Content [HEADER_END] }
       | eof  { LS.return_eof }

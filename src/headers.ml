@@ -1,54 +1,274 @@
 open Core.Std
 
-type 'a field_list = 'a Field_list.t [@@deriving sexp, bin_io, compare]
-include (Field_list
-         : module type of Field_list with type 'a t := 'a field_list)
-type t = string field_list [@@deriving sexp, bin_io, compare]
+module Whitespace = struct
+  type t =
+    [ `Keep (* Leave whitespace unchanged *)
+    | `Strip (* Cleanup leading and trailing whitespace on each line *)
+    ] [@@deriving sexp]
+  let default : t = `Strip
+end
+
+module Name : sig
+  type t = string [@@deriving sexp, bin_io]
+  val of_string : string -> t
+  val to_string : t -> string
+  include Comparable.S with type t := t
+  val is : t -> string -> bool
+end = struct
+  include Mimestring.Case_insensitive
+  let to_string str = str
+  let is = equal_string
+end
+
+module Value : sig
+  type t = string [@@deriving sexp, bin_io]
+  val of_string : ?whitespace:Whitespace.t -> string -> t
+  val to_string : ?whitespace:Whitespace.t -> t -> string
+  val of_string_to_string : ?whitespace:Whitespace.t -> string -> string
+  include Comparable.S with type t := t
+end = struct
+  include String
+  let of_string ?(whitespace=Whitespace.default) str =
+    match whitespace with
+    | `Keep -> str
+    | `Strip -> String.split_lines str |> List.map ~f:String.strip |> String.concat ~sep:"\n"
+  let of_string_to_string ?(whitespace=Whitespace.default) str =
+    match whitespace with
+    | `Keep -> str
+    | `Strip -> " " ^ (String.split_lines str |> List.map ~f:String.strip |> String.concat ~sep:"\n\t")
+  let to_string = of_string_to_string
+end
+
+type t = (Name.t * string) list [@@deriving sexp, bin_io, compare]
 
 let to_string_monoid t =
-  let field_to_string_monoid ((name : Field_name.t), body) =
-    String_monoid.concat_string [(name :> string); ":"; body; "\n"]
-  in
-  String_monoid.concat
-    (List.map t ~f:field_to_string_monoid)
+  List.map t ~f:(fun (name,value) ->
+    String_monoid.concat_string [(name :> string); ":"; value; "\n"])
+  |> String_monoid.concat
+
+let to_string t = String_monoid.to_string (to_string_monoid t)
+
+let hash = Hashtbl.hash
 
 let empty = []
+let append = List.append
 
-let add t ~name ~value =
-  add t ~name (" " ^ value)
-let add_at_bottom t ~name ~value =
-  add_at_bottom t ~name (" " ^ value)
-let set t ~name ~value =
-  set t ~name (" " ^ value)
-let set_at_bottom t ~name ~value =
-  set_at_bottom t ~name (" " ^ value)
+(* Accessors *)
+let last ?whitespace t name =
+  let name = Name.of_string name in
+  List.fold t ~init:None ~f:(fun r (k,v) ->
+    if Name.equal name k then Some v else r)
+  |> Option.map ~f:(Value.of_string ?whitespace)
 
-module Content_type = struct
-  module Token = Rfc.RFC2045.Token
+let find_all ?whitespace t name =
+  let name = Name.of_string name in
+  List.filter_map t ~f:(fun (name', value) ->
+    if Name.equal name name' then Some (Value.of_string ?whitespace value) else None)
 
-  let last t =
-    Option.bind (Field_list.last t "content-type")
-      (fun field -> Option.try_with (fun () -> Media_type.of_string field))
+(* Modify *)
+let of_list ~whitespace : _ -> t =
+  List.map ~f:(fun (name,value) ->
+    let name = Name.of_string name in
+    let value = Value.of_string_to_string ~whitespace value in
+    name, value)
 
-  let default_default =
-    { Media_type.
-      mime_type = Token.of_string "text";
-      mime_subtype = Token.of_string "plain";
-      params = [(Field_name.of_string "charset","us-ascii")]
-    }
-  ;;
+let to_list ?whitespace : t -> _ =
+  List.map ~f:(fun (name, value) ->
+    name, Value.of_string ?whitespace value)
 
-  let default_digest =
-    { Media_type.
-      mime_type = Token.of_string "message";
-      mime_subtype = Token.of_string "rfc2822";
-      params = []
-    }
-  ;;
+let add ?whitespace t ~name ~value =
+  let name = Name.of_string name in
+  let value = Value.of_string_to_string ?whitespace value in
+  let rec add acc = function
+    | ((name', _) :: _) as fields when Name.equal name name' ->
+      List.rev acc @ [name, value] @ fields
+    | field :: fields ->
+      add (field :: acc) fields
+    | [] ->
+      (name, value) :: t
+  in
+  add [] t
 
-  let default ~parent =
-    if Option.value_map parent ~f:Media_type.is_digest ~default:false
-    then default_digest
-    else default_default
-  ;;
-end
+let set ?whitespace t ~name ~value =
+  let name = Name.of_string name in
+  let value = Value.of_string_to_string ?whitespace value in
+  let rec set acc = function
+    | ((name', _) :: fields) when Name.equal name name' ->
+      List.rev acc @ [name, value] @ fields
+    | field :: fields ->
+      set (field :: acc) fields
+    | [] ->
+      (name, value) :: t
+  in
+  set [] t
+
+let add_at_bottom ?whitespace t ~name ~value =
+  List.rev (add ?whitespace (List.rev t) ~name ~value)
+
+let set_at_bottom ?whitespace t ~name ~value =
+  List.rev (set ?whitespace (List.rev t) ~name ~value)
+
+let add_all ?whitespace t ts : t=
+  List.fold ~init:t ~f:(fun t (name,value) ->
+    add ?whitespace t ~name ~value)
+    (List.rev ts)
+
+let add_all_at_bottom ?whitespace t ts =
+  List.fold ~init:t ~f:(fun t (name,value) ->
+    add_at_bottom ?whitespace t ~name ~value)
+    ts
+
+let filter ?whitespace t ~f =
+  List.filter t ~f:(fun (name,value) -> f ~name ~value:(Value.of_string ?whitespace value))
+
+let map ?whitespace t ~f =
+  List.map t ~f:(fun ((name:Name.t),(value_raw:string)) ->
+    let value = Value.of_string ?whitespace value_raw in
+    let value' = f ~name ~value in
+    let value =
+      if String.equal (value :> string) value'
+      then value_raw
+      else Value.of_string_to_string ?whitespace value'
+    in
+    name, value)
+
+let names = List.map ~f:fst
+
+let%test_module _ =
+  (module struct
+    let t = of_list ~whitespace:`Keep [ "A", "a1"
+                                      ; "B", "b1"
+                                      ; "B", "b2" ]
+
+    let%test_unit _ =
+      [%test_result: string]
+        (to_string t)
+        ~expect:"A:a1\n\
+                 B:b1\n\
+                 B:b2\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (add ~whitespace:`Keep t ~name:"B" ~value:"b3"
+         |> to_string)
+        ~expect:"A:a1\n\
+                 B:b3\n\
+                 B:b1\n\
+                 B:b2\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (add ~whitespace:`Keep t ~name:"B" ~value:"b3\nb3"
+         |> to_string)
+        ~expect:"A:a1\n\
+                 B:b3\n\
+                 b3\n\
+                 B:b1\n\
+                 B:b2\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (add t ~name:"B" ~value:"b3"
+         |> to_string)
+        ~expect:"A:a1\n\
+                 B: b3\n\
+                 B:b1\n\
+                 B:b2\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (add t ~name:"B" ~value:"b3\nb3"
+         |> to_string)
+        ~expect:"A:a1\n\
+                 B: b3\n\
+                 \tb3\n\
+                 B:b1\n\
+                 B:b2\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (add ~whitespace:`Keep t ~name:"C" ~value:"c1"
+         |> to_string)
+        ~expect:"C:c1\n\
+                 A:a1\n\
+                 B:b1\n\
+                 B:b2\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (set ~whitespace:`Keep t ~name:"B" ~value:"b3"
+         |> to_string)
+        ~expect:"A:a1\n\
+                 B:b3\n\
+                 B:b2\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (set ~whitespace:`Keep t ~name:"b" ~value:"b3"
+         |> to_string)
+        ~expect:"A:a1\n\
+                 b:b3\n\
+                 B:b2\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (set ~whitespace:`Keep t ~name:"C" ~value:"c1"
+         |> to_string)
+        ~expect:"C:c1\n\
+                 A:a1\n\
+                 B:b1\n\
+                 B:b2\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (set ~whitespace:`Keep t ~name:"c" ~value:"c1"
+         |> to_string)
+        ~expect:"c:c1\n\
+                 A:a1\n\
+                 B:b1\n\
+                 B:b2\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (add_at_bottom ~whitespace:`Keep t ~name:"A" ~value:"a2"
+         |> to_string)
+        ~expect:"A:a1\n\
+                 A:a2\n\
+                 B:b1\n\
+                 B:b2\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (add_at_bottom ~whitespace:`Keep t ~name:"B" ~value:"b3"
+         |> to_string)
+        ~expect:"A:a1\n\
+                 B:b1\n\
+                 B:b2\n\
+                 B:b3\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (add_at_bottom ~whitespace:`Keep t ~name:"C" ~value:"c1"
+         |> to_string)
+        ~expect:"A:a1\n\
+                 B:b1\n\
+                 B:b2\n\
+                 C:c1\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (set_at_bottom ~whitespace:`Keep t ~name:"B" ~value:"b3"
+         |> to_string)
+        ~expect:"A:a1\n\
+                 B:b1\n\
+                 B:b3\n"
+
+    let%test_unit _ =
+      [%test_result: string]
+        (set_at_bottom ~whitespace:`Keep t ~name:"C" ~value:"c1"
+         |> to_string)
+        ~expect:"A:a1\n\
+                 B:b1\n\
+                 B:b2\n\
+                 C:c1\n"
+  end)

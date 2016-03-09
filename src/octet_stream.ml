@@ -38,7 +38,7 @@ module Encoding = struct
   let default = `Bit7
 
   let of_headers headers =
-    Field_list.last headers "content-transfer-encoding"
+    Headers.last headers "content-transfer-encoding"
     |> Option.map ~f:of_string
 
   let of_headers_or_default headers =

@@ -155,8 +155,8 @@ end
   let of_bigstring_shared ~headers ~parent bstr =
     let open Or_error.Monad_infix in
     let media_type =
-      Option.value (Headers.Content_type.last headers)
-        ~default:(Headers.Content_type.default ~parent)
+      Option.value (Media_type.last headers)
+        ~default:(Media_type.default ~parent)
     in
     let encoding = Octet_stream.Encoding.of_headers_or_default headers in
     let octet_stream = Octet_stream.create ~encoding bstr in
@@ -167,29 +167,19 @@ end
           encoding Octet_stream.Encoding.sexp_of_t
       | Some decoded_bstr -> Ok decoded_bstr
     in
-    if Media_type.is_message_rfc2822 media_type
-    then begin
+    match Media_type.multipart_boundary media_type with
+    | Some boundary ->
+      (* According to Wikipedia, the content-transfer-encoding of a multipart
+         type must always be "7bit", "8bit" or "binary" to avoid the
+         complications that would be posed by multiple levels of decoding. In
+         this case this decode call is free. *)
       decode octet_stream
       >>= fun decoded_bstr ->
-      Message.of_bigstring_shared ~parent:(Some media_type) decoded_bstr
-      >>= fun msg ->
-      Ok (Message msg)
-    end
-    else begin
-      match Media_type.multipart_boundary media_type with
-      | Some boundary ->
-        (* According to Wikipedia, the content-transfer-encoding of a multipart
-           type must always be "7bit", "8bit" or "binary" to avoid the
-           complications that would be posed by multiple levels of decoding. In
-           this case this decode call is free. *)
-        decode octet_stream
-        >>= fun decoded_bstr ->
-        Multipart.of_bigstring_shared ~media_type ~boundary decoded_bstr
-        >>= fun multipart ->
-        Ok (Multipart multipart)
-      | None ->
-        Ok (Data octet_stream)
-    end
+      Multipart.of_bigstring_shared ~media_type ~boundary decoded_bstr
+      >>= fun multipart ->
+      Ok (Multipart multipart)
+    | None ->
+      Ok (Data octet_stream)
   ;;
 
   let map_data t ~f =
@@ -240,11 +230,29 @@ and Message : sig
   include Bigstringable.S with type t := t
 
   val headers : t -> Headers.t
-  val content : t -> Content.t
+
+  val last_header : ?whitespace:Headers.Whitespace.t -> t -> Headers.Name.t -> Headers.Value.t option
+  val find_all_headers : ?whitespace:Headers.Whitespace.t -> t -> Headers.Name.t -> Headers.Value.t list
 
   val set_headers : t -> Headers.t -> t
-  val add_headers : t -> Headers.t -> t
-  val add_headers_at_bottom : t -> Headers.t -> t
+
+  val modify_headers : t -> f:(Headers.t -> Headers.t) -> t
+
+  val add_header : ?whitespace:Headers.Whitespace.t -> t -> name:string -> value:string -> t
+  val add_header_at_bottom : ?whitespace:Headers.Whitespace.t -> t -> name:string -> value:string -> t
+
+  val set_header : ?whitespace:Headers.Whitespace.t -> t -> name:string -> value:string -> t
+  val set_header_at_bottom : ?whitespace:Headers.Whitespace.t -> t -> name:string -> value:string -> t
+
+  val add_headers : ?whitespace:Headers.Whitespace.t -> t -> (string * string) list -> t
+  val add_headers_at_bottom : ?whitespace:Headers.Whitespace.t -> t -> (string * string) list -> t
+
+  val filter_headers : ?whitespace:Headers.Whitespace.t -> t -> f:(name:Headers.Name.t -> value:Headers.Value.t -> bool) -> t
+  val map_headers : ?whitespace:Headers.Whitespace.t -> t -> f:(name:Headers.Name.t -> value:Headers.Value.t -> string) -> t
+
+  val content : t -> Content.t
+
+  val set_content : t -> Content.t -> t
 
   val map_data
     : t -> f:(Octet_stream.t -> Octet_stream.t) -> t
@@ -272,15 +280,16 @@ end = struct
     }
 
   let of_grammar ~parent bstr (`Message (headers, content_offset)) =
+    let headers = Headers.of_list ~whitespace:`Keep headers in
     let line_break, bstr =
-    match content_offset with
-    | `Truncated ->
-      Debug.run_debug (fun () -> eprintf "Warning: Message truncated\n%!");
-      false, Bigstring_shared.of_string ""
-    | `Bad_headers pos ->
-      false, Bigstring_shared.sub ~pos bstr
-    | `Content_offset pos ->
-      true, Bigstring_shared.sub ~pos bstr
+      match content_offset with
+      | `Truncated ->
+        Debug.run_debug (fun () -> eprintf "Warning: Message truncated\n%!");
+        false, Bigstring_shared.of_string ""
+      | `Bad_headers pos ->
+        false, Bigstring_shared.sub ~pos bstr
+      | `Content_offset pos ->
+        true, Bigstring_shared.sub ~pos bstr
     in
     Content.of_bigstring_shared ~headers ~parent bstr
     >>= fun content ->
@@ -336,9 +345,46 @@ end = struct
 
   let headers t = t.headers;;
   let content t = t.content;;
+  let set_content t content = { t with content };;
   let set_headers t headers = { t with headers };;
-  let add_headers t headers = { t with headers = headers @ t.headers }
-  let add_headers_at_bottom t headers = { t with headers = t.headers @ headers }
+
+  let modify_headers t ~f =
+    headers t |> f |> set_headers t
+
+  let last_header ?whitespace t name = Headers.last ?whitespace (headers t) name
+  let find_all_headers ?whitespace t name = Headers.find_all ?whitespace (headers t) name
+
+  let add_header ?whitespace t ~name ~value =
+    modify_headers t ~f:(fun headers ->
+      Headers.add ?whitespace headers ~name ~value)
+
+  let add_header_at_bottom ?whitespace t ~name ~value =
+    modify_headers t ~f:(fun headers ->
+      Headers.add_at_bottom ?whitespace headers ~name ~value)
+
+  let set_header ?whitespace t ~name ~value =
+    modify_headers t ~f:(fun headers ->
+      Headers.set ?whitespace headers ~name ~value)
+
+  let set_header_at_bottom ?whitespace t ~name ~value =
+    modify_headers t ~f:(fun headers ->
+      Headers.set_at_bottom ?whitespace headers ~name ~value)
+
+  let add_headers ?whitespace t ts =
+    modify_headers t ~f:(fun headers ->
+      Headers.add_all ?whitespace headers ts)
+
+  let add_headers_at_bottom ?whitespace t ts =
+    modify_headers t ~f:(fun headers ->
+      Headers.add_all_at_bottom ?whitespace headers ts)
+
+  let filter_headers ?whitespace t ~f =
+    modify_headers t ~f:(fun headers ->
+      Headers.filter ?whitespace headers ~f)
+
+  let map_headers ?whitespace t ~f =
+    modify_headers t ~f:(fun headers ->
+      Headers.map ?whitespace headers ~f)
 
   let hash { headers; line_break=_; content } =
     let x =
@@ -365,11 +411,12 @@ type email = t
 
 module Simple = struct
   module Expert = struct
-    let content ~extra_headers ~encoding body =
+    let content ~whitespace ~extra_headers ~encoding body =
       let headers =
         [ "Content-Transfer-Encoding", (Octet_stream.Encoding.to_string (encoding:>Octet_stream.Encoding.t))
         ] @ extra_headers
       in
+      let headers = Headers.of_list ~whitespace headers in
       let content =
         body
         |> Bigstring_shared.of_string
@@ -378,18 +425,20 @@ module Simple = struct
       in
       Message.create ~headers ~content
 
-    let multipart ~content_type ~extra_headers parts =
+    let multipart ~whitespace ~content_type ~extra_headers parts =
       let boundary = Boundary.generate () in
       let headers =
         [ "Content-Type", (sprintf !"%s; boundary=\"%{Boundary}\"" content_type boundary)
         ] @ extra_headers
       in
+      let headers = Headers.of_list ~whitespace headers in
       let content = Content.of_multipart ~boundary parts in
       Message.create ~headers ~content
 
     let%test_unit _ =
       let t =
         content
+          ~whitespace:`Keep
           ~encoding:`Quoted_printable
           ~extra_headers:[ "header1", "value1"
                          ; "header2", "value2"]
@@ -404,12 +453,13 @@ module Simple = struct
     let%test_unit _ =
       let t =
         content
+          ~whitespace:`Strip
           ~encoding:`Quoted_printable
           ~extra_headers:[]
           "x\n"
       in
       [%test_result: string] (to_string t)
-        ~expect:"Content-Transfer-Encoding:quoted-printable\n\nx\n"
+        ~expect:"Content-Transfer-Encoding: quoted-printable\n\nx\n"
   end
 
   module Mimetype = struct
@@ -442,8 +492,8 @@ module Simple = struct
 
     let create ~content_type ?(encoding=Mimetype.guess_encoding content_type) ?(extra_headers=[]) content =
       Expert.content
-        ~extra_headers:(extra_headers
-                  @ [ "Content-Type", content_type ])
+        ~whitespace:`Strip
+        ~extra_headers:(extra_headers @ [ "Content-Type", content_type ])
         ~encoding
         content
 
@@ -465,12 +515,14 @@ module Simple = struct
       | [content] -> add_headers content extra_headers
       | alternatives ->
         Expert.multipart
+          ~whitespace:`Strip
           ~content_type:Mimetype.multipart_alternative
           ~extra_headers
           alternatives
 
     let with_related ?(extra_headers=[]) ~resources t =
       Expert.multipart
+        ~whitespace:`Strip
         ~content_type:Mimetype.multipart_related
         ~extra_headers
         (add_headers t
@@ -547,26 +599,21 @@ module Simple = struct
       add_headers content headers
     | Some attachments ->
       Expert.multipart
+        ~whitespace:`Strip
         ~content_type:"multipart/mixed"
         ~extra_headers:headers
-        ((add_headers content
-            [ "Content-Disposition", "inline"])
+        ((set_header_at_bottom content
+            ~name:"Content-Disposition" ~value:"inline")
          :: List.map attachments ~f:(fun (name,content) ->
-             let headers = Message.headers content in
              let content_type =
-               Headers.last headers "Content-Type"
+               last_header content "Content-Type"
                |> Option.value ~default:"application/x-octet-stream"
              in
-             let headers =
-               headers
-               |> Headers.set_at_bottom
-                 ~name:"Content-Type"
-                 ~value:(sprintf "%s; name=%s" content_type (Mimestring.quote name))
-               |> Headers.set_at_bottom
-                 ~name:"Content-Disposition"
-                 ~value:(sprintf "attachment; filename=%s" (Mimestring.quote name))
-             in
-             set_headers content headers))
+             content
+             |> set_header_at_bottom
+               ~name:"Content-Type" ~value:(sprintf "%s; name=%s" content_type (Mimestring.quote name))
+             |> set_header_at_bottom
+               ~name:"Content-Disposition" ~value:(sprintf "attachment; filename=%s" (Mimestring.quote name))))
 end
 
 

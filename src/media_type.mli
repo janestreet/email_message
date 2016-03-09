@@ -1,23 +1,29 @@
-open Core.Std
+open! Core.Std
 
-type t = {
-  mime_type : Rfc.RFC2045.Token.t;
-  mime_subtype : Rfc.RFC2045.Token.t;
-  params : (Field_name.t * string) list;
-} [@@deriving fields, sexp]
+type t
+
+include Stringable.S with type t := t
+include String_monoidable.S with type t := t
+
+val create : ?params:(Headers.Name.t * string) list -> string -> string -> t
+
+val mime_type : t -> string
+val mime_subtype : t -> string
+val params : t -> (Headers.Name.t * string) list
+val param : t -> Headers.Name.t -> string option
 
 val is_multipart : t -> bool
 val is_digest : t -> bool
 
-val is_message_rfc2822 : t -> bool
-
 val is_simple : t -> bool
 
-(** A composite message may be decomposed into several submessages *)
+    (** A composite message may be decomposed into several submessages *)
 val is_composite : t -> bool
 
 val mode : t -> [ `Text | `Binary ]
 
 val multipart_boundary : t -> Boundary.t option
 
-include Stringable.S with type t := t
+val last : Headers.t -> t option
+val set_at_bottom : Headers.t -> t -> Headers.t
+val default : parent:(t option) -> t

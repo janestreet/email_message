@@ -1,6 +1,6 @@
 (** Simple library for concatenating immutable strings efficiently *)
 
-open Core.Std
+open! Core.Std
 type t
 
 (** Primitive, constant-time operations *)

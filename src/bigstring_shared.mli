@@ -1,4 +1,4 @@
-open Core.Std
+open! Core.Std
 
 (** Immutable sequences of bytes which can be windowed efficiently. *)
 type t = private Bigstring.t [@@deriving sexp, bin_io, compare]

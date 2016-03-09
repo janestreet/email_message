@@ -1,4 +1,4 @@
-open Core.Std
+open! Core.Std
 
 val message : Lexer_state.t -> Lexing.lexbuf -> Grammar.token
 val content_type : Lexing.lexbuf -> Grammar.token

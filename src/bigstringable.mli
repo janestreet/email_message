@@ -1,4 +1,4 @@
-open Core.Std
+open! Core.Std
 
 (** Objects which can be converted to and from Bigstring.t. The following
   holds for all modules implementing this interface.

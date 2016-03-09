@@ -1,4 +1,4 @@
-open Core.Std
+open! Core.Std
 
 type t
 
@@ -20,7 +20,7 @@ val empty : unit -> t
   Where * is any other main media type: text, image, application...
 
   Encoding and type can be obtained from the headers, using the modules
-  Header.Content_type and Header.Content_transfer_encoding, and the corresponding default
+  Headers.Content_type and Headers.Content_transfer_encoding, and the corresponding default
   values.
 *)
 val of_bigbuffer : Bigbuffer.t -> t Or_error.t
@@ -44,13 +44,29 @@ module Content : sig
 end
 
 val headers     : t -> Headers.t
+
+val last_header : ?whitespace:Headers.Whitespace.t -> t -> Headers.Name.t -> Headers.Value.t option
+val find_all_headers : ?whitespace:Headers.Whitespace.t -> t -> Headers.Name.t -> Headers.Value.t list
+
 val set_headers : t -> Headers.t -> t
 
-val add_headers : t -> Headers.t -> t
-val add_headers_at_bottom : t -> Headers.t -> t
+val modify_headers : t -> f:(Headers.t -> Headers.t) -> t
 
-val content : t -> Content.t
+val add_header : ?whitespace:Headers.Whitespace.t -> t -> name:Headers.Name.t -> value:Headers.Value.t -> t
+val add_headers : ?whitespace:Headers.Whitespace.t -> t -> (Headers.Name.t * Headers.Value.t) list -> t
+val set_header : ?whitespace:Headers.Whitespace.t -> t -> name:Headers.Name.t -> value:Headers.Value.t -> t
 
+val add_header_at_bottom : ?whitespace:Headers.Whitespace.t -> t -> name:Headers.Name.t -> value:Headers.Value.t -> t
+val add_headers_at_bottom : ?whitespace:Headers.Whitespace.t -> t -> (Headers.Name.t * Headers.Value.t) list -> t
+val set_header_at_bottom : ?whitespace:Headers.Whitespace.t -> t -> name:Headers.Name.t -> value:Headers.Value.t -> t
+
+val filter_headers : ?whitespace:Headers.Whitespace.t -> t -> f:(name:Headers.Name.t -> value:Headers.Value.t -> bool) -> t
+val map_headers : ?whitespace:Headers.Whitespace.t -> t -> f:(name:Headers.Name.t -> value:Headers.Value.t -> Headers.Value.t) -> t
+
+val content     : t -> Content.t
+val set_content : t -> Content.t -> t
+
+(** Always sets [line_break = true] *)
 val create
   :  headers : Headers.t
   -> content : Content.t
@@ -106,24 +122,24 @@ module Simple : sig
     val create
       :  content_type:Mimetype.t
       -> ?encoding:(Octet_stream.Encoding.known)
-      -> ?extra_headers:(string * string) list
+      -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
       -> string
       -> t
 
-    val html : ?extra_headers:(Field_name.t * string) list -> string -> t
-    val text : ?extra_headers:(Field_name.t * string) list -> string -> t
+    val html : ?extra_headers:(Headers.Name.t * Headers.Value.t) list -> string -> t
+    val text : ?extra_headers:(Headers.Name.t * Headers.Value.t) list -> string -> t
 
     val of_file
       :  ?content_type:Mimetype.t
       -> ?encoding:(Octet_stream.Encoding.known)
-      -> ?extra_headers:(Field_name.t * string) list
+      -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
       -> string
       -> t Async.Std.Deferred.t
 
     (* Combine 2 or more contents as alternative versions.
        List should be sorted from worst to best. *)
     val alternatives
-      :  ?extra_headers:(Field_name.t * string) list
+      :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
       -> t list
       -> t
 
@@ -131,7 +147,7 @@ module Simple : sig
        reference them using 'cid:${attachment_name}' in the content.
        To attach files you should use [create ~attachments] *)
     val with_related
-      :  ?extra_headers:(Field_name.t * string) list
+      :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
       -> resources:(attachment_name * t) list
       -> t
       -> t
@@ -147,19 +163,23 @@ module Simple : sig
     -> subject:string
     -> ?id:string
     -> ?date:Time.t
-    -> ?extra_headers:(Field_name.t * string) list
+    -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> ?attachments:(attachment_name * Content.t) list
     -> Content.t
     -> t
 
   module Expert : sig
     val content
-      :  extra_headers:(Field_name.t * string) list
+      :  whitespace:Headers.Whitespace.t
+      -> extra_headers:(Headers.Name.t * Headers.Value.t) list
       -> encoding:Octet_stream.Encoding.known
       -> string
       -> t
     val multipart
-      :  content_type:Mimetype.t
-      -> extra_headers:(Field_name.t * string) list -> t list -> t
+      :  whitespace:Headers.Whitespace.t
+      -> content_type:Mimetype.t
+      -> extra_headers:(Headers.Name.t * Headers.Value.t) list
+      -> t list
+      -> t
   end
 end

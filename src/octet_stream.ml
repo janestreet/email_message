@@ -150,7 +150,7 @@ module Base64 = struct
       assert_equal ~printer:to_string plaintext plaintext'
     ;;
 
-    (** Exhaustive check of boundaries *)
+    (* Exhaustive check of boundaries *)
     let%test_unit _ = test_decode 0 pleasure;;
     let%test_unit _ = test_decode 1 pleasure;;
     let%test_unit _ = test_decode 2 pleasure;;

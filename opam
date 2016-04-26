@@ -18,6 +18,7 @@ depends: [
   "core"
   "core_extended"
   "fieldslib"
+  "js-build-tools"  {build}
   "magic-mime"
   "ounit"
   "ppx_assert"

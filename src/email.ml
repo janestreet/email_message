@@ -43,7 +43,7 @@ end = struct
     List.map parts ~f:(fun part ->
       Or_error.tag
         (Message.of_bigstring_shared ~parent:(Some media_type) part)
-        (sprintf "failed part:\n%s" (Bigstring_shared.to_string part)))
+        ~tag:(sprintf "failed part:\n%s" (Bigstring_shared.to_string part)))
     |> Or_error.all
     >>= fun parts ->
     Ok

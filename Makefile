@@ -2,7 +2,7 @@
 
 SETUP := setup.exe
 NAME := email_message
-PREFIX = $(shell grep ^prefix= setup.data | cut -d\" -f 2)
+PREFIX ?= $(shell grep ^prefix= setup.data | cut -d\" -f 2)
 
 # Default rule
 default: build

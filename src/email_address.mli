@@ -34,8 +34,8 @@ val local_address : unit -> t
 
 (* Hash and comparisons are based on the address part (local_part + domain)
    only. *)
-include Comparable.S with type t := t
-include Hashable.S with type t := t
+include Comparable.S_binable with type t := t
+include Hashable.S_binable with type t := t
 
 module Stable : sig
   module V1 : sig

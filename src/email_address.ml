@@ -204,5 +204,5 @@ end
 open Core.Std
 
 include Stable.V1
-include Hashable.Make(Stable.V1)
-include Comparable.Make(Stable.V1)
+include Hashable.Make_binable(Stable.V1)
+include Comparable.Make_binable(Stable.V1)

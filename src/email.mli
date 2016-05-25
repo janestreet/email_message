@@ -117,6 +117,7 @@ module Simple : sig
 
   module Content : sig
     type t = private email
+
     val of_email : email -> t
 
     val create

@@ -206,3 +206,19 @@ open Core.Std
 include Stable.V1
 include Hashable.Make_binable(Stable.V1)
 include Comparable.Make_binable(Stable.V1)
+
+module Caseless = struct
+  module T = struct
+    type nonrec t = t [@@deriving sexp, bin_io]
+    let compare a b =
+      let o = String.Caseless.compare a.local_part b.local_part in
+      if Int.(<>) o 0 then o else Option.compare Domain.compare a.domain b.domain
+    let hash a =
+      Int.bit_xor
+        (String.Caseless.hash a.local_part)
+        (Option.value_map a.domain ~f:Domain.hash ~default:0)
+  end
+  include T
+  include Hashable.Make_binable(T)
+  include Comparable.Make_binable(T)
+end

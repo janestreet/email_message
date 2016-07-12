@@ -2,10 +2,10 @@ open Core.Std
 
 module Whitespace = struct
   type t =
-    [ `Keep (* Leave whitespace unchanged *)
-    | `Strip (* Cleanup leading and trailing whitespace on each line *)
+    [ `Raw (* Leave whitespace unchanged *)
+    | `Normalize (* Cleanup leading and trailing whitespace on each line *)
     ] [@@deriving sexp]
-  let default : t = `Strip
+  let default : t = `Normalize
 end
 
 module Name : sig
@@ -30,12 +30,12 @@ end = struct
   include String
   let of_string ?(whitespace=Whitespace.default) str =
     match whitespace with
-    | `Keep -> str
-    | `Strip -> String.split_lines str |> List.map ~f:String.strip |> String.concat ~sep:"\n"
+    | `Raw -> str
+    | `Normalize -> String.split_lines str |> List.map ~f:String.strip |> String.concat ~sep:"\n"
   let of_string_to_string ?(whitespace=Whitespace.default) str =
     match whitespace with
-    | `Keep -> str
-    | `Strip -> " " ^ (String.split_lines str |> List.map ~f:String.strip |> String.concat ~sep:"\n\t")
+    | `Raw -> str
+    | `Normalize -> " " ^ (String.split_lines str |> List.map ~f:String.strip |> String.concat ~sep:"\n\t")
   let to_string = of_string_to_string
 end
 
@@ -136,7 +136,7 @@ let names = List.map ~f:fst
 
 let%test_module _ =
   (module struct
-    let t = of_list ~whitespace:`Keep [ "A", "a1"
+    let t = of_list ~whitespace:`Raw  [ "A", "a1"
                                       ; "B", "b1"
                                       ; "B", "b2" ]
 
@@ -149,7 +149,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (add ~whitespace:`Keep t ~name:"B" ~value:"b3"
+        (add ~whitespace:`Raw t ~name:"B" ~value:"b3"
          |> to_string)
         ~expect:"A:a1\n\
                  B:b3\n\
@@ -158,7 +158,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (add ~whitespace:`Keep t ~name:"B" ~value:"b3\nb3"
+        (add ~whitespace:`Raw t ~name:"B" ~value:"b3\nb3"
          |> to_string)
         ~expect:"A:a1\n\
                  B:b3\n\
@@ -187,7 +187,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (add ~whitespace:`Keep t ~name:"C" ~value:"c1"
+        (add ~whitespace:`Raw t ~name:"C" ~value:"c1"
          |> to_string)
         ~expect:"C:c1\n\
                  A:a1\n\
@@ -196,7 +196,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (set ~whitespace:`Keep t ~name:"B" ~value:"b3"
+        (set ~whitespace:`Raw t ~name:"B" ~value:"b3"
          |> to_string)
         ~expect:"A:a1\n\
                  B:b3\n\
@@ -204,7 +204,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (set ~whitespace:`Keep t ~name:"b" ~value:"b3"
+        (set ~whitespace:`Raw t ~name:"b" ~value:"b3"
          |> to_string)
         ~expect:"A:a1\n\
                  b:b3\n\
@@ -212,7 +212,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (set ~whitespace:`Keep t ~name:"C" ~value:"c1"
+        (set ~whitespace:`Raw t ~name:"C" ~value:"c1"
          |> to_string)
         ~expect:"C:c1\n\
                  A:a1\n\
@@ -221,7 +221,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (set ~whitespace:`Keep t ~name:"c" ~value:"c1"
+        (set ~whitespace:`Raw t ~name:"c" ~value:"c1"
          |> to_string)
         ~expect:"c:c1\n\
                  A:a1\n\
@@ -230,7 +230,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (add_at_bottom ~whitespace:`Keep t ~name:"A" ~value:"a2"
+        (add_at_bottom ~whitespace:`Raw t ~name:"A" ~value:"a2"
          |> to_string)
         ~expect:"A:a1\n\
                  A:a2\n\
@@ -239,7 +239,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (add_at_bottom ~whitespace:`Keep t ~name:"B" ~value:"b3"
+        (add_at_bottom ~whitespace:`Raw t ~name:"B" ~value:"b3"
          |> to_string)
         ~expect:"A:a1\n\
                  B:b1\n\
@@ -248,7 +248,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (add_at_bottom ~whitespace:`Keep t ~name:"C" ~value:"c1"
+        (add_at_bottom ~whitespace:`Raw t ~name:"C" ~value:"c1"
          |> to_string)
         ~expect:"A:a1\n\
                  B:b1\n\
@@ -257,7 +257,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (set_at_bottom ~whitespace:`Keep t ~name:"B" ~value:"b3"
+        (set_at_bottom ~whitespace:`Raw t ~name:"B" ~value:"b3"
          |> to_string)
         ~expect:"A:a1\n\
                  B:b1\n\
@@ -265,7 +265,7 @@ let%test_module _ =
 
     let%test_unit _ =
       [%test_result: string]
-        (set_at_bottom ~whitespace:`Keep t ~name:"C" ~value:"c1"
+        (set_at_bottom ~whitespace:`Raw t ~name:"C" ~value:"c1"
          |> to_string)
         ~expect:"A:a1\n\
                  B:b1\n\

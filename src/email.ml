@@ -117,7 +117,6 @@ and Content : sig
   type t =
       Multipart of Multipart.t
     | Data of Octet_stream.t
-    | Message of Message.t
   [@@deriving sexp, compare]
   ;;
 
@@ -146,7 +145,6 @@ end
      7bit encoding with US-ASCII character set *)
   type t = Multipart of Multipart.t
          | Data of Octet_stream.t
-         | Message of Message.t
   [@@deriving sexp, compare]
   ;;
 
@@ -188,13 +186,10 @@ end
       Multipart (Multipart.map_data t ~f)
     | Data data ->
       Data (f data)
-    | Message t ->
-      Message (Message.map_data t ~f)
   ;;
 
   let to_string_monoid = function
     | Multipart multipart -> Multipart.to_string_monoid multipart
-    | Message message -> Message.to_string_monoid message
     | Data octet_stream ->
       Octet_stream.to_string_monoid octet_stream
   ;;
@@ -208,8 +203,6 @@ end
       Hashtbl.hash (0, Multipart.hash m)
     | Data d ->
       Hashtbl.hash (1, Octet_stream.hash d)
-    | Message m ->
-      Hashtbl.hash (2, Message.hash m)
 end
 and Message : sig
   type t [@@deriving sexp, compare]
@@ -280,7 +273,7 @@ end = struct
     }
 
   let of_grammar ~parent bstr (`Message (headers, content_offset)) =
-    let headers = Headers.of_list ~whitespace:`Keep headers in
+    let headers = Headers.of_list ~whitespace:`Raw headers in
     let line_break, bstr =
       match content_offset with
       | `Truncated ->
@@ -407,9 +400,37 @@ include Binable.Of_binable (Bigstring)
 let of_bigbuffer buffer =
   of_bigstring (Bigbuffer.big_contents buffer)
 
-type email = t
+type email = t [@@deriving bin_io]
 
 module Simple = struct
+  let make_id () =
+    sprintf !"<%s/%s+%{Uuid}@%s>"
+      (Unix.getlogin ())
+      (Sys.executable_name |> Filename.basename)
+      (Uuid.create ())
+      (Unix.gethostname ())
+
+  let utc_offset_string time ~zone =
+    let utc_offset   = Time.utc_offset time ~zone in
+    let is_utc       = Time.Span.(=) utc_offset Time.Span.zero in
+    if is_utc
+    then "Z"
+    else
+      String.concat
+        [ (if Time.Span.(<) utc_offset Time.Span.zero then "-" else "+");
+          Time.Ofday.to_string_trimmed
+            (Time.Ofday.of_span_since_start_of_day (Time.Span.abs utc_offset));
+        ]
+
+  let rfc822_date now =
+    let zone = Time.Zone.local in
+    let offset_string =
+      utc_offset_string ~zone now
+      |> String.filter ~f:(fun c -> Char.(<>) c ':')
+    in
+    let now_string = Time.format now "%a, %d %b %Y %H:%M:%S" ~zone in
+    sprintf "%s %s" now_string offset_string
+
   module Expert = struct
     let content ~whitespace ~extra_headers ~encoding body =
       let headers =
@@ -435,10 +456,61 @@ module Simple = struct
       let content = Content.of_multipart ~boundary parts in
       Message.create ~headers ~content
 
+    let create_raw
+          ?(from=Email_address.local_address () |> Email_address.to_string)
+          ~to_
+          ?(cc=[])
+          ~subject
+          ?id
+          ?date
+          ?(extra_headers=[])
+          ?attachments
+          content
+      =
+      let id = match id with
+        | None ->  make_id ()
+        | Some id -> id
+      in
+      let date = match date with
+        | None -> rfc822_date (Time.now ())
+        | Some date -> date
+      in
+      let headers =
+        extra_headers
+        @ [ "From", from ]
+        @ (if List.is_empty to_ then []
+           else [ "To", String.concat to_ ~sep:",\n\t" ])
+        @ (if List.is_empty cc then []
+           else [ "Cc", String.concat cc ~sep:",\n\t" ])
+        @ [ "Subject", subject ]
+        @ [ "Message-Id", id ]
+        @ [ "Date", date ]
+      in
+      match attachments with
+      | None ->
+        add_headers content headers
+      | Some attachments ->
+        multipart
+          ~whitespace:`Normalize
+          ~content_type:"multipart/mixed"
+          ~extra_headers:headers
+          ((set_header_at_bottom content
+              ~name:"Content-Disposition" ~value:"inline")
+           :: List.map attachments ~f:(fun (name,content) ->
+             let content_type =
+               last_header content "Content-Type"
+               |> Option.value ~default:"application/x-octet-stream"
+             in
+             content
+             |> set_header_at_bottom
+                  ~name:"Content-Type" ~value:(sprintf "%s; name=%s" content_type (Mimestring.quote name))
+             |> set_header_at_bottom
+                  ~name:"Content-Disposition" ~value:(sprintf "attachment; filename=%s" (Mimestring.quote name))))
+
     let%test_unit _ =
       let t =
         content
-          ~whitespace:`Keep
+          ~whitespace:`Raw
           ~encoding:`Quoted_printable
           ~extra_headers:[ "header1", "value1"
                          ; "header2", "value2"]
@@ -453,7 +525,7 @@ module Simple = struct
     let%test_unit _ =
       let t =
         content
-          ~whitespace:`Strip
+          ~whitespace:`Normalize
           ~encoding:`Quoted_printable
           ~extra_headers:[]
           "x\n"
@@ -486,13 +558,15 @@ module Simple = struct
       | _ -> `Base64
   end
 
+  type attachment_name = string
+
   module Content = struct
-    type t = email
+    type t = email [@@deriving bin_io]
     let of_email = ident
 
     let create ~content_type ?(encoding=Mimetype.guess_encoding content_type) ?(extra_headers=[]) content =
       Expert.content
-        ~whitespace:`Strip
+        ~whitespace:`Normalize
         ~extra_headers:(extra_headers @ [ "Content-Type", content_type ])
         ~encoding
         content
@@ -510,110 +584,227 @@ module Simple = struct
     let html = create ~content_type:Mimetype.html ~encoding:`Quoted_printable
     let text = create ~content_type:Mimetype.text ~encoding:`Quoted_printable
 
-    let alternatives ?(extra_headers=[]) = function
-      | [] -> failwith "at least one alternative is required"
+    let create_multipart ?(extra_headers=[]) ~content_type = function
+      | [] -> failwith "at least one part is required"
       | [content] -> add_headers content extra_headers
-      | alternatives ->
+      | parts ->
         Expert.multipart
-          ~whitespace:`Strip
-          ~content_type:Mimetype.multipart_alternative
+          ~whitespace:`Normalize
+          ~content_type
           ~extra_headers
-          alternatives
+          parts
+
+    let alternatives ?extra_headers =
+      create_multipart ?extra_headers ~content_type:Mimetype.multipart_alternative
+
+    let mixed ?extra_headers =
+      create_multipart ?extra_headers ~content_type:Mimetype.multipart_mixed
 
     let with_related ?(extra_headers=[]) ~resources t =
       Expert.multipart
-        ~whitespace:`Strip
+        ~whitespace:`Normalize
         ~content_type:Mimetype.multipart_related
         ~extra_headers
         (add_headers t
            [ "Content-Disposition", "inline" ]
          :: List.map resources ~f:(fun (name,content) ->
-             add_headers content
-               [ "Content-Id", sprintf "<%s>" name ]))
-  end
+           add_headers content
+             [ "Content-Id", sprintf "<%s>" name ]))
 
-  type attachment_name = string
+    let parse_last_header t name =
+      match last_header t name with
+      | None -> None
+      | Some str ->
+        match String.split str ~on:';'
+              |> List.map ~f:String.strip with
+        | [] -> None
+        | v::args ->
+          let args = List.map args ~f:(fun str ->
+            match String.lsplit2 str ~on:'=' with
+            | None -> str, None
+            | Some (k,v) -> String.strip k, Some (String.strip v))
+          in
+          Some (v,args)
+
+    let content_type t =
+      let open Option.Monad_infix in
+      (parse_last_header t "Content-Type" >>| fst)
+      |> Option.value ~default:"application/x-octet-stream"
+
+    let attachment_name t =
+      let open Option.Monad_infix in
+      Option.first_some
+        begin
+          parse_last_header t "Content-Disposition"
+          >>= fun (disp, args) ->
+          if String.Caseless.equal disp "attachment" then
+            List.find_map args ~f:(fun (k,v) ->
+              if String.Caseless.equal k "filename" then v else None)
+          else
+            None
+        end
+        begin
+          parse_last_header t "Content-Type"
+          >>= fun (_, args) ->
+          List.find_map args ~f:(fun (k,v) ->
+            if String.Caseless.equal k "name" then v else None)
+        end
+
+    let related_part_cid t =
+      let open Option.Monad_infix in
+      last_header t "Content-Id"
+      >>| String.strip
+      >>| fun str ->
+      begin
+        String.chop_prefix str ~prefix:"<"
+        >>= String.chop_suffix ~suffix:">"
+      end |> Option.value ~default:str
+
+    let content_disposition t =
+      match parse_last_header t "Content-Disposition" with
+      | None -> `Inline
+      | Some (disp,_) ->
+        if String.Caseless.equal disp "inline" then `Inline
+        else if String.Caseless.equal disp "related" then
+          `Related (related_part_cid t |> Option.value ~default:"unnamed-related-part")
+        else if String.Caseless.equal disp "attachment" then
+          `Attachment (attachment_name t |> Option.value ~default:"unnamed-attachment")
+        else match attachment_name t with
+          | None -> `Inline
+          | Some name -> `Attachment name
+
+    let parts t =
+      match content t with
+      | Content.Multipart ts -> Some ts.Multipart.parts
+      | Content.Data _ -> None
+
+    let content t =
+      match content t with
+      | Content.Multipart _ -> None
+      | Content.Data data -> Some data
+
+    let rec inline_parts t =
+      match parts t with
+      | Some parts ->
+        if String.Caseless.equal (content_type t) Mimetype.multipart_alternative then
+          (* multipart/alternative is special since an aplication is expected to
+             present/process any one of the alternative parts. The logic for picking
+             the 'correct' alternative is application dependant so leaving this to
+             to users (e.g. first one that parses) *)
+          [t]
+        else
+          List.concat_map parts ~f:inline_parts
+      | None ->
+        match content_disposition t with
+        | `Inline -> [t]
+        | `Related _ | `Attachment _ -> []
+
+    let rec alternative_parts t =
+      match parts t with
+      | None -> [t]
+      | Some ts ->
+        if String.Caseless.equal (content_type t) Mimetype.multipart_alternative then
+          List.concat_map ts ~f:alternative_parts
+        else [t]
+
+    let rec find_related t name =
+      match content_disposition t with
+      | `Related name' -> Option.some_if (String.equal name name') t
+      | `Attachment _ -> None
+      | `Inline ->
+        Option.bind (parts t) (List.find_map ~f:(fun t -> find_related t name))
+
+    let rec all_related_parts t =
+      match content_disposition t with
+      | `Related name -> [name,t]
+      | `Attachment _ -> []
+      | `Inline ->
+        parts t
+        |> Option.value ~default:[]
+        |> List.concat_map ~f:all_related_parts
+
+    let rec find_attachment t name =
+      match content_disposition t with
+      | `Related _ -> None
+      | `Attachment name' -> Option.some_if (String.equal name name') t
+      | `Inline ->
+        Option.bind (parts t) (List.find_map ~f:(fun t -> find_attachment t name))
+
+    let rec all_attachments t =
+      match content_disposition t with
+      | `Related _ -> []
+      | `Attachment name -> [name,t]
+      | `Inline ->
+        parts t
+        |> Option.value ~default:[]
+        |> List.concat_map ~f:all_attachments
+
+    let to_file t file =
+      let open Async.Std in
+      match content t with
+      | None -> Deferred.Or_error.errorf "The payload of this email is ambigous, you
+                  you should decompose the email further"
+      | Some content ->
+        match Octet_stream.decode content with
+        | None -> Deferred.Or_error.errorf "The message payload used an unknown encoding"
+        | Some content ->
+          Deferred.Or_error.try_with (fun () ->
+            Writer.with_file file
+              ~f:(fun w ->
+                String_monoid.output_unix (Bigstring_shared.to_string_monoid content) w;
+                Writer.flushed w))
+  end
 
   type t = email
 
-  let make_id () =
-            sprintf !"<%s/%s+%{Uuid}@%s>"
-              (Unix.getlogin ())
-              (Sys.executable_name |> Filename.basename)
-              (Uuid.create ())
-              (Unix.gethostname ())
-
-  let utc_offset_string time ~zone =
-    let utc_offset   = Time.utc_offset time ~zone in
-    let is_utc       = Time.Span.(=) utc_offset Time.Span.zero in
-    if is_utc
-    then "Z"
-    else
-      String.concat
-        [ (if Time.Span.(<) utc_offset Time.Span.zero then "-" else "+");
-          Time.Ofday.to_string_trimmed
-            (Time.Ofday.of_span_since_start_of_day (Time.Span.abs utc_offset));
-        ]
-
-  let rfc822_date now =
-    let zone = Time.Zone.local in
-    let offset_string =
-      utc_offset_string ~zone now
-      |> String.filter ~f:(fun c -> Char.(<>) c ':')
-    in
-    let now_string = Time.format now "%a, %d %b %Y %H:%M:%S" ~zone in
-    sprintf "%s %s" now_string offset_string
-
   let create
-      ?(from=Email_address.local_address ())
+      ?from
       ~to_
-      ?(cc=[])
+      ?cc
       ~subject
       ?id
       ?date
-      ?(extra_headers=[])
+      ?extra_headers
       ?attachments
       content
     =
-    let id = match id with
-      | None ->  make_id ()
-      | Some id -> id
-    in
-    let date = match date with
-      | None -> Time.now ()
-      | Some date -> date
-    in
-    let headers =
-      extra_headers
-      @ [ "From", (from |> Email_address.to_string) ]
-      @ (if List.is_empty to_ then []
-         else [ "To", List.map to_ ~f:Email_address.to_string |> String.concat ~sep:",\n\t" ])
-      @ (if List.is_empty cc then []
-         else [ "Cc", List.map cc ~f:Email_address.to_string |> String.concat ~sep:",\n\t" ])
-      @ [ "Subject", subject ]
-      @ [ "Message-Id", id ]
-      @ [ "Date", rfc822_date date ]
-    in
-    match attachments with
-    | None ->
-      add_headers content headers
-    | Some attachments ->
-      Expert.multipart
-        ~whitespace:`Strip
-        ~content_type:"multipart/mixed"
-        ~extra_headers:headers
-        ((set_header_at_bottom content
-            ~name:"Content-Disposition" ~value:"inline")
-         :: List.map attachments ~f:(fun (name,content) ->
-             let content_type =
-               last_header content "Content-Type"
-               |> Option.value ~default:"application/x-octet-stream"
-             in
-             content
-             |> set_header_at_bottom
-               ~name:"Content-Type" ~value:(sprintf "%s; name=%s" content_type (Mimestring.quote name))
-             |> set_header_at_bottom
-               ~name:"Content-Disposition" ~value:(sprintf "attachment; filename=%s" (Mimestring.quote name))))
+    Expert.create_raw
+      ?from:(Option.map from ~f:Email_address.to_string)
+      ~to_:(List.map to_ ~f:Email_address.to_string)
+      ?cc:(Option.map cc ~f:(List.map ~f:Email_address.to_string))
+      ~subject
+      ?id
+      ?date:(Option.map date ~f:rfc822_date)
+      ?extra_headers
+      ?attachments
+      content
+
+  let decode_last_header name ~f t =
+    Option.bind
+      (last_header ~whitespace:`Normalize t name)
+      (fun v -> Option.try_with (fun () -> f v))
+
+  let from =
+    decode_last_header "From" ~f:Email_address.of_string_exn
+
+  let to_ =
+    decode_last_header "To" ~f:Email_address.list_of_string_exn
+
+  let cc =
+    decode_last_header "Cc" ~f:Email_address.list_of_string_exn
+
+  let subject =
+    decode_last_header "Subject" ~f:Fn.id
+
+  let id =
+    decode_last_header "Message-Id" ~f:Fn.id
+
+
+  let all_attachments = Content.all_attachments
+  let find_attachment = Content.find_attachment
+  let all_related_parts = Content.all_related_parts
+  let find_related = Content.find_related
+  let inline_parts =  Content.inline_parts
 end
 
 

@@ -1,10 +1,19 @@
 open! Core.Std
+
+(** [Whitespace.t] specifies how to handle header values. It is used in two contexts:
+
+    1) Transport: Specify how to turn a string into a header value. [`Normalize] will add
+       the necessary for transport.
+
+    2) Processing: Specify how to turn a header value into a string. [`Normalize] will remove
+       all leading and trailing whitespace on each line in order to cleanly process the
+       value. *)
 module Whitespace : sig
   type t =
-    [ `Keep (* Leave whitespace unchanged *)
-    | `Strip (* Cleanup leading and trailing whitespace on each line *)
+    [ `Raw (* Leave whitespace unchanged *)
+    | `Normalize (* Cleanup leading and trailing whitespace on each line *)
     ] [@@deriving sexp]
-  val default : t (* `Strip *)
+  val default : t (* `Normalize *)
 end
 
 module Name : sig
@@ -24,14 +33,13 @@ module Value : sig
   type t = string [@@deriving sexp, bin_io]
 
 (** Normalize the whitespace for processing/
-    if [whitespace == `Keep] this does nothing.
-    if [whitespace = `Strip] (default), strip leading/trailing whitespace on every line. *)
+    if [whitespace == `Raw] this does nothing.
+    if [whitespace = `Normalize] (default), strip leading/trailing whitespace on every line. *)
   val of_string : ?whitespace:Whitespace.t -> string -> t
   (** Normalize the whitespace for transport (insert the appropriate leading space).
-      if [whitespace == `Keep] this does nothing.
-      if [whitespace == `Strip] (default), insert a leading space and indent subsequent
-        lines with a tab (remove any other leading/trailing space on every line).
-      *)
+      if [whitespace == `Raw] this does nothing.
+      if [whitespace == `Normalize] (default), insert a leading space and indent subsequent
+        lines with a tab (remove any other leading/trailing space on every line). *)
   val to_string : ?whitespace:Whitespace.t -> t -> string
 
   include Comparable.S with type t := t

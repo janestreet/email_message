@@ -22,7 +22,7 @@ type t = {
   mime_type : Rfc.RFC2045.Token.t;
   mime_subtype : Rfc.RFC2045.Token.t;
   params : Params.t;
-}
+} [@@deriving sexp]
 
 let create ?(params=[]) mime_type mime_subtype =
   let mime_type = Rfc.RFC2045.Token.of_string mime_type in
@@ -97,7 +97,7 @@ let to_string_monoid t =
 let to_string t = String_monoid.to_string (to_string_monoid t);;
 
 let last headers =
-  Option.bind (Headers.last headers "Content-Type")
+  Option.bind (Headers.last ~whitespace:`Raw headers "Content-Type")
     (fun field -> Option.try_with (fun () -> of_string field))
 
 let set_at_bottom headers t =
@@ -122,3 +122,18 @@ let default ~parent =
   then default_digest
   else default_default
 ;;
+
+let%test_module "Media_type" =
+  (module struct
+
+    let headers =
+      ["Content-Type", "multipart/mixed;\nboundary=\"BOUNDARY\""]
+      |> Headers.of_list ~whitespace:`Normalize
+
+    let%test_unit _ =
+      [%test_result: t]
+        (last headers |> Option.value_exn)
+        ~expect:{ mime_type = Rfc.RFC2045.Token.of_string "multipart"
+                ; mime_subtype = Rfc.RFC2045.Token.of_string "mixed"
+                ; params = ["boundary", "BOUNDARY"] }
+  end)

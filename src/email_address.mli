@@ -37,6 +37,12 @@ val local_address : unit -> t
 include Comparable.S_binable with type t := t
 include Hashable.S_binable with type t := t
 
+module Caseless : sig
+  type nonrec t = t [@@deriving sexp, bin_io]
+  include Comparable.S_binable with type t := t
+  include Hashable.S_binable with type t := t
+end
+
 module Stable : sig
   module V1 : sig
     type nonrec t = t [@@deriving bin_io, sexp]

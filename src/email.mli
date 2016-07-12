@@ -40,7 +40,6 @@ module Content : sig
   type t =
     | Multipart of Multipart.t
     | Data of Octet_stream.t
-    | Message of email
 end
 
 val headers     : t -> Headers.t
@@ -116,7 +115,7 @@ module Simple : sig
   type attachment_name = string
 
   module Content : sig
-    type t = private email
+    type t = private email [@@deriving bin_io]
 
     val of_email : email -> t
 
@@ -144,8 +143,14 @@ module Simple : sig
       -> t list
       -> t
 
+    (* Combine 2 or more contents that should be bundled together *)
+    val mixed
+      :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
+      -> t list
+      -> t
+
     (* Add related resources (e.g. inline images).
-       reference them using 'cid:${attachment_name}' in the content.
+       You can reference them using 'cid:${attachment_name}' in the content.
        To attach files you should use [create ~attachments] *)
     val with_related
       :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
@@ -153,6 +158,34 @@ module Simple : sig
       -> t
       -> t
 
+    val content_type : t -> Mimetype.t
+
+    val attachment_name : t -> attachment_name option
+    val related_part_cid : t -> attachment_name option
+    val content_disposition : t ->
+      [ `Related of attachment_name
+      | `Attachment of attachment_name
+      | `Inline ]
+
+    val all_related_parts : t -> (attachment_name * t) list
+    val find_related : t -> attachment_name -> t option
+    val all_attachments : t -> (attachment_name * t) list
+    val find_attachment : t -> attachment_name -> t option
+
+    val content : t -> Octet_stream.t option
+    val parts : t -> t list option
+
+    (* Get the alternative versions available. If the message is not of content type
+       "multipart/alternative" then return a singleton list. *)
+    val alternative_parts : t -> t list
+
+    (* Get the 'inline' parts, This expands "Content-Type: multipart/{mixed,related}",
+       stripping out any related (CID) and attachment parts. multipart/alternative is not
+       expanded *)
+    val inline_parts : t -> t list
+
+    (* Save content to disk *)
+    val to_file : t -> string -> unit Async.Std.Deferred.Or_error.t
   end
 
   type t = email
@@ -169,13 +202,39 @@ module Simple : sig
     -> Content.t
     -> t
 
+  val from : t -> Email_address.t option
+  val to_ : t -> Email_address.t list option
+  val cc : t -> Email_address.t list option
+  val subject : t -> string option
+  val id : t -> string option
+
+  val all_attachments : t -> (attachment_name * Content.t) list
+  val find_attachment : t -> attachment_name -> Content.t option
+  val all_related_parts : t -> (attachment_name * Content.t) list
+  val find_related : t -> attachment_name -> Content.t option
+
+  val inline_parts : t -> Content.t list
+
   module Expert : sig
+    val create_raw
+      :  ?from:string (* defaults to <user@host> *)
+      -> to_:string list
+      -> ?cc:string list
+      -> subject:string
+      -> ?id:string
+      -> ?date:string
+      -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
+      -> ?attachments:(attachment_name * Content.t) list
+      -> Content.t
+      -> t
+
     val content
       :  whitespace:Headers.Whitespace.t
       -> extra_headers:(Headers.Name.t * Headers.Value.t) list
       -> encoding:Octet_stream.Encoding.known
       -> string
       -> t
+
     val multipart
       :  whitespace:Headers.Whitespace.t
       -> content_type:Mimetype.t

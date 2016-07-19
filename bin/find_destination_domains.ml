@@ -12,16 +12,16 @@ let asdf y = Option.Monad_infix.(y
   >>| List.map ~f:String.strip  )
 
 (* let _asdfa y = List.map ~f:(String.split ~on:',') y
-  |! List.fold_right ~f:(fun accum x -> accum @ x) ~init:[]
+  |> List.fold_right ~f:(fun accum x -> accum @ x) ~init:[]
 *)
 
 let x_js_compliance_to_hash astring =
   let _returnme = String.Table.create () ~size:4 in
   List.map ~f:(String.split ~on:' ') [astring]
-  |! List.hd_exn
-  |! List.filter ~f:(Fn.non String.is_empty)
-  |! List.map ~f:(String.split ~on:'=')
-  |! List.iter ~f:(function
+  |> List.hd_exn
+  |> List.filter ~f:(Fn.non String.is_empty)
+  |> List.map ~f:(String.split ~on:'=')
+  |> List.iter ~f:(function
     | [key; data] -> Hashtbl.add_multi _returnme ~key ~data
     | _ -> ()
   );
@@ -122,4 +122,4 @@ let () =
     );
     never_returns (Scheduler.go ())
 
-  ) |! Command.run
+  ) |> Command.run

@@ -119,7 +119,7 @@ module Postmark = struct
         Result.Ok { from = from; time = time }
       with
       e -> Result.Error (Exn.to_string e))
-  |! Result.map_error ~f:(sprintf "Unable to parse postmark %s: %s." str)
+  |> Result.map_error ~f:(sprintf "Unable to parse postmark %s: %s." str)
   ;;
 
   let of_string str = Result.ok_or_failwith (parse str);;

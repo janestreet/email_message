@@ -25,4 +25,4 @@ let () =
     match output_file with
     | Some fname -> Out_channel.with_file fname ~f:main'
     | None       -> main' Out_channel.stdout
-  ) |! Command.run
+  ) |> Command.run

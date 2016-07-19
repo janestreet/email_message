@@ -20,4 +20,4 @@ let () =
       ~f:(fun ifd -> main ifd)
     | None       -> main In_channel.stdin
 
-  ) |! Command.run
+  ) |> Command.run

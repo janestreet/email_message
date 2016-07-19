@@ -53,4 +53,4 @@ let () =
     );
     never_returns (Scheduler.go ())
 
-  ) |! Command.run
+  ) |> Command.run

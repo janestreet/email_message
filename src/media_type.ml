@@ -98,7 +98,7 @@ let to_string t = String_monoid.to_string (to_string_monoid t);;
 
 let last headers =
   Option.bind (Headers.last ~whitespace:`Raw headers "Content-Type")
-    (fun field -> Option.try_with (fun () -> of_string field))
+    ~f:(fun field -> Option.try_with (fun () -> of_string field))
 
 let set_at_bottom headers t =
   Headers.set_at_bottom headers ~name:"Content-Type" ~value:(to_string t)

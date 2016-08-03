@@ -712,7 +712,7 @@ module Simple = struct
       | `Related name' -> Option.some_if (String.equal name name') t
       | `Attachment _ -> None
       | `Inline ->
-        Option.bind (parts t) (List.find_map ~f:(fun t -> find_related t name))
+        Option.bind (parts t) ~f:(List.find_map ~f:(fun t -> find_related t name))
 
     let rec all_related_parts t =
       match content_disposition t with
@@ -728,7 +728,7 @@ module Simple = struct
       | `Related _ -> None
       | `Attachment name' -> Option.some_if (String.equal name name') t
       | `Inline ->
-        Option.bind (parts t) (List.find_map ~f:(fun t -> find_attachment t name))
+        Option.bind (parts t) ~f:(List.find_map ~f:(fun t -> find_attachment t name))
 
     let rec all_attachments t =
       match content_disposition t with
@@ -782,7 +782,7 @@ module Simple = struct
   let decode_last_header name ~f t =
     Option.bind
       (last_header ~whitespace:`Normalize t name)
-      (fun v -> Option.try_with (fun () -> f v))
+      ~f:(fun v -> Option.try_with (fun () -> f v))
 
   let from =
     decode_last_header "From" ~f:Email_address.of_string_exn

@@ -2,6 +2,9 @@ module Debug_in_this_directory = Debug
 open Core.Std
 open Core_extended.Std
 module Debug = Debug_in_this_directory
+open Re2.Std
+module Crypto = Crypto.Cryptokit
+module Hash = Crypto.Hash
 
 module rec Multipart : sig
   type t =
@@ -431,10 +434,19 @@ module Simple = struct
     let now_string = Time.format now "%a, %d %b %Y %H:%M:%S" ~zone in
     sprintf "%s %s" now_string offset_string
 
+  let bigstring_shared_to_file data file =
+    let open Async.Std in
+    Deferred.Or_error.try_with (fun () ->
+      Writer.with_file file
+        ~f:(fun w ->
+          String_monoid.output_unix (Bigstring_shared.to_string_monoid data) w;
+          Writer.flushed w))
+
   module Expert = struct
     let content ~whitespace ~extra_headers ~encoding body =
       let headers =
-        [ "Content-Transfer-Encoding", (Octet_stream.Encoding.to_string (encoding:>Octet_stream.Encoding.t))
+        [ "Content-Transfer-Encoding",
+          (Octet_stream.Encoding.to_string (encoding :> Octet_stream.Encoding.t))
         ] @ extra_headers
       in
       let headers = Headers.of_list ~whitespace headers in
@@ -560,6 +572,58 @@ module Simple = struct
 
   type attachment_name = string
 
+  module Attachment = struct
+    type t =
+      { filename : string
+      (* These are expensive operations. Ensure they are only computed once, and
+         lazily. *)
+      ; raw_data : Bigstring_shared.t Or_error.t Lazy.t
+      ; md5      : string Or_error.t Lazy.t
+      ; email    : email
+      }
+
+    let filename t = t.filename
+    let email t    = t.email
+    let raw_data t = Lazy.force t.raw_data
+    let md5 t      = Lazy.force t.md5
+
+    let to_hex digest =
+      let result = String.create (String.length digest * 2) in
+      let hex = "0123456789ABCDEF" in
+      for i = 0 to String.length digest - 1 do
+        let c = int_of_char digest.[i] in
+        result.[2*i] <- hex.[c lsr 4];
+        result.[2*i+1] <- hex.[c land 0xF]
+      done;
+      result
+
+    let create ~email ~filename ~content =
+      let raw_data =
+        lazy (
+          Or_error.try_with (fun () ->
+            Octet_stream.decode content
+            |> Option.value_exn)
+        )
+      in
+      let md5 =
+        lazy (
+          match Lazy.force raw_data with
+          | Error _ as err -> err
+          | Ok data ->
+            Or_error.try_with (fun () ->
+              Crypto.hash_string (Hash.md5 ())
+                (Bigstring_shared.to_string data)
+              |> to_hex)
+        )
+      in
+      { filename; raw_data; md5; email }
+
+    let to_file t file =
+      match raw_data t with
+      | Error _ as err -> Async.Std.return err
+      | Ok data -> bigstring_shared_to_file data file
+  end
+
   module Content = struct
     type t = email [@@deriving bin_io]
     let of_email = ident
@@ -633,13 +697,26 @@ module Simple = struct
 
     let attachment_name t =
       let open Option.Monad_infix in
+      let quoted_re = Re2.create "\"(.*)\"" in
+      let unquote name =
+        let f name =
+          match
+            Or_error.try_with (fun () ->
+              Re2.replace_exn (Or_error.ok_exn quoted_re) name ~f:(fun match_ ->
+                Re2.Match.get_exn ~sub:(`Index 1) match_))
+          with
+          | Error _ -> name
+          | Ok name -> name
+        in
+        Option.map name ~f
+      in
       Option.first_some
         begin
           parse_last_header t "Content-Disposition"
           >>= fun (disp, args) ->
           if String.Caseless.equal disp "attachment" then
             List.find_map args ~f:(fun (k,v) ->
-              if String.Caseless.equal k "filename" then v else None)
+              if String.Caseless.equal k "filename" then (unquote v) else None)
           else
             None
         end
@@ -647,7 +724,7 @@ module Simple = struct
           parse_last_header t "Content-Type"
           >>= fun (_, args) ->
           List.find_map args ~f:(fun (k,v) ->
-            if String.Caseless.equal k "name" then v else None)
+            if String.Caseless.equal k "name" then (unquote v) else None)
         end
 
     let related_part_cid t =
@@ -665,8 +742,6 @@ module Simple = struct
       | None -> `Inline
       | Some (disp,_) ->
         if String.Caseless.equal disp "inline" then `Inline
-        else if String.Caseless.equal disp "related" then
-          `Related (related_part_cid t |> Option.value ~default:"unnamed-related-part")
         else if String.Caseless.equal disp "attachment" then
           `Attachment (attachment_name t |> Option.value ~default:"unnamed-attachment")
         else match attachment_name t with
@@ -697,7 +772,7 @@ module Simple = struct
       | None ->
         match content_disposition t with
         | `Inline -> [t]
-        | `Related _ | `Attachment _ -> []
+        | `Attachment _ -> []
 
     let rec alternative_parts t =
       match parts t with
@@ -707,37 +782,37 @@ module Simple = struct
           List.concat_map ts ~f:alternative_parts
         else [t]
 
-    let rec find_related t name =
-      match content_disposition t with
-      | `Related name' -> Option.some_if (String.equal name name') t
-      | `Attachment _ -> None
-      | `Inline ->
-        Option.bind (parts t) ~f:(List.find_map ~f:(fun t -> find_related t name))
-
     let rec all_related_parts t =
-      match content_disposition t with
-      | `Related name -> [name,t]
-      | `Attachment _ -> []
-      | `Inline ->
-        parts t
+      let get_cid t =
+        Option.map (related_part_cid t) ~f:(fun cid -> [cid, t])
         |> Option.value ~default:[]
-        |> List.concat_map ~f:all_related_parts
+      in
+      (get_cid t) @
+      (parts t
+       |> Option.value ~default:[]
+       |> List.concat_map ~f:all_related_parts)
 
-    let rec find_attachment t name =
-      match content_disposition t with
-      | `Related _ -> None
-      | `Attachment name' -> Option.some_if (String.equal name name') t
-      | `Inline ->
-        Option.bind (parts t) ~f:(List.find_map ~f:(fun t -> find_attachment t name))
+    let find_related t name =
+      List.find (all_related_parts t) ~f:(fun (cid, _t) ->
+        String.equal cid name)
+      |> Option.map ~f:snd
 
     let rec all_attachments t =
       match content_disposition t with
-      | `Related _ -> []
-      | `Attachment name -> [name,t]
+      | `Attachment filename ->
+        begin match content t with
+        (* It is an error if the email is of content type multipart. So just return [] *)
+        | None -> []
+        | Some content -> [Attachment.create ~email:t ~filename ~content]
+        end
       | `Inline ->
         parts t
         |> Option.value ~default:[]
         |> List.concat_map ~f:all_attachments
+
+    let find_attachment t name =
+      List.find (all_attachments t) ~f:(fun attachment ->
+        String.equal (Attachment.filename attachment) name)
 
     let to_file t file =
       let open Async.Std in
@@ -747,12 +822,7 @@ module Simple = struct
       | Some content ->
         match Octet_stream.decode content with
         | None -> Deferred.Or_error.errorf "The message payload used an unknown encoding"
-        | Some content ->
-          Deferred.Or_error.try_with (fun () ->
-            Writer.with_file file
-              ~f:(fun w ->
-                String_monoid.output_unix (Bigstring_shared.to_string_monoid content) w;
-                Writer.flushed w))
+        | Some content -> bigstring_shared_to_file content file
   end
 
   type t = email
@@ -805,6 +875,21 @@ module Simple = struct
   let all_related_parts = Content.all_related_parts
   let find_related = Content.find_related
   let inline_parts =  Content.inline_parts
+
+  let rec map_attachments t ~f =
+    let open Async.Std in
+    match content t with
+    | Data _data ->
+      begin match all_attachments t with
+      | [] -> Async.Std.return t
+      | [attachment] -> f attachment
+      | _::_ -> failwith "impossible"
+      end
+    | Multipart mp ->
+      Deferred.List.map mp.Multipart.parts ~f:(map_attachments ~f)
+      >>| fun parts' ->
+      let mp' = {mp with Multipart.parts = parts'} in
+      set_content t (Multipart mp')
 end
 
 

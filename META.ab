@@ -1,6 +1,6 @@
 version = "$(pkg_version)"
 description = "E-mail message parser"
-requires = "async bin_prot core core_extended fieldslib magic-mime oUnit ppx_assert.runtime-lib ppx_bench.runtime-lib ppx_expect.collector ppx_hash.runtime-lib ppx_inline_test.runtime-lib re2 sexplib typerep variantslib"
+requires = "async bin_prot core core_extended cryptokit fieldslib magic-mime oUnit ppx_assert.runtime-lib ppx_bench.runtime-lib ppx_expect.collector ppx_hash.runtime-lib ppx_inline_test.runtime-lib re2 sexplib typerep variantslib"
 archive(byte  ) = "email_message.cma"
 archive(native) = "email_message.cmxa"
 plugin(byte  ) = "email_message.cma"

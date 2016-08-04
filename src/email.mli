@@ -114,6 +114,21 @@ module Simple : sig
 
   type attachment_name = string
 
+  (* For parsing attachments. Use [create ~attachments] to add attachments.
+     Convenience functions for email parts that have "Content-Disposition: attachment" *)
+  module Attachment : sig
+    type t
+
+    val filename : t -> attachment_name
+    val email : t -> email
+
+    (* These are expensive operations *)
+    val raw_data : t -> Bigstring_shared.t Or_error.t
+    val md5 : t -> string Or_error.t
+
+    val to_file : t -> string -> unit Async.Std.Deferred.Or_error.t
+  end
+
   module Content : sig
     type t = private email [@@deriving bin_io]
 
@@ -160,17 +175,14 @@ module Simple : sig
 
     val content_type : t -> Mimetype.t
 
-    val attachment_name : t -> attachment_name option
+    (* The Content-ID of the content *)
     val related_part_cid : t -> attachment_name option
-    val content_disposition : t ->
-      [ `Related of attachment_name
-      | `Attachment of attachment_name
-      | `Inline ]
 
     val all_related_parts : t -> (attachment_name * t) list
     val find_related : t -> attachment_name -> t option
-    val all_attachments : t -> (attachment_name * t) list
-    val find_attachment : t -> attachment_name -> t option
+
+    val all_attachments : t -> Attachment.t list
+    val find_attachment : t -> attachment_name -> Attachment.t option
 
     val content : t -> Octet_stream.t option
     val parts : t -> t list option
@@ -180,8 +192,7 @@ module Simple : sig
     val alternative_parts : t -> t list
 
     (* Get the 'inline' parts, This expands "Content-Type: multipart/{mixed,related}",
-       stripping out any related (CID) and attachment parts. multipart/alternative is not
-       expanded *)
+       stripping out any attachment parts. multipart/alternative is not expanded *)
     val inline_parts : t -> t list
 
     (* Save content to disk *)
@@ -208,12 +219,17 @@ module Simple : sig
   val subject : t -> string option
   val id : t -> string option
 
-  val all_attachments : t -> (attachment_name * Content.t) list
-  val find_attachment : t -> attachment_name -> Content.t option
+  val all_attachments : t -> Attachment.t list
+  val find_attachment : t -> attachment_name -> Attachment.t option
   val all_related_parts : t -> (attachment_name * Content.t) list
   val find_related : t -> attachment_name -> Content.t option
 
   val inline_parts : t -> Content.t list
+
+  val map_attachments
+    :  t
+    -> f : (Attachment.t -> t Async.Std.Deferred.t)
+    -> t Async.Std.Deferred.t
 
   module Expert : sig
     val create_raw

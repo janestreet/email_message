@@ -39,6 +39,14 @@ end = struct
   let to_string = of_string_to_string
 end
 
+module Common = struct
+  let subject = "Subject"
+  let to_ = "To"
+  let from = "From"
+  let date = "Date"
+  let message_id = "Message_id"
+end
+
 type t = (Name.t * string) list [@@deriving sexp, bin_io, compare]
 
 let to_string_monoid t =

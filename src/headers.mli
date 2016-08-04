@@ -29,6 +29,15 @@ module Name : sig
   val is : t -> string -> bool
 end
 
+(** This is just a list of commonly used header field names for simple reuse *)
+module Common : sig
+  val subject : string
+  val to_ : string
+  val from : string
+  val date : string
+  val message_id : string
+end
+
 module Value : sig
   type t = string [@@deriving sexp, bin_io]
 

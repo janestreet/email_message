@@ -1,0 +1,14 @@
+(library
+ ((name email_message)
+  (public_name email_message)
+  (libraries (async
+              core
+              core_extended
+              crypto
+              oUnit
+              re2
+              magic_mime_external))
+ ))
+
+(ocamllex (lexer email_address_lexer_v1))
+(ocamlyacc (grammar))

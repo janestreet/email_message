@@ -40,6 +40,7 @@ module Content : sig
   type t =
     | Multipart of Multipart.t
     | Data of Octet_stream.t
+  [@@deriving sexp_of]
 end
 
 val headers     : t -> Headers.t

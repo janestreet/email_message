@@ -44,7 +44,7 @@ module Common = struct
   let to_ = "To"
   let from = "From"
   let date = "Date"
-  let message_id = "Message_id"
+  let message_id = "Message-ID"
 end
 
 type t = (Name.t * string) list [@@deriving sexp, bin_io, compare]

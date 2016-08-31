@@ -142,8 +142,17 @@ module Simple : sig
       -> string
       -> t
 
-    val html : ?extra_headers:(Headers.Name.t * Headers.Value.t) list -> string -> t
-    val text : ?extra_headers:(Headers.Name.t * Headers.Value.t) list -> string -> t
+    val html
+      :  ?encoding : Octet_stream.Encoding.known (* default: `Quoted_printable *)
+      -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
+      -> string
+      -> t
+
+    val text
+      :  ?encoding : Octet_stream.Encoding.known (* default: `Quoted_printable *)
+      -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
+      -> string
+      -> t
 
     val of_file
       :  ?content_type:Mimetype.t

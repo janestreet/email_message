@@ -645,8 +645,11 @@ module Simple = struct
       in
       create ~content_type ?encoding ?extra_headers content
 
-    let html = create ~content_type:Mimetype.html ~encoding:`Quoted_printable
-    let text = create ~content_type:Mimetype.text ~encoding:`Quoted_printable
+    let html ?(encoding=`Quoted_printable) ?extra_headers content =
+      create ?extra_headers ~content_type:Mimetype.html ~encoding content
+
+    let text ?(encoding=`Quoted_printable) ?extra_headers content =
+      create ?extra_headers ~content_type:Mimetype.text ~encoding content
 
     let create_multipart ?(extra_headers=[]) ~content_type = function
       | [] -> failwith "at least one part is required"

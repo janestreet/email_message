@@ -4,10 +4,10 @@
   (libraries (async
               core
               core_extended
-              crypto
+              cryptokit
               oUnit
               re2
-              magic_mime_external))
+              magic-mime))
  ))
 
 (ocamllex (lexer email_address_lexer_v1))

@@ -80,7 +80,7 @@ module Postmark = struct
 
   let to_string t =
     let date, ofday = Time.to_date_ofday t.time ~zone:Time.Zone.utc in
-    let parts = Core.Ofday.to_parts ofday in
+    let parts = Time.Ofday.to_parts ofday in
 
     sprintf "From %s %s %s %2d %02d:%02d:%02d %4d"
       t.from
@@ -88,9 +88,9 @@ module Postmark = struct
         (String.lowercase (Day_of_week.to_string (Date.day_of_week date))))
       (Month.to_string (Date.month date))
       (Date.day date)
-      parts.Core.Span.Parts.hr
-      parts.Core.Span.Parts.min
-      parts.Core.Span.Parts.sec
+      parts.Time.Span.Parts.hr
+      parts.Time.Span.Parts.min
+      parts.Time.Span.Parts.sec
       (Date.year date)
   ;;
 
@@ -113,7 +113,7 @@ module Postmark = struct
         let hr = Int.of_string (Match.by_name m "h") in
         let min = Int.of_string (Match.by_name m "i") in
         let sec = Int.of_string (Match.by_name m "s") in
-        let ofday = Core.Ofday.create ~hr ~min ~sec () in
+        let ofday = Time.Ofday.create ~hr ~min ~sec () in
 
         let time = Time.of_date_ofday ~zone:Time.Zone.utc date ofday  in
         Result.Ok { from = from; time = time }

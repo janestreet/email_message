@@ -426,7 +426,7 @@ module Simple = struct
         ]
 
   let rfc822_date now =
-    let zone = Time.Zone.local in
+    let zone = (force Time.Zone.local) in
     let offset_string =
       utc_offset_string ~zone now
       |> String.filter ~f:(fun c -> Char.(<>) c ':')

@@ -90,7 +90,7 @@ module Base64 = struct
   include Core_extended.Std.Base64.Make(struct
       let char62 = '+'
       let char63 = '/'
-      let pad_char = Some '='
+      let pad_char = `Suggested '='
       (* Permissive - ignore anything that would be an invalid base64 character... *)
       let ignore_char = function
         | '0'..'9' | 'a'..'z' | 'A'..'Z' | '+' | '/' | '=' -> false

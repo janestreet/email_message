@@ -3,13 +3,13 @@ open Core.Std;;
 module State = struct
   type t = [
     (** Initial state, parsing headers *)
-    `Header  |
+      `Header  |
 
-    (** Parsing the body of the message. The details are in the body state. *)
-    `Content |
+      (** Parsing the body of the message. The details are in the body state. *)
+      `Content |
 
-    (** The message should end here. If it doesn't, it's an error *)
-    `Expected_eof
+      (** The message should end here. If it doesn't, it's an error *)
+      `Expected_eof
   ]
   ;;
 
@@ -18,8 +18,8 @@ end
 
 module Content = struct
   type t =
-    Multipart of string list |
-    Octet_stream
+      Multipart of string list |
+      Octet_stream
 
   let default = Octet_stream;;
 end
@@ -27,7 +27,7 @@ end
 type t =
   {
     mutable state : State.t;
-    buf : Grammar.token Queue.t;
+    buf : Email_grammar.token Queue.t;
   }
 ;;
 
@@ -39,7 +39,7 @@ let create () = {
 module Result = struct
   type t = {
     new_state : State.t option;
-    tokens : Grammar.token list;
+    tokens : Email_grammar.token list;
   }
 
   module Std = struct
@@ -50,8 +50,8 @@ module Result = struct
       }
     ;;
 
-    let return_eof = return ~new_state:`Expected_eof [Grammar.EOF];;
-    let return_error str = return [Grammar.ERROR str];;
+    let return_eof = return ~new_state:`Expected_eof [Email_grammar.EOF];;
+    let return_error str = return [Email_grammar.ERROR str];;
   end
 end
 

@@ -3,11 +3,11 @@ open! Core.Std
 (** [Whitespace.t] specifies how to handle header values. It is used in two contexts:
 
     1) Transport: Specify how to turn a string into a header value. [`Normalize] will add
-       the necessary for transport.
+    the necessary for transport.
 
     2) Processing: Specify how to turn a header value into a string. [`Normalize] will remove
-       all leading and trailing whitespace on each line in order to cleanly process the
-       value. *)
+    all leading and trailing whitespace on each line in order to cleanly process the
+    value. *)
 module Whitespace : sig
   type t =
     [ `Raw (* Leave whitespace unchanged *)
@@ -18,14 +18,15 @@ end
 
 module Name : sig
   (* Case insensitive *)
-  type t = string [@@deriving sexp, bin_io]
+  type t = string [@@deriving sexp, bin_io, compare, hash]
 
   val of_string : string -> t
   val to_string : t -> string
 
   include Comparable.S with type t := t
+  include Hashable.S with type t := t
 
-(* Short hand for [let is a b = equal a (of_string b)] *)
+  (* Short hand for [let is a b = equal a (of_string b)] *)
   val is : t -> string -> bool
 end
 
@@ -39,25 +40,26 @@ module Common : sig
 end
 
 module Value : sig
-  type t = string [@@deriving sexp, bin_io]
+  type t = string [@@deriving sexp, bin_io, compare, hash]
 
-(** Normalize the whitespace for processing/
-    if [whitespace == `Raw] this does nothing.
-    if [whitespace = `Normalize] (default), strip leading/trailing whitespace on every line. *)
+  (** Normalize the whitespace for processing/
+      if [whitespace == `Raw] this does nothing.
+      if [whitespace = `Normalize] (default), strip leading/trailing whitespace on every line. *)
   val of_string : ?whitespace:Whitespace.t -> string -> t
   (** Normalize the whitespace for transport (insert the appropriate leading space).
       if [whitespace == `Raw] this does nothing.
       if [whitespace == `Normalize] (default), insert a leading space and indent subsequent
-        lines with a tab (remove any other leading/trailing space on every line). *)
+      lines with a tab (remove any other leading/trailing space on every line). *)
   val to_string : ?whitespace:Whitespace.t -> t -> string
 
   include Comparable.S with type t := t
+  include Hashable.S with type t := t
 end
 
 
 (* The add and set functions are same as in Field_list, except they add a space
    before the value. *)
-type t [@@deriving sexp, bin_io, compare]
+type t [@@deriving sexp, bin_io, compare, hash]
 
 include String_monoidable.S with type t := t
 val to_string : t -> string

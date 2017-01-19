@@ -12,7 +12,7 @@ module rec Multipart : sig
     ; prologue : Bigstring_shared.t option
     ; epilogue : Bigstring_shared.t option
     ; parts    : Message.t list
-    } [@@deriving sexp, compare]
+    } [@@deriving sexp, compare, hash]
 
   (* Returns none if this is not a multipart message. *)
   val of_bigstring_shared
@@ -26,8 +26,6 @@ module rec Multipart : sig
     -> f:(Octet_stream.t -> Octet_stream.t)
     -> t
 
-  val hash : t -> int
-
   include String_monoidable.S with type t := t
 end = struct
   type t = {
@@ -35,7 +33,7 @@ end = struct
     prologue : Bigstring_shared.t sexp_option;
     epilogue : Bigstring_shared.t sexp_option;
     parts    : Message.t list;
-  } [@@deriving sexp, compare]
+  } [@@deriving sexp, compare, hash]
 
   let of_bigstring_shared ~media_type ~boundary bstr =
     let open Or_error.Monad_infix in
@@ -62,65 +60,17 @@ end = struct
   ;;
 
   let to_string_monoid t =
-    if List.is_empty t.parts then
-      match t.prologue, t.epilogue with
-      | Some prologue, Some epilogue ->
-        String_monoid.plus
-          (Bigstring_shared.to_string_monoid prologue)
-          (Bigstring_shared.to_string_monoid epilogue)
-      | Some content, None | None, Some content ->
-        Bigstring_shared.to_string_monoid content
-      | None, None ->
-        String_monoid.of_string "\n"
-    else
-      let parts = List.map t.parts ~f:Message.to_string_monoid in
-      let boundary = Boundary.generate ~suggest:t.boundary () in
-      (* Different types of boundaries that may appear in a message *)
-      let boundary_open_first = boundary |> Boundary.Open_first.to_string_monoid in
-      let boundary_open       = boundary |> Boundary.Open.to_string_monoid in
-      let boundary_close      = boundary |> Boundary.Close.to_string_monoid in
-
-    let prologue =
-        t.prologue
-        |> Option.value_map
-          ~f:Bigstring_shared.to_string_monoid
-          ~default:String_monoid.empty
-    in
-    let first_boundary =
-      if Option.is_some t.prologue then boundary_open else boundary_open_first
-    in
-    let inner_boundary = boundary_open in
-    let last_boundary = boundary_close in
-    let epilogue =
-        t.epilogue
-        |> Option.value_map
-          ~f:Bigstring_shared.to_string_monoid
-          ~default:String_monoid.empty
-    in
-    String_monoid.concat
-      [ prologue
-      ; first_boundary
-      ; String_monoid.concat ~sep:inner_boundary parts
-      ; last_boundary
-      ; epilogue
-      ]
-
-  let hash { boundary; prologue; epilogue; parts } =
-    let x =
-      Boundary.hash boundary,
-      Option.value_map prologue
-        ~f:Bigstring_shared.hash ~default:(Hashtbl.hash None),
-      Option.value_map epilogue
-        ~f:Bigstring_shared.hash ~default:(Hashtbl.hash None),
-      Common.list_hash parts ~hash:Message.hash
-    in
-    Hashtbl.hash x
+    let boundary = Boundary.generate ~suggest:t.boundary () in
+    Boundary.join boundary
+      ( t.prologue
+      , List.map t.parts ~f:Message.to_string_monoid
+      , t.epilogue)
 end
 and Content : sig
   type t =
       Multipart of Multipart.t
     | Data of Octet_stream.t
-  [@@deriving sexp, compare]
+  [@@deriving sexp, compare, hash]
   ;;
 
   val empty : unit -> t
@@ -139,8 +89,6 @@ and Content : sig
   val of_data : Octet_stream.t -> t
   val of_multipart : boundary:Boundary.t -> Message.t list -> t
 
-  val hash : t -> int
-
   include String_monoidable.S with type t := t
 end
 = struct
@@ -148,7 +96,7 @@ end
      7bit encoding with US-ASCII character set *)
   type t = Multipart of Multipart.t
          | Data of Octet_stream.t
-  [@@deriving sexp, compare]
+  [@@deriving sexp, compare, hash]
   ;;
 
   let empty () = Data Octet_stream.empty
@@ -200,15 +148,9 @@ end
   let of_data octet_stream = Data octet_stream
   let of_multipart ~boundary parts =
     Multipart { boundary; prologue=None; epilogue=None; parts }
-
-  let hash = function
-    | Multipart m ->
-      Hashtbl.hash (0, Multipart.hash m)
-    | Data d ->
-      Hashtbl.hash (1, Octet_stream.hash d)
 end
 and Message : sig
-  type t [@@deriving sexp, compare]
+  type t [@@deriving sexp, compare, hash]
 
   val empty : unit -> t
 
@@ -223,7 +165,8 @@ and Message : sig
 
   include String_monoidable.S with type t := t
   include Stringable.S with type t := t
-  include Bigstringable.S with type t := t
+  val of_bigstring : Bigstring.t -> t Or_error.t
+  val to_bigstring : t -> Bigstring.t
 
   val headers : t -> Headers.t
 
@@ -254,14 +197,12 @@ and Message : sig
     : t -> f:(Octet_stream.t -> Octet_stream.t) -> t
 
   val raw_content : t -> Bigstring_shared.t
-
-  val hash : t -> int
 end = struct
   type t =
     { headers    : Headers.t
     ; line_break : bool
     ; content    : Content.t
-    } [@@deriving sexp, compare]
+    } [@@deriving sexp, compare, hash]
   ;;
 
   open Or_error.Monad_infix
@@ -297,8 +238,8 @@ end = struct
   let of_bigstring_shared ~parent bstr =
     let lexbuf = Bigstring_shared.to_lexbuf bstr in
     begin
-      try Ok (Grammar.message
-                (Lexer.message (Lexer_state.create ())) lexbuf)
+      try Ok (Email_grammar.message
+                (Email_lexer.message (Email_lexer_state.create ())) lexbuf)
       with _ ->
         (* Looks like lexer just throws Failure, not Parsing.Parse_error *)
         let pos = lexbuf.Lexing.lex_curr_p in
@@ -381,29 +322,22 @@ end = struct
   let map_headers ?whitespace t ~f =
     modify_headers t ~f:(fun headers ->
       Headers.map ?whitespace headers ~f)
-
-  let hash { headers; line_break=_; content } =
-    let x =
-      Headers.hash headers,
-      Content.hash content
-    in
-    Hashtbl.hash x
 end
 
 include Message
 include Comparable.Make(Message)
 
 include Binable.Of_binable (Bigstring)
-          (struct
-            type nonrec t = t
-            let to_binable = to_bigstring
-            let of_binable bs = of_bigstring bs |> Or_error.ok_exn
-          end)
+    (struct
+      type nonrec t = t
+      let to_binable = to_bigstring
+      let of_binable bs = of_bigstring bs |> Or_error.ok_exn
+    end)
 
 let of_bigbuffer buffer =
   of_bigstring (Bigbuffer.big_contents buffer)
 
-type email = t [@@deriving bin_io]
+type email = t [@@deriving bin_io, sexp_of]
 
 module Simple = struct
   let make_id () =
@@ -476,7 +410,7 @@ module Simple = struct
           ?id
           ?date
           ?(extra_headers=[])
-          ?attachments
+          ?(attachments=[])
           content
       =
       let id = match id with
@@ -499,9 +433,9 @@ module Simple = struct
         @ [ "Date", date ]
       in
       match attachments with
-      | None ->
+      | [] ->
         add_headers content headers
-      | Some attachments ->
+      | attachments ->
         multipart
           ~whitespace:`Normalize
           ~content_type:"multipart/mixed"
@@ -625,7 +559,7 @@ module Simple = struct
   end
 
   module Content = struct
-    type t = email [@@deriving bin_io]
+    type t = email [@@deriving bin_io, sexp_of]
     let of_email = ident
 
     let create ~content_type ?(encoding=Mimetype.guess_encoding content_type) ?(extra_headers=[]) content =
@@ -828,18 +762,18 @@ module Simple = struct
         | Some content -> bigstring_shared_to_file content file
   end
 
-  type t = email
+  type t = email [@@deriving sexp_of]
 
   let create
-      ?from
-      ~to_
-      ?cc
-      ~subject
-      ?id
-      ?date
-      ?extra_headers
-      ?attachments
-      content
+        ?from
+        ~to_
+        ?cc
+        ~subject
+        ?id
+        ?date
+        ?extra_headers
+        ?attachments
+        content
     =
     Expert.create_raw
       ?from:(Option.map from ~f:Email_address.to_string)
@@ -896,20 +830,21 @@ module Simple = struct
 end
 
 
-let%test_module _ = (module struct
-  let check s =
-    let b = Bigbuffer.create 1000 in
-    Bigbuffer.add_string b s;
-    let result =
-      Bigbuffer.big_contents b
-      |> of_bigstring
-      |> Or_error.ok_exn
-      |> to_string
-    in
-    [%test_result: string] ~expect:s result
+let%test_module _ =
+  (module struct
+    let check s =
+      let b = Bigbuffer.create 1000 in
+      Bigbuffer.add_string b s;
+      let result =
+        Bigbuffer.big_contents b
+        |> of_bigstring
+        |> Or_error.ok_exn
+        |> to_string
+      in
+      [%test_result: string] ~expect:s result
 
-      (* A message without headers must start with an empty line. *)
-  let%test_unit _ = check "\n"
-  let%test_unit _ = check "\nhello world"
-  let%test_unit _ = check "\nhello world\n hello again\n"
-end)
+    (* A message without headers must start with an empty line. *)
+    let%test_unit _ = check "\n"
+    let%test_unit _ = check "\nhello world"
+    let%test_unit _ = check "\nhello world\n hello again\n"
+  end)

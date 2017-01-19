@@ -3,6 +3,7 @@ open Core.Stable
 include struct
   open Core.Std
   (* These don't have stable interfaces. *)
+  module Int = Int
   module List = List
   module Option = Option
   module String = String
@@ -10,19 +11,21 @@ end
 
 module Domain = Mimestring.Case_insensitive
 
+type 'a no_compare = 'a [@@deriving sexp, bin_io]
+let compare_no_compare _ _ _ = 0
+let hash_fold_no_compare _ init _ = init
+
 module Stable = struct
   module V1 = struct
-
     type t =
       { (* [prefix = None] means no brackets. *)
-        prefix : string option
-      ; local_part : string
-      ; domain : Domain.t option
-      }
-      (* The [sexp_of] converter defined here is only used for printing the output of
-         unit tests. Externally we use a string representation - see bottom of this
-         file. *)
-    [@@deriving fields, sexp_of, compare]
+        prefix : String.t Option.t no_compare
+      ; local_part : String.t
+      ; domain : Domain.t Option.t
+      } [@@deriving fields, sexp_of, compare, hash]
+    (* The [sexp_of] converter defined here is only used for printing the output of
+       unit tests. Externally we use a string representation - see bottom of this
+       file. *)
 
     let create ?prefix ?domain local_part =
       { prefix
@@ -89,6 +92,13 @@ module Stable = struct
 
     let set_prefix t prefix =
       { t with prefix }
+
+    let%test_unit _ =
+      [%test_result: int]
+        (compare
+           (of_string_exn "foobar <foo@bar.com>")
+           (of_string_exn "foo@bar.com"))
+        ~expect:0
 
     let%test_unit _ =
       [%test_result: t]
@@ -196,8 +206,6 @@ module Stable = struct
         let to_string = to_string
         let of_string s = of_string s |> Core.Std.Or_error.ok_exn
       end)
-
-    let hash = Hashtbl.hash
   end
 end
 
@@ -209,14 +217,7 @@ include Comparable.Make_binable(Stable.V1)
 
 module Caseless = struct
   module T = struct
-    type nonrec t = t [@@deriving sexp, bin_io]
-    let compare a b =
-      let o = String.Caseless.compare a.local_part b.local_part in
-      if Int.(<>) o 0 then o else Option.compare Domain.compare a.domain b.domain
-    let hash a =
-      Int.bit_xor
-        (String.Caseless.hash a.local_part)
-        (Option.value_map a.domain ~f:Domain.hash ~default:0)
+    type nonrec t = t [@@deriving sexp, bin_io, compare, hash]
   end
   include T
   include Hashable.Make_binable(T)

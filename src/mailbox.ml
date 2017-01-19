@@ -36,22 +36,22 @@ end
 
   (* Regexen for parsing postmarks *)
   let datetime = of_list
-  [
-    cg "w" alpha'; wsp';
-    cg "m" alpha'; wsp';
-    cg "d" digit'; wsp';
-    cg "h" digit'; ":"; cg "i" digit'; ":"; cg "s" digit'; wsp';
-    cg "y" digit'
-  ]
+                   [
+                     cg "w" alpha'; wsp';
+                     cg "m" alpha'; wsp';
+                     cg "d" digit'; wsp';
+                     cg "h" digit'; ":"; cg "i" digit'; ":"; cg "s" digit'; wsp';
+                     cg "y" digit'
+                   ]
   ;;
 
   let postmark = create ("^From" ^ wsp ^ "+.*$");;
   let postmark' = create (of_list
-    [ "^From"; wsp';
-      cg "from" no_wsp'; wsp';
-      cg "time" datetime; maybe wsp';
-      "$"
-    ]);;
+                            [ "^From"; wsp';
+                              cg "from" no_wsp'; wsp';
+                              cg "time" datetime; maybe wsp';
+                              "$"
+                            ]);;
 
 
   let escaped_line = create ("^>From" ^ wsp ^ ".*$");;
@@ -60,8 +60,8 @@ end
   (* Templates *)
   let escape_line =
     Template.create
-    ~regex:(create_m ("^From(" ^ wsp ^ ")"))
-    ~template:">From\\1"
+      ~regex:(create_m ("^From(" ^ wsp ^ ")"))
+      ~template:">From\\1"
 
   let __UNUSED_VALUE__unix_line_terminator =
     Template.create
@@ -85,7 +85,7 @@ module Postmark = struct
     sprintf "From %s %s %s %2d %02d:%02d:%02d %4d"
       t.from
       (String.capitalize
-        (String.lowercase (Day_of_week.to_string (Date.day_of_week date))))
+         (String.lowercase (Day_of_week.to_string (Date.day_of_week date))))
       (Month.to_string (Date.month date))
       (Date.day date)
       parts.Time.Span.Parts.hr
@@ -118,8 +118,8 @@ module Postmark = struct
         let time = Time.of_date_ofday ~zone:Time.Zone.utc date ofday  in
         Result.Ok { from = from; time = time }
       with
-      e -> Result.Error (Exn.to_string e))
-  |> Result.map_error ~f:(sprintf "Unable to parse postmark %s: %s." str)
+        e -> Result.Error (Exn.to_string e))
+    |> Result.map_error ~f:(sprintf "Unable to parse postmark %s: %s." str)
   ;;
 
   let of_string str = Result.ok_or_failwith (parse str);;
@@ -135,11 +135,11 @@ module Message = struct
     let text = Email.to_string message.email in
     let text = Regexp.(Template.apply escape_line text) in
     String.concat ~sep:"\n"
-    [
-      Postmark.to_string message.postmark;
-      text;
-      ""
-    ]
+      [
+        Postmark.to_string message.postmark;
+        text;
+        ""
+      ]
   ;;
 end
 
@@ -154,9 +154,9 @@ let unescape line =
 ;;
 
 let __UNUSED_VALUE__counting_fold fold ?(from=0) ~init ~f =
-    fold
-      ~init:(from, init)
-      ~f:(fun (n, acc) data -> (n + 1, f n acc data))
+  fold
+    ~init:(from, init)
+    ~f:(fun (n, acc) data -> (n + 1, f n acc data))
 ;;
 
 module Parser' = struct
@@ -223,9 +223,9 @@ struct
   let t_of_fd fd =
     Parser.parse_lazy_list
       (Lazy_list.of_iterator
-        ~init:(fd, In_channel.input_line fd)
-        ~next:(fun (fd, _) -> (fd, In_channel.input_line fd))
-        ~curr:snd)
+         ~init:(fd, In_channel.input_line fd)
+         ~next:(fun (fd, _) -> (fd, In_channel.input_line fd))
+         ~curr:snd)
   ;;
 
   let t_of_file fname = In_channel.with_file fname ~f:t_of_fd;;
@@ -249,7 +249,7 @@ module Lazy_sequence_extra = struct
         | None      -> Lazy_sequence.empty
       in
       loop ())
-    ~finally:(fun () -> In_channel.close fd)
+      ~finally:(fun () -> In_channel.close fd)
   ;;
 end
 
@@ -301,10 +301,3 @@ module With_pipe = struct
     Pipe.iter t ~f:(Fn.compose f Message.to_string);
   ;;
 end
-
-
-
-
-
-
-

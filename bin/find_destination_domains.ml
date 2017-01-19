@@ -6,15 +6,6 @@ module Email_Address = struct
   type t = string
 end
 
-let asdf y = Option.Monad_infix.(y
-  >>| String.split ~on:','
-  >>| List.fold_right ~f:(fun accum x -> accum :: x) ~init:[]
-  >>| List.map ~f:String.strip  )
-
-(* let _asdfa y = List.map ~f:(String.split ~on:',') y
-  |> List.fold_right ~f:(fun accum x -> accum @ x) ~init:[]
-*)
-
 let x_js_compliance_to_hash astring =
   let _returnme = String.Table.create () ~size:4 in
   List.map ~f:(String.split ~on:' ') [astring]
@@ -49,77 +40,77 @@ let print_all_header_names  message =
 
 let () =
   Command.basic ~summary:"Mailbox parser tester"
-  Command.Spec.(empty
-    +> flag ~aliases:["i"] "input-file" (optional string)
-      ~doc:"file Mailbox to parse."
-    +> flag ~aliases:["o"] "output-file" (optional string)
-      ~doc:"file File to write the mailbox to.\nBROKEN, use > redirection instead"
-    +> flag ~aliases:["s"] "sexp" (no_arg)
-      ~doc:"Output S-expressions instead of strings"
-    +> flag "domain" (optional string)
-      ~doc:"Domain Only print messages with this domain in the X-Js-Compliance/recipient field.")
+    Command.Spec.(empty
+                  +> flag ~aliases:["i"] "input-file" (optional string)
+                       ~doc:"file Mailbox to parse."
+                  +> flag ~aliases:["o"] "output-file" (optional string)
+                       ~doc:"file File to write the mailbox to.\nBROKEN, use > redirection instead"
+                  +> flag ~aliases:["s"] "sexp" (no_arg)
+                       ~doc:"Output S-expressions instead of strings"
+                  +> flag "domain" (optional string)
+                       ~doc:"Domain Only print messages with this domain in the X-Js-Compliance/recipient field.")
 
-  (fun input_file output_file write_sexps domain ->
-    don't_wait_for (
-      let main ifd ofd =
-        ifd >>= fun ifd ->
-        let ofd = Writer.create ofd in
-        Mailbox.With_pipe.t_of_fd ifd >>= fun mailbox ->
-        if write_sexps then
-          Pipe.iter mailbox
-            ~f:(fun message ->
-              let sexp = Mailbox.Message.sexp_of_t message in
-              Print.fprintf ofd "%s" (Sexplib.Pre_sexp.to_string_hum sexp);
-              Print.fprintf ofd "\n\n";
-              return ())
-        else
-        begin
-          Pipe.iter mailbox
-            ~f:(fun message ->
-              begin
-                match domain with
-                | Some dest_domain ->
-                  begin
-                    match destination_addresses message with
-                    | Some dests -> let matching_dests = List.filter
-                      ~f:(fun s -> String.is_suffix ~suffix:dest_domain s) dests in
-                    begin
-                      match matching_dests with
-                      | [] -> ()
-                      | stuff -> Print.printf "Found matching dests: %s\n%!" (String.concat
-                      ~sep:" | " stuff);
-                    end
+    (fun input_file output_file write_sexps domain ->
+       don't_wait_for (
+         let main ifd ofd =
+           ifd >>= fun ifd ->
+           let ofd = Writer.create ofd in
+           Mailbox.With_pipe.t_of_fd ifd >>= fun mailbox ->
+           if write_sexps then
+             Pipe.iter mailbox
+               ~f:(fun message ->
+                 let sexp = Mailbox.Message.sexp_of_t message in
+                 Print.fprintf ofd "%s" (Sexplib.Pre_sexp.to_string_hum sexp);
+                 Print.fprintf ofd "\n\n";
+                 return ())
+           else
+             begin
+               Pipe.iter mailbox
+                 ~f:(fun message ->
+                   begin
+                     match domain with
+                     | Some dest_domain ->
+                       begin
+                         match destination_addresses message with
+                         | Some dests -> let matching_dests = List.filter
+                                                                ~f:(fun s -> String.is_suffix ~suffix:dest_domain s) dests in
+                           begin
+                             match matching_dests with
+                             | [] -> ()
+                             | stuff -> Print.printf "Found matching dests: %s\n%!" (String.concat
+                                                                                       ~sep:" | " stuff);
+                           end
 
-                    | None -> Print.printf "No dests?! Message-id: %s Headers: %s \n%!"
-                      (easy_get_header message "message-id")
-                      (print_all_header_names message);
-                  end;
-                |None -> ()
-              end;
+                         | None -> Print.printf "No dests?! Message-id: %s Headers: %s \n%!"
+                                     (easy_get_header message "message-id")
+                                     (print_all_header_names message);
+                       end;
+                     |None -> ()
+                   end;
 
-              return ())
+                   return ())
               (*
-              Print.fprintf ofd "%s" (Mailbox.Message.to_string message); *)
-        end
-        >>= fun () ->
-        Print.fprintf ofd "%!";
-        Writer.close ofd
+                    Print.fprintf ofd "%s" (Mailbox.Message.to_string message); *)
+             end
+             >>= fun () ->
+             Print.fprintf ofd "%!";
+             Writer.close ofd
 
-      in
-      let main' ofd =
-        match input_file with
-        | Some fname -> main (Fd.of_in_channel_auto (In_channel.create fname)) ofd
-        | None       -> main (return (Fd.stdin ())) ofd
-      in
-      match ignore output_file; None with
-      | Some fname ->
-        Fd.of_out_channel_auto (Out_channel.create fname)
-        >>= fun ofd ->
-        main' ofd
-      | None       -> main' (Fd.stdout ())
-      >>= fun () ->
-      return (shutdown 0)
-    );
-    never_returns (Scheduler.go ())
+         in
+         let main' ofd =
+           match input_file with
+           | Some fname -> main (Fd.of_in_channel_auto (In_channel.create fname)) ofd
+           | None       -> main (return (Fd.stdin ())) ofd
+         in
+         match ignore output_file; None with
+         | Some fname ->
+           Fd.of_out_channel_auto (Out_channel.create fname)
+           >>= fun ofd ->
+           main' ofd
+         | None       -> main' (Fd.stdout ())
+           >>= fun () ->
+           return (shutdown 0)
+       );
+       never_returns (Scheduler.go ())
 
-  ) |> Command.run
+    ) |> Command.run

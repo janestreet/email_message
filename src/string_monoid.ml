@@ -17,26 +17,26 @@ module Underlying = struct
     match src with
     | String src ->
       (fun ?(src_pos=0) ?src_len:(len=(String.length src)) ~dst ?(dst_pos=0) () ->
-        String.blit ~src ~src_pos ~len ~dst ~dst_pos)
+         String.blit ~src ~src_pos ~len ~dst ~dst_pos)
     | Bigstring src -> Bigstring.To_string.blito ~src
     | Char c ->
       (fun ?(src_pos=0) ?(src_len=1) ~dst ?(dst_pos=0) () ->
-        match src_pos, src_len with
-        | 0, 1     -> dst.[dst_pos] <- c
-        | (0|1), 0 -> ()
-        | _, _     -> invalid_arg "index out of bounds")
+         match src_pos, src_len with
+         | 0, 1     -> dst.[dst_pos] <- c
+         | (0|1), 0 -> ()
+         | _, _     -> invalid_arg "index out of bounds")
   ;;
 
- let blit_bigstring ~src =
+  let blit_bigstring ~src =
     match src with
     | String src -> Bigstring.From_string.blito ~src
     | Bigstring src -> Bigstring.blito ~src
     | Char c ->
       (fun ?(src_pos=0) ?(src_len=1) ~dst ?(dst_pos=0) () ->
-        match src_pos, src_len with
-        | 0, 1     -> dst.{dst_pos} <- c
-        | (0|1), 0 -> ()
-        | _, _     -> invalid_arg "index out of bounds")
+         match src_pos, src_len with
+         | 0, 1     -> dst.{dst_pos} <- c
+         | (0|1), 0 -> ()
+         | _, _     -> invalid_arg "index out of bounds")
   ;;
 
   let output_channel ~channel = function
@@ -82,31 +82,31 @@ let length = function
 ;;
 
 (**
-  The plus operation is not associative over individual representations,
-  but is associative over the quotient space with the equivalence
-  relationship
-    x ~ y == (to_string x) = (to_string y)
-  *)
+   The plus operation is not associative over individual representations,
+   but is associative over the quotient space with the equivalence
+   relationship
+   x ~ y == (to_string x) = (to_string y)
+*)
 let plus a b =
-    match a, b with
-    | b, List (0,_)          -> b
-    | List (0, _), b         -> b
-    | List (len, _) , b      -> List (len + (length b), [a;b])
-    | Leaf a', List (len, l) -> List ((Underlying.length a') + len, a :: l)
-    | Leaf x, Leaf y  -> List (Underlying.((length x) + (length y)), [a;b])
+  match a, b with
+  | b, List (0,_)          -> b
+  | List (0, _), b         -> b
+  | List (len, _) , b      -> List (len + (length b), [a;b])
+  | Leaf a', List (len, l) -> List ((Underlying.length a') + len, a :: l)
+  | Leaf x, Leaf y  -> List (Underlying.((length x) + (length y)), [a;b])
 ;;
 
 
 let concat ?(sep=empty) ts =
-    (* Fold right is more efficient than fold_left, as it will create a
-       flat List node *)
-    match ts with
-    | []      -> empty
-    | t :: ts ->
-      plus t
-        (List.fold_right ts
-          ~f:(fun t ts -> plus sep (plus t ts))
-          ~init:empty)
+  (* Fold right is more efficient than fold_left, as it will create a
+     flat List node *)
+  match ts with
+  | []      -> empty
+  | t :: ts ->
+    plus t
+      (List.fold_right ts
+         ~f:(fun t ts -> plus sep (plus t ts))
+         ~init:empty)
 ;;
 
 let concat_underlying ~of_underlying ?sep strs =
@@ -117,8 +117,8 @@ let concat_underlying ~of_underlying ?sep strs =
 
 let concat_string = concat_underlying ~of_underlying:of_string;;
 (*
-let __UNUSED_VALUE__concat_bigstring =
-  concat_underlying ~of_underlying:of_bigstring;;
+   let __UNUSED_VALUE__concat_bigstring =
+   concat_underlying ~of_underlying:of_bigstring;;
 *)
 
 type blitter =
@@ -131,9 +131,9 @@ let blit ~(dst_blit:blitter) t =
     | Leaf src -> dst_blit ~src ~dst_pos ()
     | List (len, srcs) ->
       let len' = List.fold_left srcs ~init:dst_pos
-        ~f:(fun dst_pos t ->
-          blit dst_pos t;
-          dst_pos + (length t))
+                   ~f:(fun dst_pos t ->
+                     blit dst_pos t;
+                     dst_pos + (length t))
       in
       assert ((len' - dst_pos) = len)
   in

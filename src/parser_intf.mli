@@ -23,7 +23,7 @@ module Comm : sig
   val warning  : 'a -> msg:string -> ('a, 'b) t
 
   (* A fatal error from which the parser can't recover has ocurred *)
-  val fatal    : string -> ('a, 'b) t 
+  val fatal    : string -> ('a, 'b) t
 
 end
 
@@ -33,7 +33,7 @@ module type Basic_S = sig
   type a
   type b
   val create : unit -> t
-  val parse : t -> a token -> (t, b) Comm.t 
+  val parse : t -> a token -> (t, b) Comm.t
 end
 
 (* Extended signature with automatically generated functions *)
@@ -47,8 +47,7 @@ module type S = sig
   val parse_pipe : ?log:(string -> unit) -> a Pipe.Reader.t -> b Pipe.Reader.t
 end
 
-module Make (S : Basic_S) : S with 
-  type t = S.t and 
-  type a = S.a and 
-  type b = S.b
-
+module Make (S : Basic_S) :
+  S with type t = S.t
+     and type a = S.a
+     and type b = S.b

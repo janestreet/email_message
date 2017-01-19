@@ -67,13 +67,13 @@ module Make (T : Basic_S) = struct
       let rec loop t =
         match Lazy_sequence.Iterator.get iter with
         | Some a ->
-            let (t, b) = parse_exn ?log t (`Token a) in
-            b ==>> (fun () -> loop t)
+          let (t, b) = parse_exn ?log t (`Token a) in
+          b ==>> (fun () -> loop t)
         | None      ->
-            let (_, b) = parse_exn ?log t `Eof in
-            b ==>> (fun () -> Lazy_sequence.empty)
+          let (_, b) = parse_exn ?log t `Eof in
+          b ==>> (fun () -> Lazy_sequence.empty)
       in
-        loop (create ()))
+      loop (create ()))
   ;;
 
   let parse_lazy_list ?log l =
@@ -82,9 +82,9 @@ module Make (T : Basic_S) = struct
       | Some (a, rest_of_l) ->
         (* Continue parsing until we get something to give back *)
         begin
-        match parse_exn ?log t (`Token a) with
-        | (t, []) -> next' t rest_of_l
-        | (t, b)  -> ((t, rest_of_l), b)
+          match parse_exn ?log t (`Token a) with
+          | (t, []) -> next' t rest_of_l
+          | (t, b)  -> ((t, rest_of_l), b)
         end
       | None         ->
         let (t, b) = parse_exn ?log t `Eof in
@@ -104,20 +104,20 @@ module Make (T : Basic_S) = struct
   let parse_list ?log l =
     Lazy_list.to_list
       (parse_lazy_list ?log
-        (Lazy_list.of_list l))
+         (Lazy_list.of_list l))
 
   let parse_pipe ?log src =
     let output, dst = Pipe.create () in
     let to_dst l = Deferred.List.iter l
-      ~how:`Sequential
-      ~f:(fun x ->
-        if not (Pipe.is_closed dst) then
-          Pipe.write dst x
-        else begin
-          Pipe.close_read src;
-          Pipe.close dst;
-          return ()
-        end)
+                     ~how:`Sequential
+                     ~f:(fun x ->
+                       if not (Pipe.is_closed dst) then
+                         Pipe.write dst x
+                       else begin
+                         Pipe.close_read src;
+                         Pipe.close dst;
+                         return ()
+                       end)
     in
     don't_wait_for (
       Pipe.fold_without_pushback src
@@ -135,4 +135,3 @@ module Make (T : Basic_S) = struct
     output
   ;;
 end
-

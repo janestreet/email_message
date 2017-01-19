@@ -1,6 +1,7 @@
 open Core.Std
 
-include Bigstring
+open Bigstring
+type t = t_frozen [@@deriving sexp, bin_io, compare, hash]
 
 let to_bigstring t = t
 let of_bigstring t = t
@@ -10,10 +11,6 @@ let of_string_monoid t = String_monoid.to_bigstring t
 
 let to_string t = to_string t
 let of_string s = of_string s
-
-(* Polymorphic comparison does the right thing for Bigarray. *)
-let compare = compare
-let hash = Hashtbl.hash
 
 let empty = Bigstring.create 0;;
 
@@ -35,16 +32,16 @@ let to_lexbuf t =
   let len = length t in
   Lexing.from_function
     (fun dst n ->
-      let read = min n (len - !offset) in
-      Bigstring.To_string.blit
-        ~src:t
-        ~src_pos:!offset
-        ~len:read
-        ~dst
-        ~dst_pos:0
-      ;
-      offset := !offset + read;
-      read)
+       let read = min n (len - !offset) in
+       Bigstring.To_string.blit
+         ~src:t
+         ~src_pos:!offset
+         ~len:read
+         ~dst
+         ~dst_pos:0
+       ;
+       offset := !offset + read;
+       read)
 ;;
 
 let foldi t ~init ~f =
@@ -119,3 +116,26 @@ let of_bigbuffer_volatile buffer =
     ~pos:0
     ~len:(Bigbuffer.length buffer)
     (Bigbuffer.volatile_contents buffer)
+;;
+
+let substr_index ?(pos=0) t ~pattern =
+  if length pattern = 0
+  then Some pos
+  else (
+    let c = Bigstring.get pattern 0 in
+    let last_index = Bigstring.length t - Bigstring.length pattern in
+    let rec loop pos =
+      if pos > last_index
+      then None
+      else (
+        match Bigstring.find c t ~pos ~len:(last_index - pos + 1) with
+        | None -> None
+        | Some pos ->
+          assert (pos <= last_index);
+          let found_ = Bigstring.sub_shared t ~pos ~len:(Bigstring.length pattern) in
+          if Bigstring.equal pattern found_
+          then Some pos
+          else loop (pos + 1))
+    in
+    loop pos)
+;;

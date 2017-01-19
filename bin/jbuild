@@ -7,3 +7,5 @@
                     netstring
                     re2))
   ))
+
+(enforce_style ())

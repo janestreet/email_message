@@ -1,30 +1,22 @@
 open Core.Std
 
 module type S = sig
-  type t = private string [@@deriving sexp, bin_io];;
-  val hash : t -> int
+  type t = private string [@@deriving sexp, bin_io, hash]
   val of_string : string -> t
   val to_lowercase_string : t -> string
   val equal_string : t -> string -> bool
 
-  include Comparable.S with type t := t
+  include Comparable.S_binable with type t := t
+  include Hashable.S_binable with type t := t
 end
 
 (** Case-insensitive strings *)
 module Case_insensitive = struct
-  module T = struct
-    type t = string [@@deriving sexp, bin_io]
+  include String.Caseless
 
-    let compare x y = String.compare (String.lowercase x) (String.lowercase y)
-    let hash x = String.hash (String.lowercase x)
-    let of_string t = t
-    let to_lowercase_string t = String.lowercase t
-  end
-  include T
-  include Comparable.Make(T)
-
-  let equal_string t s =
-    equal t (of_string s)
+  let of_string = Fn.id
+  let to_lowercase_string = String.lowercase
+  let equal_string = equal
 end
 
 let quote_escape =

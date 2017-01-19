@@ -24,12 +24,12 @@ val to_bigstring : t -> Bigstring.t
 val of_char : char -> t
 
 (*
-  For the library to fulfil it's purpose of minimal overhead
-  string concatenation, the output functions must be tightly
-  coupled with the low-level representation.
+   For the library to fulfil it's purpose of minimal overhead
+   string concatenation, the output functions must be tightly
+   coupled with the low-level representation.
 
-  Any new output channel should be implemented as new methods
-  of the library itself.
+   Any new output channel should be implemented as new methods
+   of the library itself.
 *)
 val output_unix : t -> Async.Std.Writer.t -> unit
 val output_channel : t -> Out_channel.t -> unit

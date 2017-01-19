@@ -1,27 +1,27 @@
 open! Core.Std
 
-type t
+type t [@@deriving sexp, bin_io, compare, hash]
 
 val empty : unit -> t
 
 (** The cost depends on the encoding of the content and the main media type.
 
-  N = Size of the message
-  H = Size of the headers of the sub-message(s)
+    N = Size of the message
+    H = Size of the headers of the sub-message(s)
 
-  Format: time complexity, memory complexity
+    Format: time complexity, memory complexity
 
-            | 7bit, 8bit, binary | Base64, Quoted_printable
-  -------------------------------------------------------------
-  message   |    O(N), O(H)      | O(N), O(N)
-  multipart |    O(N), O(H)      | O(N), O(N)
-  *         |    O(1), O(1)      | O(N), O(N)
+    .         | 7bit, 8bit, binary | Base64, Quoted_printable
+    -------------------------------------------------------------
+    message   |    O(N), O(H)      | O(N), O(N)
+    multipart |    O(N), O(H)      | O(N), O(N)
+    other     |    O(1), O(1)      | O(N), O(N)
 
-  Where * is any other main media type: text, image, application...
+    Where other is any other main media type: text, image, application...
 
-  Encoding and type can be obtained from the headers, using the modules
-  Headers.Content_type and Headers.Content_transfer_encoding, and the corresponding default
-  values.
+    Encoding and type can be obtained from the headers, using the modules
+    Headers.Content_type and Headers.Content_transfer_encoding, and the corresponding
+    default values.
 *)
 val of_bigbuffer : Bigbuffer.t -> t Or_error.t
 
@@ -86,13 +86,11 @@ val to_bigstring_shared : t -> Bigstring_shared.t
 include String_monoidable.S with type t := t
 
 include Stringable.S    with type t := t
-include Bigstringable.S with type t := t
+val to_bigstring : t -> Bigstring.t
+val of_bigstring : Bigstring.t -> t Or_error.t
 include Sexpable.S      with type t := t
 include Comparable.S    with type t := t
-
 include Binable.S       with type t := t
-
-val hash : t -> int
 
 module Simple : sig
   module Mimetype : sig
@@ -131,7 +129,7 @@ module Simple : sig
   end
 
   module Content : sig
-    type t = private email [@@deriving bin_io]
+    type t = private email [@@deriving bin_io, sexp_of]
 
     val of_email : email -> t
 
@@ -209,7 +207,7 @@ module Simple : sig
     val to_file : t -> string -> unit Async.Std.Deferred.Or_error.t
   end
 
-  type t = email
+  type t = email [@@deriving sexp_of]
 
   val create
     :  ?from:Email_address.t (* defaults to <user@host> *)

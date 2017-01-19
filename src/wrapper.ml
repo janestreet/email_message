@@ -34,9 +34,9 @@ let create_from_email headers =
     | Some subject -> `Prepend subject
   in
   let headers = Email.filter_headers headers ~f:(fun ~name ~value:_ ->
-      let open String.Caseless.Replace_polymorphic_compare in
-      name <> "From" && name <> "To" && name <> "Cc" && name <> "Subject"
-    ) in
+    let open String.Caseless.Replace_polymorphic_compare in
+    name <> "From" && name <> "To" && name <> "Cc" && name <> "Subject"
+  ) in
   create ~from ~to_ ~cc ~subject (Email.Simple.Content.of_email headers)
 
 let content_of_email email =
@@ -49,11 +49,11 @@ let content_of_email email =
 
    (1) Add "From", "To", "Cc", "Subject" according to the supplied arguments to [create]
    (2) Copy over all other headers except:
-        (i) DKIM-Signature - We break the signing by altering the email content
-       (ii) Return-Path - We don't want the altered email to ever bounce back to the
-            original sender
-      (iii) Content-Transfer-Encoding, Content-Type, Content-Disposition - We structure
-            the email differently. These wouldn't make sense anymore
+   (i) DKIM-Signature - We break the signing by altering the email content
+   (ii) Return-Path - We don't want the altered email to ever bounce back to the
+   original sender
+   (iii) Content-Transfer-Encoding, Content-Type, Content-Disposition - We structure
+   the email differently. These wouldn't make sense anymore
 *)
 let add { header; from; to_; cc; subject } email =
   let content = Email.Simple.Content.mixed [header; content_of_email email] in

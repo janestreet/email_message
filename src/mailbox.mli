@@ -32,9 +32,9 @@ end
 
 module With_lazy_list : With_container with type t = Message.t Lazy_list.t;;
 
-(** 
-  Warning: When created from a file descriptor, the resulting mailbox can
-  only be traversed once.
+(**
+   Warning: When created from a file descriptor, the resulting mailbox can
+   only be traversed once.
 *)
 module With_seq : With_container with type t = Message.t Lazy_sequence.t;;
 
@@ -48,4 +48,3 @@ module With_pipe : sig
   (* Mostly for testing purposes *)
   val iter_string : t -> f:(string -> unit Deferred.t) -> unit Deferred.t
 end
-

@@ -1,6 +1,6 @@
 open! Core.Std
 
-type t [@@deriving bin_io, sexp, compare]
+type t [@@deriving bin_io, sexp, compare, hash]
 
 (* Case-insensitive. *)
 module Domain : Mimestring.S with type t=string
@@ -38,7 +38,7 @@ include Comparable.S_binable with type t := t
 include Hashable.S_binable with type t := t
 
 module Caseless : sig
-  type nonrec t = t [@@deriving sexp, bin_io]
+  type nonrec t = t [@@deriving sexp, bin_io, compare, hash]
   include Comparable.S_binable with type t := t
   include Hashable.S_binable with type t := t
 end

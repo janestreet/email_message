@@ -9,10 +9,11 @@ module Whitespace = struct
 end
 
 module Name : sig
-  type t = string [@@deriving sexp, bin_io]
+  type t = string [@@deriving sexp, bin_io, compare, hash]
   val of_string : string -> t
   val to_string : t -> string
   include Comparable.S with type t := t
+  include Hashable.S with type t := t
   val is : t -> string -> bool
 end = struct
   include Mimestring.Case_insensitive
@@ -21,11 +22,12 @@ end = struct
 end
 
 module Value : sig
-  type t = string [@@deriving sexp, bin_io]
+  type t = string [@@deriving sexp, bin_io, compare, hash]
   val of_string : ?whitespace:Whitespace.t -> string -> t
   val to_string : ?whitespace:Whitespace.t -> t -> string
   val of_string_to_string : ?whitespace:Whitespace.t -> string -> string
   include Comparable.S with type t := t
+  include Hashable.S with type t := t
 end = struct
   include String
   let of_string ?(whitespace=Whitespace.default) str =
@@ -47,7 +49,7 @@ module Common = struct
   let message_id = "Message-ID"
 end
 
-type t = (Name.t * string) list [@@deriving sexp, bin_io, compare]
+type t = (Name.t * string) list [@@deriving sexp, bin_io, compare, hash]
 
 let to_string_monoid t =
   List.map t ~f:(fun (name,value) ->
@@ -55,8 +57,6 @@ let to_string_monoid t =
   |> String_monoid.concat
 
 let to_string t = String_monoid.to_string (to_string_monoid t)
-
-let hash = Hashtbl.hash
 
 let empty = []
 let append = List.append

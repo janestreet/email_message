@@ -1,4 +1,4 @@
-open! Core.Std
+open! Core
 
 (** [Whitespace.t] specifies how to handle header values. It is used in two contexts:
 

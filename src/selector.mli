@@ -1,4 +1,4 @@
-open! Core.Std
+open! Core
 open Re2
 
 module Base : sig

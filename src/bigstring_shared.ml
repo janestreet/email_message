@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 
 open Bigstring
 type t = t_frozen [@@deriving sexp, bin_io, compare, hash]

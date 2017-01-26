@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 
 type t =
   { header  : Email.Simple.Content.t

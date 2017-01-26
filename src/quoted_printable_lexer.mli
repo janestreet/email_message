@@ -1,4 +1,4 @@
-open! Core.Std
+open! Core
 
 val decode_quoted_printable : int -> Lexing.lexbuf ->
   (Bigbuffer.t * [`Ok | `Unexpected_characters ])

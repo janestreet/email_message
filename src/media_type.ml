@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 
 module Params = struct
   type t = (Headers.Name.t * string) list [@@deriving sexp]

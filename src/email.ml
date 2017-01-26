@@ -1,5 +1,5 @@
 module Debug_in_this_directory = Debug
-open Core.Std
+open Core
 open Core_extended.Std
 module Debug = Debug_in_this_directory
 open Re2.Std
@@ -406,9 +406,12 @@ module Simple = struct
           ?(from=Email_address.local_address () |> Email_address.to_string)
           ~to_
           ?(cc=[])
+          ?(reply_to=[])
           ~subject
           ?id
+          ?in_reply_to
           ?date
+          ?auto_generated
           ?(extra_headers=[])
           ?(attachments=[])
           content
@@ -428,8 +431,18 @@ module Simple = struct
            else [ "To", String.concat to_ ~sep:",\n\t" ])
         @ (if List.is_empty cc then []
            else [ "Cc", String.concat cc ~sep:",\n\t" ])
+        @ (if List.is_empty reply_to then []
+           else [ "Reply-To", String.concat reply_to ~sep:",\n\t" ])
         @ [ "Subject", subject ]
         @ [ "Message-Id", id ]
+        @ (match in_reply_to with
+          | None -> []
+          | Some in_reply_to -> [ "In-Reply-To", in_reply_to ])
+        @ (match auto_generated with
+          | None -> []
+          | Some () ->
+            [ "Auto-Submitted", "auto-generated"
+            ; "Precedence", "bulk" ])
         @ [ "Date", date ]
       in
       match attachments with
@@ -768,9 +781,12 @@ module Simple = struct
         ?from
         ~to_
         ?cc
+        ?reply_to
         ~subject
         ?id
+        ?in_reply_to
         ?date
+        ?auto_generated
         ?extra_headers
         ?attachments
         content
@@ -779,9 +795,12 @@ module Simple = struct
       ?from:(Option.map from ~f:Email_address.to_string)
       ~to_:(List.map to_ ~f:Email_address.to_string)
       ?cc:(Option.map cc ~f:(List.map ~f:Email_address.to_string))
+      ?reply_to:(Option.map reply_to ~f:(List.map ~f:Email_address.to_string))
       ~subject
       ?id
+      ?in_reply_to
       ?date:(Option.map date ~f:rfc822_date)
+      ?auto_generated
       ?extra_headers
       ?attachments
       content

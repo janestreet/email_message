@@ -1,4 +1,4 @@
-open! Core.Std
+open! Core
 
 (* For usage in functors *)
 module type S = sig

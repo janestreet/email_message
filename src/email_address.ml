@@ -1,7 +1,7 @@
-open Core.Stable
+open Core.Core_stable
 
 include struct
-  open Core.Std
+  open Core
   (* These don't have stable interfaces. *)
   module Int = Int
   module List = List
@@ -44,11 +44,11 @@ module Stable = struct
         { local_part; domain; prefix })
 
     let list_of_string ?default_domain s =
-      let module Or_error = Core.Std.Or_error in
+      let module Or_error = Core.Or_error in
       Or_error.try_with (fun () -> list_of_string_exn ?default_domain s)
 
     let of_string ?default_domain s =
-      let module Or_error = Core.Std.Or_error in
+      let module Or_error = Core.Or_error in
       let open Or_error.Monad_infix in
       list_of_string ?default_domain s
       >>= function
@@ -56,19 +56,19 @@ module Stable = struct
       | _ -> Or_error.error_string ("Expected single email address: " ^ s)
 
     let of_string_exn ?default_domain s =
-      let module Or_error = Core.Std.Or_error in
+      let module Or_error = Core.Or_error in
       Or_error.ok_exn (of_string ?default_domain s)
 
     let compose ~prefix ~address_part =
       match prefix with
       | None -> address_part
-      | Some prefix -> Core.Std.sprintf "%s<%s>" prefix address_part
+      | Some prefix -> Core.sprintf "%s<%s>" prefix address_part
 
     let to_string t =
       let address_part =
         match t.domain with
         | None -> t.local_part
-        | Some domain -> Core.Std.sprintf "%s@%s" t.local_part domain
+        | Some domain -> Core.sprintf "%s@%s" t.local_part domain
       in
       compose ~prefix:t.prefix ~address_part
 
@@ -177,9 +177,9 @@ module Stable = struct
                   ; prefix = Some "\"a@b.com\" " } ]
 
     let must_fail = function
-      | Core.Std.Error _ -> ()
+      | Core.Error _ -> ()
       | Ok ts ->
-        Core.Std.failwithf "Expected to fail, got %s"
+        Core.failwithf "Expected to fail, got %s"
           (Sexp.to_string_hum ([%sexp_of: t list] ts)) ()
 
     let%test_unit _ =
@@ -192,24 +192,24 @@ module Stable = struct
       must_fail (list_of_string "a@@b.com")
 
     let local_address () =
-      create (Core.Std.Unix.getlogin ())
-        ~domain:(Core.Std.Unix.gethostname ())
+      create (Core.Unix.getlogin ())
+        ~domain:(Core.Unix.gethostname ())
 
     include Sexpable.Of_stringable.V1(struct
         type nonrec t = t
         let to_string = to_string
-        let of_string s = of_string s |> Core.Std.Or_error.ok_exn
+        let of_string s = of_string s |> Core.Or_error.ok_exn
       end)
 
     include Binable.Of_stringable.V1(struct
         type nonrec t = t
         let to_string = to_string
-        let of_string s = of_string s |> Core.Std.Or_error.ok_exn
+        let of_string s = of_string s |> Core.Or_error.ok_exn
       end)
   end
 end
 
-open Core.Std
+open Core
 
 include Stable.V1
 include Hashable.Make_binable(Stable.V1)

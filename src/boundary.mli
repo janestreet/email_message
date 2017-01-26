@@ -1,4 +1,4 @@
-open! Core.Std
+open! Core
 
 type t [@@deriving sexp, bin_io, compare, hash]
 

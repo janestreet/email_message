@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 (*
    module RFC2822 = struct
    let unfold str =

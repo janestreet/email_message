@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 
 module type S = sig
   type t = private string [@@deriving sexp, bin_io, hash]

@@ -1,4 +1,4 @@
-open! Core.Std
+open! Core
 
 (* RFC 2045 MIME-encoded Bigstrings. *)
 

@@ -1,5 +1,5 @@
 open Async.Std
-open Core.Std
+open Core
 open Email_message
 
 module Email_Address = struct

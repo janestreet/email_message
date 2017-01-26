@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 
 type t = Re2.Regex.t
 type regex = t

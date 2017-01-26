@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 
 module Encoding = struct
   (** Text or binary are the type of the plaintext. For Base64, if the mode is

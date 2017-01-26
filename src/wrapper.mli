@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 (* This module exposes a function to add a custom wrapper around an existing email. Gmail
    will result in the following formatting:
 

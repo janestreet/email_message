@@ -1,4 +1,4 @@
-open! Core.Std
+open! Core
 
 type t [@@deriving sexp, bin_io, compare, hash]
 
@@ -213,9 +213,12 @@ module Simple : sig
     :  ?from:Email_address.t (* defaults to <user@host> *)
     -> to_:Email_address.t list
     -> ?cc:Email_address.t list
+    -> ?reply_to:Email_address.t list
     -> subject:string
     -> ?id:string
+    -> ?in_reply_to:string
     -> ?date:Time.t
+    -> ?auto_generated:unit
     -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> ?attachments:(attachment_name * Content.t) list
     -> Content.t
@@ -244,9 +247,12 @@ module Simple : sig
       :  ?from:string (* defaults to <user@host> *)
       -> to_:string list
       -> ?cc:string list
+      -> ?reply_to:string list
       -> subject:string
       -> ?id:string
+      -> ?in_reply_to:string
       -> ?date:string
+      -> ?auto_generated:unit
       -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
       -> ?attachments:(attachment_name * Content.t) list
       -> Content.t

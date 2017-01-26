@@ -1,5 +1,5 @@
 module Debug_in_this_directory = Debug
-open Core.Std
+open Core
 open Core_extended.Std
 module Debug = Debug_in_this_directory
 

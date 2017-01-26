@@ -1,5 +1,5 @@
 open! Async.Std
-open! Core.Std
+open! Core
 open Core_extended.Std
 
 module Postmark : sig

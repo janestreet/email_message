@@ -87,10 +87,11 @@ module Identity = struct
 end
 
 module Base64 = struct
-  include Core_extended.Std.Base64.Make(struct
+  include Base64.Make(struct
       let char62 = '+'
       let char63 = '/'
-      let pad_char = `Suggested '='
+      let pad_char = '='
+      let pad_when_encoding = true
       (* Permissive - ignore anything that would be an invalid base64 character... *)
       let ignore_char = function
         | '0'..'9' | 'a'..'z' | 'A'..'Z' | '+' | '/' | '=' -> false
@@ -101,6 +102,8 @@ module Base64 = struct
     bstr
     |> Bigstring_shared.to_string
     |> decode
+    (* Ignore unconsumed data *)
+    |> fst
     |> Bigstring_shared.of_string
 
   let split ~len =

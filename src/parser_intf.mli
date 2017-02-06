@@ -1,6 +1,6 @@
 open! Core
 open Core_extended.Std
-open! Async.Std
+open! Async
 
 type 'a token = [`Token of 'a | `Eof]
 type 'a continue = [`Continue of 'a | `End ]

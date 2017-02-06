@@ -1,4 +1,4 @@
-open Async.Std
+open Async
 open Core
 open Core_extended.Std
 

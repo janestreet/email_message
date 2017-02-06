@@ -369,7 +369,7 @@ module Simple = struct
     sprintf "%s %s" now_string offset_string
 
   let bigstring_shared_to_file data file =
-    let open Async.Std in
+    let open Async in
     Deferred.Or_error.try_with (fun () ->
       Writer.with_file file
         ~f:(fun w ->
@@ -567,7 +567,7 @@ module Simple = struct
 
     let to_file t file =
       match raw_data t with
-      | Error _ as err -> Async.Std.return err
+      | Error _ as err -> Async.return err
       | Ok data -> bigstring_shared_to_file data file
   end
 
@@ -583,7 +583,7 @@ module Simple = struct
         content
 
     let of_file ?content_type ?encoding ?extra_headers file =
-      let open Async.Std in
+      let open Async in
       Reader.file_contents file
       >>| fun content ->
       let content_type = match content_type with
@@ -765,7 +765,7 @@ module Simple = struct
         String.equal (Attachment.filename attachment) name)
 
     let to_file t file =
-      let open Async.Std in
+      let open Async in
       match content t with
       | None -> Deferred.Or_error.errorf "The payload of this email is ambigous, you
                   you should decompose the email further"
@@ -833,11 +833,11 @@ module Simple = struct
   let inline_parts =  Content.inline_parts
 
   let rec map_attachments t ~f =
-    let open Async.Std in
+    let open Async in
     match content t with
     | Data _data ->
       begin match all_attachments t with
-      | [] -> Async.Std.return t
+      | [] -> Async.return t
       | [attachment] -> f attachment
       | _::_ -> failwith "impossible"
       end

@@ -46,9 +46,9 @@ module Underlying = struct
   ;;
 
   let output_unix ~writer = function
-    | String str -> Async.Std.Writer.write writer str
-    | Bigstring bstr -> Async.Std.Writer.write_bigstring writer bstr
-    | Char c -> Async.Std.Writer.write_char writer c
+    | String str -> Async.Writer.write writer str
+    | Bigstring bstr -> Async.Writer.write_bigstring writer bstr
+    | Char c -> Async.Writer.write_char writer c
   ;;
 end
 

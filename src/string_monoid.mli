@@ -31,5 +31,5 @@ val of_char : char -> t
    Any new output channel should be implemented as new methods
    of the library itself.
 *)
-val output_unix : t -> Async.Std.Writer.t -> unit
+val output_unix : t -> Async.Writer.t -> unit
 val output_channel : t -> Out_channel.t -> unit

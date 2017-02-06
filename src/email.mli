@@ -125,7 +125,7 @@ module Simple : sig
     val raw_data : t -> Bigstring_shared.t Or_error.t
     val md5 : t -> string Or_error.t
 
-    val to_file : t -> string -> unit Async.Std.Deferred.Or_error.t
+    val to_file : t -> string -> unit Async.Deferred.Or_error.t
   end
 
   module Content : sig
@@ -157,7 +157,7 @@ module Simple : sig
       -> ?encoding:(Octet_stream.Encoding.known)
       -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
       -> string
-      -> t Async.Std.Deferred.t
+      -> t Async.Deferred.t
 
     (* Combine 2 or more contents as alternative versions.
        List should be sorted from worst to best. *)
@@ -204,7 +204,7 @@ module Simple : sig
     val inline_parts : t -> t list
 
     (* Save content to disk *)
-    val to_file : t -> string -> unit Async.Std.Deferred.Or_error.t
+    val to_file : t -> string -> unit Async.Deferred.Or_error.t
   end
 
   type t = email [@@deriving sexp_of]
@@ -239,8 +239,8 @@ module Simple : sig
 
   val map_attachments
     :  t
-    -> f : (Attachment.t -> t Async.Std.Deferred.t)
-    -> t Async.Std.Deferred.t
+    -> f : (Attachment.t -> t Async.Deferred.t)
+    -> t Async.Deferred.t
 
   module Expert : sig
     val create_raw

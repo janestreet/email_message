@@ -15,3 +15,5 @@
 (ocamlyacc (email_grammar media_type_grammar))
 
 (enforce_style ((exceptions (email_lexer.ml media_type_lexer.ml quoted_printable_lexer.ml email_grammar.ml media_type_grammar.ml email_address_lexer_v1.ml))))
+
+(jbuild_version jane_street)

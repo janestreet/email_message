@@ -3,8 +3,8 @@ open Media_type_grammar
 
 module String = Bytes
 
-let unescape_staged = Core.Std.String.Escaping.unescape ~escape_char:'\\';;
-let unescape = Core.Std.unstage unescape_staged;;
+let unescape_staged = Core.String.Escaping.unescape ~escape_char:'\\';;
+let unescape = Core.unstage unescape_staged;;
 
 }
 (* Rules from RFCs. Some may need to be copied to specific places to parse
@@ -111,7 +111,7 @@ content_type = parse
   | token as str { ATOM (str) }
   | '='          { EQUALS }
   | ';'          { SEMICOLON }
-  | _ as c       { ERROR (Core.Std.sprintf "Unexpected char: %c" c) }
+  | _ as c       { ERROR (Core.sprintf "Unexpected char: %c" c) }
   | eof          { EOF }
 
 

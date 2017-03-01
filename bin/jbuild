@@ -1,5 +1,5 @@
 (executables
- ((names (hkg_mail_finder test mailbox_test mailbox_test_pipe find_destination_domains mailbox_wc))
+ ((names (test mailbox_test mailbox_test_pipe find_destination_domains mailbox_wc))
   (libraries (async
                     core
                     core_extended
@@ -9,5 +9,6 @@
   ))
 
 (enforce_style ())
+
 
 (jbuild_version jane_street)

@@ -1,8 +1,8 @@
 {
 
-(* Can't open Core.Std, as the OCamlLex generated code requires Array.create
+(* Can't open Core, as the OCamlLex generated code requires Array.create
  * to be of type (int -> 'a -> 'a t), not (len:int -> 'a -> 'a t) *)
-module C = Core.Std
+module C = Core
 
 module String = Bytes
 

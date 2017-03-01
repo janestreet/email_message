@@ -90,7 +90,7 @@ rule
 message t = parse
   | ""
   {
-    match Core.Std.Queue.dequeue t.LS.buf with
+    match Core.Queue.dequeue t.LS.buf with
     | Some tok -> force_token tok lexbuf
     | None ->
       let result =
@@ -140,7 +140,7 @@ and
 (* Supporting functions *)
 error =
   parse
-    | _ as c { LS.return_error (Core.Std.sprintf "Unexpected character %c" c) }
+    | _ as c { LS.return_error (Core.sprintf "Unexpected character %c" c) }
     | eof    { LS.return_error "Unexpected EOF" }
 and
 expected_eof =

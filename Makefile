@@ -1,9 +1,8 @@
 INSTALL_ARGS := $(if $(PREFIX),--prefix $(PREFIX),)
-NAME := email_message
 
 # Default rule
 default:
-	jbuilder build-package $(NAME)
+	jbuilder build @install
 
 install:
 	jbuilder install $(INSTALL_ARGS)

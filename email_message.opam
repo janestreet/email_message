@@ -12,12 +12,13 @@ depends: [
   "async"
   "core"
   "core_extended"
-  "jbuilder"
+  "jbuilder"                {build}
   "ppx_driver"
   "ppx_jane"
   "re2"
   "cryptokit"
   "magic-mime"
+  "ocaml-migrate-parsetree"
   "ounit"
 ]
 available: [ ocaml-version >= "4.03.0" ]

@@ -9,7 +9,7 @@
               oUnit
               re2
               magic-mime))
-  (preprocess (pps (ppx_jane)))
+  (preprocess (pps (ppx_jane ppx_driver.runner)))
  ))
 
 (ocamllex (email_lexer media_type_lexer quoted_printable_lexer email_address_lexer_v1))

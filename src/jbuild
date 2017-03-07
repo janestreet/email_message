@@ -16,4 +16,4 @@
 (ocamlyacc (email_grammar media_type_grammar))
 
 
-(jbuild_version jane_street)
+(jbuild_version 1)

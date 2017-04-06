@@ -21,7 +21,7 @@ val create
   -> ?to_ : [`Keep | `Change_to of Email_address.t list] (* default: `Keep *)
   -> ?cc : [`Keep | `Change_to of Email_address.t list] (* default: `Keep *)
   -> ?subject : [`Keep | `Prepend of string] (* default: `Keep *)
-  -> Email.Simple.Content.t
+  -> Email_simple.Content.t
   -> t
 
 (* Like [create], but extract [?from], [?to_], [?cc] and [?subject] from

@@ -1,5 +1,9 @@
 module Bigstring_shared = Bigstring_shared
-module Email = Email
+module Email = struct
+  include Email
+  module Content = Email_content
+  module Simple = Email_simple
+end
 module Email_address = Email_address
 module Email_headers = Headers
 module Email_selector = Selector

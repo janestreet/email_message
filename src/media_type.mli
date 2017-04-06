@@ -1,7 +1,9 @@
 open! Core
 
-type t
+type t [@@deriving sexp_of]
 
 val multipart_boundary : t -> Boundary.t option
+val is_message_rfc822 : t -> bool
+
 val last : Headers.t -> t option
-val default : parent:(t option) -> t
+val default : parent:t option -> t

@@ -1,7 +1,5 @@
-module Debug_in_this_directory = Debug
 open Core
 open Core_extended.Std
-module Debug = Debug_in_this_directory
 
 
 type t = string [@@deriving sexp, bin_io, compare, hash]
@@ -145,7 +143,6 @@ let split t bstr =
       in
       (chunk :: acc, epilogue, has_prologue)
     | `Eof ->
-      Debug.run_debug (fun () -> eprintf "Warning: No close boundary found\n");
       let chunk = sub () in
       (chunk :: acc, None, has_prologue)
   in

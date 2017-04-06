@@ -26,8 +26,9 @@ let is ?mime_type ?mime_subtype t =
 ;;
 
 (* Some convenience functions for working with mime types *)
-let is_multipart t = is ~mime_type:"multipart" t;;
-let is_digest t = is ~mime_type:"multipart" ~mime_subtype:"digest" t;;
+let is_multipart = is ~mime_type:"multipart"
+let is_message_rfc822 = is ~mime_type:"message" ~mime_subtype:"rfc822"
+let is_digest t = is ~mime_type:"multipart" ~mime_subtype:"digest" t
 
 let multipart_boundary t =
   if is_multipart t
@@ -61,7 +62,7 @@ let default_default =
 
 let default_digest =
   { mime_type = Rfc.RFC2045.Token.of_string "message";
-    mime_subtype = Rfc.RFC2045.Token.of_string "rfc2822";
+    mime_subtype = Rfc.RFC2045.Token.of_string "rfc822";
     params = []
   }
 ;;

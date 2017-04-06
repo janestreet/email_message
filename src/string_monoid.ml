@@ -169,4 +169,12 @@ let output_unix t writer =
   output ~dst_output:(Underlying.output_unix ~writer) t
 ;;
 
+let rec fold t ~init ~f =
+  match t with
+  | List (_, list) -> List.fold list ~init ~f:(fun init t -> fold t ~init ~f)
+  | Leaf underlying -> f init underlying
+;;
+
+let iter t ~f = fold t ~init:() ~f:(fun () -> f)
+
 

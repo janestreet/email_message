@@ -1,7 +1,7 @@
 open Core
 
 type t =
-  { header  : Email.Simple.Content.t
+  { header  : Email_simple.Content.t
   ; from    : [`Keep | `Change_to of Email_address.t]
   ; to_     : [`Keep | `Change_to of Email_address.t list]
   ; cc      : [`Keep | `Change_to of Email_address.t list]
@@ -11,8 +11,8 @@ type t =
 let create ?(from=`Keep) ?(to_=`Keep) ?(cc=`Keep) ?(subject=`Keep) header =
   { header; from; to_; cc; subject }
 
-let create_from_email headers =
-  let get_header x = Email.last_header ~whitespace:`Raw headers x in
+let create_from_email email =
+  let get_header x = Headers.last ~whitespace:`Raw (Email.headers email) x in
   let from =
     match get_header "From" with
     | None | Some "" -> `Keep
@@ -33,14 +33,16 @@ let create_from_email headers =
     | None | Some "" -> `Keep
     | Some subject -> `Prepend subject
   in
-  let headers = Email.filter_headers headers ~f:(fun ~name ~value:_ ->
-    let open String.Caseless.Replace_polymorphic_compare in
-    name <> "From" && name <> "To" && name <> "Cc" && name <> "Subject"
-  ) in
-  create ~from ~to_ ~cc ~subject (Email.Simple.Content.of_email headers)
+  let email =
+    Email.modify_headers email
+      ~f:(Headers.filter ~f:(fun ~name ~value:_ ->
+        let open String.Caseless.Replace_polymorphic_compare in
+        name <> "From" && name <> "To" && name <> "Cc" && name <> "Subject"))
+  in
+  create ~from ~to_ ~cc ~subject (Email_simple.Content.of_email email)
 
 let content_of_email email =
-  Email.Simple.Content.create
+  Email_simple.Content.create
     ~content_type:"message/rfc822"
     (Email.to_string email)
 
@@ -56,7 +58,7 @@ let content_of_email email =
    the email differently. These wouldn't make sense anymore
 *)
 let add { header; from; to_; cc; subject } email =
-  let content = Email.Simple.Content.mixed [header; content_of_email email] in
+  let content = Email_simple.Content.mixed [header; content_of_email email] in
   let headers = Email.headers email in
   let get_headers x = Headers.find_all ~whitespace:`Raw headers x in
   let get_header x = Headers.last ~whitespace:`Raw headers x in
@@ -93,4 +95,4 @@ let add { header; from; to_; cc; subject } email =
   in
   let id = get_header "Message-Id" in
   let date = get_header "Date" in
-  Email.Simple.Expert.create_raw ?id ?date ~from ~to_ ~cc ~subject ~extra_headers content
+  Email_simple.Expert.create_raw ?id ?date ~from ~to_ ~cc ~subject ~extra_headers content

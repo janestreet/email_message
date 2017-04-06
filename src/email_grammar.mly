@@ -20,9 +20,6 @@ open! Core
 %start message
 %type <Email_grammar_types.message> message
 
-%start only_header
-%type <Email_grammar_types.header> only_header
-
 %%
 
 message : part EOF { $1 };
@@ -35,7 +32,6 @@ part : header HEADER_END OCTET_STREAM_OFFSET
 | header
   { `Message ($1, `Truncated) }
   ;
-only_header : header EOF { $1 };
 
 header :
   FIELD header { ($1 :: $2) }
@@ -43,5 +39,3 @@ header :
 ;
 
 %%
-
-

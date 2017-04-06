@@ -33,3 +33,13 @@ val of_char : char -> t
 *)
 val output_unix : t -> Async.Writer.t -> unit
 val output_channel : t -> Out_channel.t -> unit
+
+module Underlying : sig
+  type t =
+    | String of String.t
+    | Bigstring of Bigstring.t
+    | Char of char
+end
+
+val fold : t -> init:'accum -> f:('accum -> Underlying.t -> 'accum) -> 'accum
+val iter : t -> f:(Underlying.t -> unit) -> unit

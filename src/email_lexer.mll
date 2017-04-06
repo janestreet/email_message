@@ -66,7 +66,7 @@ let unstructured = (fws? utext?)*
 
 (* Header fields *)
 let ftext = [ '\033'-'\057' '\059'-'\126' ]
-let field_name = ftext +
+let field_name = ftext *
 
 (* MESSAGE PARSING RULES *)
 
@@ -112,7 +112,7 @@ field = parse
     (wsp * as _wsp)
      ":"
     (unstructured as body)
-    crlf
+    crlf ?
     {
       (* This code is repeated to avoid cyclical dependencies. Effort has
        * been made to make it minimal.
@@ -120,7 +120,7 @@ field = parse
       LS.return [FIELD(name, body)]
     }
   | crlf { LS.return ~new_state:`Content [HEADER_END] }
-      | eof  { LS.return_eof }
+  | eof  { LS.return_eof }
   | "" { LS.return ~new_state:`Content [NO_HEADER_END] }
 
 and
@@ -151,4 +151,3 @@ expected_eof =
 {
 
 }
-

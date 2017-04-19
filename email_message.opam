@@ -12,7 +12,7 @@ depends: [
   "async"
   "core"
   "core_extended"
-  "jbuilder"                {build & >= "1.0+beta2"}
+  "jbuilder"                {build & >= "1.0+beta8"}
   "ppx_driver"
   "ppx_jane"
   "re2"

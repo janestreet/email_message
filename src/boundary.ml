@@ -72,7 +72,7 @@ let split t bstr =
     Option.some_if
       ((pos >= 0)
        && (pos + len <= Bigstring_shared.length bstr)
-       && [%equal: Bigstring_shared.t] pattern (Bigstring_shared.sub bstr ~pos ~len))
+       && [%compare.equal: Bigstring_shared.t] pattern (Bigstring_shared.sub bstr ~pos ~len))
       (pos + len)
   in
   let match_before ~pos:end_ bstr ~pattern =

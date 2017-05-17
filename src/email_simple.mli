@@ -96,9 +96,6 @@ module Content : sig
   val all_related_parts : t -> (attachment_name * t) list
   val find_related : t -> attachment_name -> t option
 
-  val all_attachments : t -> Attachment.t list
-  val find_attachment : t -> attachment_name -> Attachment.t option
-
   (* [content] and [parts] return [None] if the email doesn't properly parse. They also
      return [None] if the message has content type "message/rfc822" *)
   val content : t -> Octet_stream.t option

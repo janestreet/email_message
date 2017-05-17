@@ -424,23 +424,6 @@ module Content = struct
       String.equal cid name)
     |> Option.map ~f:snd
 
-  let rec all_attachments t =
-    match content_disposition t with
-    | `Attachment filename ->
-      begin match content t with
-      (* It is an error if the email is of content type multipart. So just return [] *)
-      | None -> []
-      | Some content -> [Attachment.create ~email:t ~filename ~content]
-      end
-    | `Inline ->
-      parts t
-      |> Option.value ~default:[]
-      |> List.concat_map ~f:all_attachments
-
-  let find_attachment t name =
-    List.find (all_attachments t) ~f:(fun attachment ->
-      String.equal (Attachment.filename attachment) name)
-
   let to_file t file =
     let open Async in
     match content t with
@@ -502,22 +485,26 @@ let subject =
 let id =
   decode_last_header "Message-Id" ~f:Fn.id
 
-
-let all_attachments = Content.all_attachments
-let find_attachment = Content.find_attachment
 let all_related_parts = Content.all_related_parts
 let find_related = Content.find_related
 let inline_parts =  Content.inline_parts
+
+let parse_attachment t =
+  match Content.content_disposition t with
+  | `Inline -> None
+  | `Attachment filename ->
+    Option.map (Content.content t) ~f:(fun content ->
+      Attachment.create ~email:t ~filename ~content)
+;;
 
 let rec map_attachments ?container_headers t ~f =
   let open Async in
   match Email_content.parse ?container_headers t with
   | Error _ -> return t
   | Ok (Data _data) ->
-    begin match all_attachments t with
-    | [] -> return t
-    | [attachment] -> f attachment
-    | _::_ -> failwith "impossible"
+    begin match parse_attachment t with
+    | None -> return t
+    | Some attachment -> f attachment
     end
   | Ok (Message message) ->
     map_attachments message ?container_headers:None ~f
@@ -530,7 +517,25 @@ let rec map_attachments ?container_headers t ~f =
     let mp' = {mp with Email_content.Multipart.parts = parts'} in
     Email_content.set_content t (Multipart mp')
 
+let rec all_attachments ?container_headers t =
+  match Email_content.parse ?container_headers t with
+  | Error _ -> []
+  | Ok (Data _data) ->
+    Option.value_map ~default:[] (parse_attachment t) ~f:(fun a -> [a])
+  | Ok (Message message) ->
+    all_attachments ?container_headers:None message
+  | Ok (Multipart (mp : Email_content.Multipart.t)) ->
+    List.concat_map mp.parts
+      ~f:(all_attachments ~container_headers:mp.container_headers)
+;;
+
 let map_attachments = map_attachments ?container_headers:None
+let all_attachments = all_attachments ?container_headers:None
+
+let find_attachment t name =
+  List.find (all_attachments t) ~f:(fun attachment ->
+    String.equal (Attachment.filename attachment) name)
+;;
 
 let%test_module _ =
   (module struct
@@ -647,7 +652,7 @@ let%test_module _ =
            --BOUNDARY--"
       in
       let%bind () = [%expect {|
-        ((attachments ())
+        ((attachments ((attachment.txt foo)))
          (stripped
           ((headers ((Content-Type " multipart/digest; boundary=BOUNDARY")))
            (raw_content
@@ -699,7 +704,7 @@ let%test_module _ =
            --BOUNDARY--"
       in
       let%bind () = [%expect {|
-        ((attachments ())
+        ((attachments ((script.py "This attachment is blacklisted")))
          (stripped
           ((headers
             ((Content-Type " message/rfc822") (Content-Disposition " attachment")))

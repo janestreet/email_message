@@ -538,16 +538,25 @@ let%test_module _ =
 
     let replacement = Content.text "<REPLACED>"
 
-    let map_attachments s =
-      let%map email' =
-        map_attachments (Email.of_string s) ~f:(fun _ -> return replacement)
+    let parse_attachments s =
+      let email = Email.of_string s in
+      let attachments =
+        List.map (all_attachments email) ~f:(fun attachment ->
+          let filename = Attachment.filename attachment in
+          let raw_data =
+            Attachment.raw_data attachment |> ok_exn |> Bigstring_shared.to_string
+          in
+          (filename, raw_data))
       in
-      printf !"%{sexp:t}\n\n" email'
+      let%map stripped = map_attachments email ~f:(fun _ -> return replacement) in
+      printf !"%s"
+        (Sexp.to_string_hum
+           [%message "" (attachments : (string * string) list) (stripped : Email.t)])
     ;;
 
-    let%expect_test "[map_attachments]" =
+    let%expect_test "[all_attachments] and [map_attachments]" =
       let%bind () =
-        map_attachments
+        parse_attachments
           "Content-Type: multipart/mixed; boundary=BOUNDARY1\n\
            \n\
            --BOUNDARY1\n\
@@ -573,33 +582,35 @@ let%test_module _ =
            --BOUNDARY1--"
       in
       let%bind () = [%expect {|
-        ((headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1")))
-         (raw_content
-          ( "--BOUNDARY1\
-           \nContent-Type: multipart/alternative; boundary=BOUNDARY2\
-           \n\
-           \n--BOUNDARY2\
-           \nContent-Type: text/plain; charset=UTF-8\
-           \n\
-           \nSimple body\
-           \n\
-           \n--BOUNDARY2\
-           \nContent-Type: text/html; charset=UTF-8\
-           \n\
-           \n<div>Simple body</div>\
-           \n\
-           \n--BOUNDARY2--\
-           \n--BOUNDARY1\
-           \nContent-Transfer-Encoding: quoted-printable\
-           \nContent-Type: text/plain\
-           \n\
-           \n<REPLACED>\
-           \n--BOUNDARY1--"))) |}]
+        ((attachments ((attachment.txt foo)))
+         (stripped
+          ((headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1")))
+           (raw_content
+            ( "--BOUNDARY1\
+             \nContent-Type: multipart/alternative; boundary=BOUNDARY2\
+             \n\
+             \n--BOUNDARY2\
+             \nContent-Type: text/plain; charset=UTF-8\
+             \n\
+             \nSimple body\
+             \n\
+             \n--BOUNDARY2\
+             \nContent-Type: text/html; charset=UTF-8\
+             \n\
+             \n<div>Simple body</div>\
+             \n\
+             \n--BOUNDARY2--\
+             \n--BOUNDARY1\
+             \nContent-Transfer-Encoding: quoted-printable\
+             \nContent-Type: text/plain\
+             \n\
+             \n<REPLACED>\
+             \n--BOUNDARY1--"))))) |}]
       in
       (* - parse into "multipart/digest" parts
          - the "message/rfc822" content type is optional *)
       let%bind () =
-        map_attachments
+        parse_attachments
           "Content-Type: multipart/digest; boundary=BOUNDARY\n\
            \n\
            --BOUNDARY\n\
@@ -636,42 +647,44 @@ let%test_module _ =
            --BOUNDARY--"
       in
       let%bind () = [%expect {|
-        ((headers ((Content-Type " multipart/digest; boundary=BOUNDARY")))
-         (raw_content
-          ( "--BOUNDARY\
-           \n\
-           \nContent-Type: multipart/mixed; boundary=BOUNDARY1\
-           \n\
-           \n--BOUNDARY1\
-           \nContent-Type: multipart/alternative; boundary=BOUNDARY2\
-           \n\
-           \n--BOUNDARY2\
-           \nContent-Type: text/plain; charset=UTF-8\
-           \n\
-           \nSimple body\
-           \n\
-           \n--BOUNDARY2\
-           \nContent-Type: text/html; charset=UTF-8\
-           \n\
-           \n<div>Simple body</div>\
-           \n\
-           \n--BOUNDARY2--\
-           \n--BOUNDARY1\
-           \nContent-Transfer-Encoding: quoted-printable\
-           \nContent-Type: text/plain\
-           \n\
-           \n<REPLACED>\
-           \n--BOUNDARY1--\
-           \n--BOUNDARY\
-           \nContent-Type:message/rfc822\
-           \n\
-           \nSubject: No content-Type in the message headers\
-           \n\
-           \n\
-           \n--BOUNDARY--"))) |}]
+        ((attachments ())
+         (stripped
+          ((headers ((Content-Type " multipart/digest; boundary=BOUNDARY")))
+           (raw_content
+            ( "--BOUNDARY\
+             \n\
+             \nContent-Type: multipart/mixed; boundary=BOUNDARY1\
+             \n\
+             \n--BOUNDARY1\
+             \nContent-Type: multipart/alternative; boundary=BOUNDARY2\
+             \n\
+             \n--BOUNDARY2\
+             \nContent-Type: text/plain; charset=UTF-8\
+             \n\
+             \nSimple body\
+             \n\
+             \n--BOUNDARY2\
+             \nContent-Type: text/html; charset=UTF-8\
+             \n\
+             \n<div>Simple body</div>\
+             \n\
+             \n--BOUNDARY2--\
+             \n--BOUNDARY1\
+             \nContent-Transfer-Encoding: quoted-printable\
+             \nContent-Type: text/plain\
+             \n\
+             \n<REPLACED>\
+             \n--BOUNDARY1--\
+             \n--BOUNDARY\
+             \nContent-Type:message/rfc822\
+             \n\
+             \nSubject: No content-Type in the message headers\
+             \n\
+             \n\
+             \n--BOUNDARY--"))))) |}]
       in
       let%bind () =
-        map_attachments
+        parse_attachments
           "Content-Type: message/rfc822\n\
            Content-Disposition: attachment\n\
            \n\
@@ -686,17 +699,19 @@ let%test_module _ =
            --BOUNDARY--"
       in
       let%bind () = [%expect {|
-        ((headers
-          ((Content-Type " message/rfc822") (Content-Disposition " attachment")))
-         (raw_content
-          ( "Content-Type: multipart/mixed; boundary=\"BOUNDARY\"\
-           \n\
-           \n--BOUNDARY\
-           \nContent-Transfer-Encoding: quoted-printable\
-           \nContent-Type: text/plain\
-           \n\
-           \n<REPLACED>\
-           \n--BOUNDARY--"))) |}]
+        ((attachments ())
+         (stripped
+          ((headers
+            ((Content-Type " message/rfc822") (Content-Disposition " attachment")))
+           (raw_content
+            ( "Content-Type: multipart/mixed; boundary=\"BOUNDARY\"\
+             \n\
+             \n--BOUNDARY\
+             \nContent-Transfer-Encoding: quoted-printable\
+             \nContent-Type: text/plain\
+             \n\
+             \n<REPLACED>\
+             \n--BOUNDARY--"))))) |}]
       in
       return ()
     ;;

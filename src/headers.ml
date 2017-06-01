@@ -97,6 +97,11 @@ let add ?whitespace t ~name ~value =
   in
   add [] t
 
+let add_if_missing ?whitespace t ~name ~value =
+  if List.Assoc.mem t ~equal:Name.equal name
+  then t
+  else add ?whitespace t ~name ~value
+
 let set ?whitespace t ~name ~value =
   let name = Name.of_string name in
   let value = Value.of_string_to_string ?whitespace value in
@@ -112,6 +117,11 @@ let set ?whitespace t ~name ~value =
 
 let add_at_bottom ?whitespace t ~name ~value =
   List.rev (add ?whitespace (List.rev t) ~name ~value)
+
+let add_at_bottom_if_missing ?whitespace t ~name ~value =
+  if List.Assoc.mem t ~equal:Name.equal name
+  then t
+  else add_at_bottom ?whitespace t ~name ~value
 
 let set_at_bottom ?whitespace t ~name ~value =
   List.rev (set ?whitespace (List.rev t) ~name ~value)

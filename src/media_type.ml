@@ -72,18 +72,3 @@ let default ~parent =
   then default_digest
   else default_default
 ;;
-
-let%test_module "Media_type" =
-  (module struct
-
-    let headers =
-      ["Content-Type", "multipart/mixed;\nboundary=\"BOUNDARY\""]
-      |> Headers.of_list ~whitespace:`Normalize
-
-    let%test_unit _ =
-      [%test_result: t]
-        (last headers |> Option.value_exn)
-        ~expect:{ mime_type = Rfc.RFC2045.Token.of_string "multipart"
-                ; mime_subtype = Rfc.RFC2045.Token.of_string "mixed"
-                ; params = ["boundary", "BOUNDARY"] }
-  end)

@@ -40,51 +40,5 @@ module RFC2045 = struct
     let is_valid_or_quote str =
       if is_valid str then str
       else Mimestring.quote str
-
-    let%test_module "RFC2045.Token" =
-      (module struct
-        let (=) = String.(=)
-
-        let%test _ = is_valid_or_quote "abcdefghijkl" = "abcdefghijkl"
-        let%test _ = is_valid_or_quote "abc=dka" = "\"abc=dka\""
-        let%test _ = is_valid_or_quote "" = "\"\""
-        let%test _ = is_valid_or_quote "\"" = "\"\\\"\""
-
-        let valid =
-          [ "abcdefghijkl"
-          ; "LoremIpsum"
-          ; "3.141"
-          ; "---"
-          ; "a"
-          ]
-
-        let%test_unit _ =
-          List.iter valid ~f:(fun t ->
-            OUnit.assert_equal
-              ~msg:(sprintf !"is_valid %{sexp:string}" t)
-              ~printer:Bool.to_string
-              true (is_valid t))
-
-        let invalid =
-          [ "abc=dka"
-          ; ""
-          ; "\""
-          ; "@"
-          ; ","
-          ; ":"
-          ; ";"
-          ; "\x00"
-          ; "\x7F"
-          ; "\x80"
-          ]
-
-        let%test_unit _ =
-          List.iter invalid ~f:(fun t ->
-            OUnit.assert_equal
-              ~msg:(sprintf !"not (is_valid %{sexp:string})" t)
-              ~printer:Bool.to_string
-              false (is_valid t))
-
-      end)
   end
 end

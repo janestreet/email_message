@@ -49,7 +49,7 @@ and content_of_bigstring_shared ~headers ?container_headers bstr =
       ~default:(Media_type.default ~parent:parent_media_type)
   in
   let encoding = Octet_stream.Encoding.of_headers_or_default headers in
-  let octet_stream = Octet_stream.create ~encoding bstr in
+  let octet_stream = Octet_stream.of_bigstring_shared ~encoding bstr in
   let decode octet_stream =
     match Octet_stream.decode octet_stream with
     | None ->
@@ -90,7 +90,8 @@ let to_string_monoid = function
   | Multipart multipart -> Multipart.to_string_monoid multipart
   | Message message -> Email.to_string_monoid message
   | Data octet_stream ->
-    Octet_stream.to_string_monoid octet_stream
+    Octet_stream.encoded_contents octet_stream
+    |> Bigstring_shared.to_string_monoid
 ;;
 
 let to_bigstring_shared t =
@@ -132,126 +133,3 @@ let map_data ?(on_unparsable_content = `Skip) email ~f =
 let to_email ~headers t = Email.create ~headers ~raw_content:(to_bigstring_shared t)
 
 let set_content email t = to_email ~headers:(Email.headers email) t
-
-let%test_module _ =
-  (module struct
-    open Async
-
-    let parse s =
-      let email = Email.of_string s in
-      let unparsed = Email.raw_content email in
-      let parsed = parse email |> ok_exn in
-      printf !"%{sexp:t}\n\n" parsed;
-      let round_tripped = to_bigstring_shared parsed in
-      assert ([%compare.equal: Bigstring_shared.t] unparsed round_tripped)
-    ;;
-
-    let%expect_test "simple content" =
-      parse
-        "From: foo@bar.com\n\
-         \n\
-         hello world";
-      let%bind () = [%expect {|
-        (Data ((encoding Bit7) (content "hello world"))) |}]
-      in
-      return ()
-    ;;
-
-    let%expect_test "simple multipart" =
-      parse
-        "Content-Type: multipart/alternative; boundary=BOUNDARY\n\
-         \n\
-         --BOUNDARY\n\
-         Content-Type: text/plain; charset=UTF-8\n\
-         \n\
-         Simple body\n\
-         \n\
-         --BOUNDARY\n\
-         Content-Type: text/html; charset=UTF-8\n\
-         Content-Transfer-Encoding: quoted-printable\n\
-         \n\
-         <div>Simple body</div>\n\
-         \n\
-         --BOUNDARY--";
-      let%bind () = [%expect {|
-        (Multipart
-         ((boundary BOUNDARY) (prologue ()) (epilogue ())
-          (parts
-           (((headers ((Content-Type " text/plain; charset=UTF-8")))
-             (raw_content ("Simple body\n")))
-            ((headers
-              ((Content-Type " text/html; charset=UTF-8")
-               (Content-Transfer-Encoding " quoted-printable")))
-             (raw_content ("<div>Simple body</div>\n")))))
-          (container_headers
-           ((Content-Type " multipart/alternative; boundary=BOUNDARY"))))) |}]
-      in
-      return ()
-    ;;
-
-    let%expect_test "nested multipart" =
-      parse
-        "Content-Type: multipart/mixed; boundary=BOUNDARY1\n\
-         \n\
-         --BOUNDARY1\n\
-         Content-Type: multipart/alternative; boundary=BOUNDARY2\n\
-         \n\
-         --BOUNDARY2\n\
-         Content-Type: text/plain; charset=UTF-8\n\
-         \n\
-         Simple body\n\
-         \n\
-         --BOUNDARY2\n\
-         Content-Type: text/html; charset=UTF-8\n\
-         \n\
-         <div>Simple body</div>\n\
-         \n\
-         --BOUNDARY2--\n\
-         --BOUNDARY1\n\
-         Content-Type: text/plain; charset=US-ASCII; name=\"attachment.txt\"\n\
-         Content-Disposition: attachment; filename=\"attachment.txt\"\n\
-         Content-Transfer-Encoding: base64\n\
-         \n\
-         Zm9v\n\
-         --BOUNDARY1--";
-      let%bind () = [%expect {|
-        (Multipart
-         ((boundary BOUNDARY1) (prologue ()) (epilogue ())
-          (parts
-           (((headers ((Content-Type " multipart/alternative; boundary=BOUNDARY2")))
-             (raw_content
-              ( "--BOUNDARY2\
-               \nContent-Type: text/plain; charset=UTF-8\
-               \n\
-               \nSimple body\
-               \n\
-               \n--BOUNDARY2\
-               \nContent-Type: text/html; charset=UTF-8\
-               \n\
-               \n<div>Simple body</div>\
-               \n\
-               \n--BOUNDARY2--")))
-            ((headers
-              ((Content-Type
-                " text/plain; charset=US-ASCII; name=\"attachment.txt\"")
-               (Content-Disposition " attachment; filename=\"attachment.txt\"")
-               (Content-Transfer-Encoding " base64")))
-             (raw_content (Zm9v)))))
-          (container_headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1"))))) |}]
-      in
-      return ()
-    ;;
-
-    let%expect_test "message/rfc822" =
-      parse
-        "Content-Type: message/rfc822\n\
-         \n\
-         From: foo@bar.com\n\
-         \n\
-         Sample body";
-      let%bind () = [%expect {|
-        (Message ((headers ((From " foo@bar.com"))) (raw_content ("Sample body")))) |}]
-      in
-      return ()
-    ;;
-  end)

@@ -76,13 +76,17 @@ val last : ?whitespace:Whitespace.t -> t -> Name.t -> Value.t option
 val find_all : ?whitespace:Whitespace.t -> t -> Name.t -> Value.t list
 val names : t -> Name.t list
 
-val add : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
-val add_all : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list -> t
+val add           : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
 val add_at_bottom : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
-val add_all_at_bottom : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list -> t
 
-val set : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
+val add_if_missing           : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
+val add_at_bottom_if_missing : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
+
+val set           : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
 val set_at_bottom : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
+
+val add_all           : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list -> t
+val add_all_at_bottom : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list -> t
 
 val filter : ?whitespace:Whitespace.t -> t -> f:(name:Name.t -> value:Value.t -> bool) -> t
 

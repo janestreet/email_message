@@ -35,7 +35,8 @@ module Encoding = struct
     | `Quoted_printable -> "quoted-printable"
     | `Unknown unknown -> unknown
 
-  let default = `Bit7
+  let default  = `Bit7
+  let default' = `Bit7
 
   let of_headers headers =
     Headers.last headers "content-transfer-encoding"
@@ -52,34 +53,16 @@ type t =
   ; content  : Bigstring_shared.t
   } [@@deriving sexp, bin_io, compare, hash]
 
-let create ?(encoding = Encoding.default) content =
-  { encoding; content }
-
 let encoding t = t.encoding
 let encoded_contents t = t.content
+let encoded_contents_string t = Bigstring_shared.to_string (encoded_contents t)
 
-let empty = create Bigstring_shared.empty
+let of_bigstring_shared ~encoding content = { encoding; content }
 
-let to_string_monoid t = Bigstring_shared.to_string_monoid (encoded_contents t)
+let of_string ~encoding str =
+  of_bigstring_shared ~encoding (Bigstring_shared.of_string str)
 
-let of_string str = create (Bigstring_shared.of_string str)
-let to_string t = Bigstring_shared.to_string (encoded_contents t)
-
-(*
-   let length t  = Bigstring_shared.length t.content
-
-   let to_lexbuf t = Bigstring_shared.to_lexbuf t.content;;
-*)
-
-(*
-   (** Bigstring.sub creates copies of the Bigstring *)
-   let of_bigstring bstr = create (Bigstring.subo bstr)
-   let to_bigstring t = Bigstring.subo (contents t)
-
-   let of_string_monoid mon = of_bigstring (String_monoid.to_bigstring mon)
-*)
-
-(********)
+let empty = of_bigstring_shared ~encoding:Encoding.default Bigstring_shared.empty
 
 module Identity = struct
   let encode bstr = bstr
@@ -126,56 +109,9 @@ module Base64 = struct
     |> String_monoid.concat_string ~sep:"\n"
     |> Bigstring_shared.of_string_monoid
   ;;
-
-  let%test_module "Octet_stream.Base64" =
-    (module struct
-      open OUnit
-      open Bigstring_shared
-
-      let test_vectors = List.map ~f:(fun (x,y) ->
-        (of_string x, of_string y))
-        [
-          ("YW55IGNhcm5hbCBwbGVhc3VyZS4=", "any carnal pleasure.");
-          ("YW55IGNhcm5hbCBwbGVhc3VyZQ==", "any carnal pleasure" );
-          ("YW55IGNhcm5hbCBwbGVhc3Vy"    , "any carnal pleasur"  );
-          ("YW55IGNhcm5hbCBwbGVhc3U="    , "any carnal pleasu"   );
-          ("YW55IGNhcm5hbCBwbGVhcw=="    , "any carnal pleas"    );
-          ("\
-TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdCwg\n\
-c2VkIGRvIGVpdXNtb2QgdGVtcG9yIGluY2lkaWR1bnQgdXQgbGFib3JlIGV0IGRvbG9yZSBtYWdu\n\
-YSBhbGlxdWEuIFV0IGVuaW0gYWQgbWluaW0gdmVuaWFtLCBxdWlzIG5vc3RydWQgZXhlcmNpdGF0\n\
-aW9uIHVsbGFtY28gbGFib3JpcyBuaXNpIHV0IGFsaXF1aXAgZXggZWEgY29tbW9kbyBjb25zZXF1\n\
-YXQuIER1aXMgYXV0ZSBpcnVyZSBkb2xvciBpbiByZXByZWhlbmRlcml0IGluIHZvbHVwdGF0ZSB2\n\
-ZWxpdCBlc3NlIGNpbGx1bSBkb2xvcmUgZXUgZnVnaWF0IG51bGxhIHBhcmlhdHVyLiBFeGNlcHRl\n\
-dXIgc2ludCBvY2NhZWNhdCBjdXBpZGF0YXQgbm9uIHByb2lkZW50LCBzdW50IGluIGN1bHBhIHF1\n\
-aSBvZmZpY2lhIGRlc2VydW50IG1vbGxpdCBhbmltIGlkIGVzdCBsYWJvcnVtLg==\
-            ", "\
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor \
-incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis \
-nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. \
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore \
-eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt \
-in culpa qui officia deserunt mollit anim id est laborum.\
-            ")
-        ]
-      ;;
-
-      let%test_unit "decode" = List.iter test_vectors  ~f:(fun (coded, plaintext) ->
-        let plaintext' = decode coded in
-        assert_equal ~printer:to_string plaintext plaintext')
-      ;;
-
-      let%test_unit "encode" =
-        List.iter test_vectors  ~f:(fun (coded, plaintext) ->
-          let coded' = encode plaintext in
-          assert_equal ~printer:to_string coded coded')
-      ;;
-    end)
 end
 
 module Quoted_printable = struct
-  open OUnit
-
   let decode bstr =
     (* The RFC2045 says that newlines can be converted to the platforms native
        format, so that's what we'll do. It's the same for both binary data and
@@ -197,55 +133,6 @@ module Quoted_printable = struct
     in
     Bigstring_shared.of_bigbuffer_volatile bigbuffer
   ;;
-
-  let%test_module "quoted-printable" =
-    (module struct
-      open Bigstring_shared
-
-      let mathematics = List.map ~f:(fun (x,y) -> (of_string x, of_string y))
-                          [("If you believe that truth=3Dbeauty, then surely =\n\
-                             mathematics is the most beautiful branch of philosophy.",
-                            "If you believe that truth=beauty, then surely mathematics is the \
-                             most beautiful branch of philosophy.")]
-      ;;
-
-      let encoding = List.map ~f:(fun (x,y) -> (of_string x, of_string y))
-                       [("=00=01=02a=03   =20\n", "\000\001\002a\003    \n");
-                        ("This text is fairly long and should be wrapped by a conforming =\n\
-                          implementation.",
-                         "This text is fairly long and should be wrapped by a conforming \
-                          implementation.");
-                        ("123456789A123456789B123456789C123456789D123456789E123456789F\
-                          123456789G12345=\n6789H123456789I",
-                         "123456789A123456789B123456789C123456789D123456789E123456789F\
-                          123456789G123456789H123456789I");
-                        ("123456789A123456789B123456789C123456789D123456789E123456789F\
-                          123456789G=3D23=\n456789H123456789I",
-                         "123456789A123456789B123456789C123456789D123456789E123456789F\
-                          123456789G=23456789H123456789I")
-                       ]
-      ;;
-
-      let test_decode pos l =
-        let coded, plaintext = List.nth_exn l pos in
-        let plaintext' = decode coded in
-        assert_equal ~printer:to_string plaintext plaintext'
-      ;;
-
-      let test_encode pos l =
-        let coded, plaintext = List.nth_exn l pos in
-        let coded' = encode plaintext in
-        assert_equal ~printer:to_string coded coded';
-        let plaintext' = decode coded' in
-        assert_equal ~printer:to_string plaintext plaintext';
-      ;;
-
-      let%test_unit _ = test_decode 0 mathematics
-      let%test_unit _ = test_encode 0 encoding
-      let%test_unit _ = test_encode 1 encoding
-      let%test_unit _ = test_encode 2 encoding
-      let%test_unit _ = test_encode 3 encoding
-    end)
 end
 
 let decode t =
@@ -267,4 +154,4 @@ let encode ~encoding bstr =
     | `Binary           -> Identity.encode bstr
   in
   let encoding = (encoding :> Encoding.t) in
-  create ~encoding bstr
+  of_bigstring_shared ~encoding bstr

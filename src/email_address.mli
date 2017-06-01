@@ -14,20 +14,31 @@ val list_of_string_exn : ?default_domain:string -> string -> t list
 val to_string : t -> string
 val list_to_header_value : t list -> string
 
-val local_part : t -> string
+val local_part     : t -> string
+val set_local_part : t -> string -> t
 
-val domain : t -> Domain.t option
+val domain     : t -> Domain.t option
+val set_domain : t -> Domain.t option -> t
 
-(* local@domain, default brackets = false *)
 val address_part
-  : ?brackets:bool -> ?lowercase_domain:bool -> t -> t
-val address_part_string
-  : ?brackets:bool -> ?lowercase_domain:bool -> t -> string
-(* Expects address part without brackets. *)
-val set_address_part
-  : t -> string -> t Or_error.t
+  :  ?brackets:bool  (** default: [false] *)
+  -> ?lowercase_domain :bool
+  -> t
+  -> t
 
-(* Setting prefix to none removes the angular brackets. *)
+val address_part_string
+  :  ?brackets:bool  (** default: [false] *)
+  -> ?lowercase_domain:bool
+  -> t
+  -> string
+
+(** [set_address_part] expects an email address without prefix or angle brackets
+    e.g. USER@DOMAIN. *)
+val set_address_part : t -> string -> t Or_error.t
+
+val prefix : t -> string option
+(** [set_prefix] will remove angle brackets if given [None], otherwise angle brackets are
+    added before the given prefix. *)
 val set_prefix : t -> string option -> t
 
 val local_address : unit -> t

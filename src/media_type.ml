@@ -26,7 +26,7 @@ let is ?mime_type ?mime_subtype t =
 ;;
 
 (* Some convenience functions for working with mime types *)
-let is_multipart = is ~mime_type:"multipart"
+let is_multipart t = is ~mime_type:"multipart" t
 let is_message_rfc822 = is ~mime_type:"message" ~mime_subtype:"rfc822"
 let is_digest t = is ~mime_type:"multipart" ~mime_subtype:"digest" t
 

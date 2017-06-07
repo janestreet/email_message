@@ -25,7 +25,13 @@ module Encoding : sig
   val default  : known
   val default' : t
 
-  val of_headers_or_default : Headers.t -> t
+  (** Determine an encoding based on email headers. [ignore_base64_for_multipart] is
+      useful because some clients can't read RFCs and incorrectly indicate a transfer
+      encoding of base64 for multipart messages. *)
+  val of_headers_or_default
+    :  ?ignore_base64_for_multipart:bool  (** default: true *)
+    -> Headers.t
+    -> t
 
   include Stringable.S with type t:=t
 end

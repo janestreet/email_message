@@ -169,16 +169,15 @@ type attachment_name = string
 
 module Attachment = struct
   type t =
-    { filename : string
+    { headers : Headers.t
+    ; filename : string
+    ; embedded_email : Email.t option
     (* These are expensive operations. Ensure they are only computed once, and
        lazily. *)
     ; raw_data : Bigstring_shared.t Or_error.t Lazy.t
     ; md5      : string Or_error.t Lazy.t
-    ; email    : Email.t
-    }
+    } [@@deriving fields]
 
-  let filename t = t.filename
-  let email t    = t.email
   let raw_data t = Lazy.force t.raw_data
   let md5 t      = Lazy.force t.md5
 
@@ -192,11 +191,11 @@ module Attachment = struct
     done;
     result
 
-  let create ~email ~filename ~content =
+  let of_content' ?embedded_email ~headers ~filename content =
     let raw_data =
       lazy (
         Or_error.try_with (fun () ->
-          Octet_stream.decode content
+          Octet_stream.decode (Lazy.force content)
           |> Option.value_exn)
       )
     in
@@ -211,7 +210,20 @@ module Attachment = struct
             |> to_hex)
       )
     in
-    { filename; raw_data; md5; email }
+    { headers; filename; embedded_email; raw_data; md5 }
+
+  let of_content ~headers ~filename content =
+    of_content' ~headers ~filename (lazy content)
+
+  let of_embedded_email ~headers ~filename embedded_email =
+    let content =
+      lazy begin
+        Email.to_bigstring_shared embedded_email
+        |> Octet_stream.of_bigstring_shared
+             ~encoding:(Octet_stream.Encoding.of_headers_or_default headers)
+      end
+    in
+    of_content' ~embedded_email ~headers ~filename content
 
   let to_file t file =
     match raw_data t with
@@ -463,30 +475,36 @@ let all_related_parts = Content.all_related_parts
 let find_related = Content.find_related
 let inline_parts =  Content.inline_parts
 
-let parse_attachment t =
+let parse_attachment ?container_headers t =
   match Content.content_disposition t with
   | `Inline -> None
   | `Attachment filename ->
-    Option.map (Content.content t) ~f:(fun content ->
-      Attachment.create ~email:t ~filename ~content)
+    let headers = Email.headers t in
+    match Email_content.parse ?container_headers t with
+    | Error _ -> None
+    | Ok (Email_content.Multipart _) -> None
+    | Ok (Message email) ->
+      Some (Attachment.of_embedded_email ~headers ~filename email)
+    | Ok (Data content) ->
+      Some (Attachment.of_content ~headers ~filename content)
 ;;
 
-let rec map_attachments ?container_headers t ~f =
+let rec map_file_attachments ?container_headers t ~f =
   let open Async in
   match Email_content.parse ?container_headers t with
   | Error _ -> return t
   | Ok (Data _data) ->
-    begin match parse_attachment t with
+    begin match parse_attachment ?container_headers t with
     | None -> return t
     | Some attachment -> f attachment
     end
   | Ok (Message message) ->
-    map_attachments message ?container_headers:None ~f
+    map_file_attachments message ?container_headers:None ~f
     >>| fun message' ->
     Email_content.set_content t (Message message')
   | Ok (Multipart (mp : Email_content.Multipart.t)) ->
     Deferred.List.map mp.parts
-      ~f:(map_attachments ~f ~container_headers:mp.container_headers)
+      ~f:(map_file_attachments ~f ~container_headers:mp.container_headers)
     >>| fun parts' ->
     let mp' = {mp with Email_content.Multipart.parts = parts'} in
     Email_content.set_content t (Multipart mp')
@@ -495,15 +513,16 @@ let rec all_attachments ?container_headers t =
   match Email_content.parse ?container_headers t with
   | Error _ -> []
   | Ok (Data _data) ->
-    Option.value_map ~default:[] (parse_attachment t) ~f:(fun a -> [a])
+    Option.value_map ~default:[] (parse_attachment ?container_headers t) ~f:(fun a -> [a])
   | Ok (Message message) ->
-    all_attachments ?container_headers:None message
+    Option.value_map ~default:[] (parse_attachment ?container_headers t) ~f:(fun a -> [a])
+    @ (all_attachments ?container_headers:None message)
   | Ok (Multipart (mp : Email_content.Multipart.t)) ->
     List.concat_map mp.parts
       ~f:(all_attachments ~container_headers:mp.container_headers)
 ;;
 
-let map_attachments = map_attachments ?container_headers:None
+let map_file_attachments = map_file_attachments ?container_headers:None
 let all_attachments = all_attachments ?container_headers:None
 
 let find_attachment t name =

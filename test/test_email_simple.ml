@@ -54,7 +54,7 @@ let parse_attachments s =
       in
       (filename, raw_data))
   in
-  let%map stripped = map_attachments email ~f:(fun _ -> return replacement) in
+  let%map stripped = map_file_attachments email ~f:(fun _ -> return replacement) in
   printf !"%s"
     (Sexp.to_string_hum
        [%message "" (attachments : (string * string) list) (stripped : Email.t)])
@@ -205,7 +205,18 @@ let%expect_test "[all_attachments] and [map_attachments]" =
        --BOUNDARY--"
   in
   let%bind () = [%expect {|
-        ((attachments ((script.py "This attachment is blacklisted")))
+        ((attachments
+          ((unnamed-attachment
+             "Content-Type: multipart/mixed; boundary=\"BOUNDARY\"\
+            \n\
+            \n--BOUNDARY\
+            \nContent-Type: text/x-python; charset=US-ASCII; name=\"script.py\"\
+            \nContent-Disposition: attachment; filename=\"script.py\"\
+            \nContent-Transfer-Encoding: base64\
+            \n\
+            \nVGhpcyBhdHRhY2htZW50IGlzIGJsYWNrbGlzdGVk\
+            \n--BOUNDARY--")
+           (script.py "This attachment is blacklisted")))
          (stripped
           ((headers
             ((Content-Type " message/rfc822") (Content-Disposition " attachment")))

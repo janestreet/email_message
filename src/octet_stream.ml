@@ -38,12 +38,23 @@ module Encoding = struct
   let default  = `Bit7
   let default' = `Bit7
 
-  let of_headers headers =
+  let of_headers ?(ignore_base64_for_multipart = true) headers =
     Headers.last headers "content-transfer-encoding"
     |> Option.map ~f:of_string
+    |> function
+    | Some `Base64 when ignore_base64_for_multipart ->
+      let is_multipart =
+        match Media_type.last headers with
+        | Some media_type -> Media_type.is_multipart media_type
+        | None -> false
+      in
+      if is_multipart
+      then Some default
+      else Some `Base64
+    | _ as encoding -> encoding
 
-  let of_headers_or_default headers =
-    match of_headers headers with
+  let of_headers_or_default ?ignore_base64_for_multipart headers =
+    match of_headers ?ignore_base64_for_multipart headers with
     | Some t -> t
     | None   -> default
 end

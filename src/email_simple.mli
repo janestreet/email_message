@@ -25,13 +25,17 @@ type attachment_name = string
 module Attachment : sig
   type t
 
-  val filename : t -> attachment_name
-  val email : t -> Email.t
+  (** The headers surrounding this attachment *)
+  val headers : t -> Headers.t
 
-  (* These are expensive operations *)
+  (** [Some email] if this is an attached message/rfc822 content *)
+  val embedded_email : t -> Email.t option
+
+  (** These are expensive operations *)
   val raw_data : t -> Bigstring_shared.t Or_error.t
   val md5 : t -> string Or_error.t
 
+  val filename : t -> attachment_name
   val to_file : t -> string -> unit Async.Deferred.Or_error.t
 end
 
@@ -143,7 +147,7 @@ val find_related : t -> attachment_name -> Content.t option
 
 val inline_parts : t -> Content.t list
 
-val map_attachments
+val map_file_attachments
   :  t
   -> f : (Attachment.t -> t Async.Deferred.t)
   -> t Async.Deferred.t

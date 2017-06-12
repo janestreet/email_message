@@ -149,7 +149,7 @@ val inline_parts : t -> Content.t list
 
 val map_file_attachments
   :  t
-  -> f : (Attachment.t -> t Async.Deferred.t)
+  -> f : (Attachment.t -> [`Keep | `Replace of t] Async.Deferred.t)
   -> t Async.Deferred.t
 
 module Expert : sig

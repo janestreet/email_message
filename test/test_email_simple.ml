@@ -54,7 +54,9 @@ let parse_attachments s =
       in
       (filename, raw_data))
   in
-  let%map stripped = map_file_attachments email ~f:(fun _ -> return replacement) in
+  let%map stripped =
+    map_file_attachments email ~f:(fun _ -> return (`Replace replacement))
+  in
   printf !"%s"
     (Sexp.to_string_hum
        [%message "" (attachments : (string * string) list) (stripped : Email.t)])

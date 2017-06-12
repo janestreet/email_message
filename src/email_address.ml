@@ -96,7 +96,6 @@ module Stable = struct
 
     let local_address () =
       create (Core.Unix.getlogin ())
-        ~domain:(Core.Unix.gethostname ())
 
     include Sexpable.Of_stringable.V1(struct
         type nonrec t = t

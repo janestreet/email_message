@@ -496,16 +496,19 @@ let rec map_file_attachments ?container_headers t ~f =
   | Ok (Data _data) ->
     begin match parse_attachment ?container_headers t with
     | None -> return t
-    | Some attachment -> f attachment
+    | Some attachment ->
+      match%map f attachment with
+      | `Keep -> t
+      | `Replace t -> t
     end
   | Ok (Message message) ->
-    map_file_attachments message ?container_headers:None ~f
-    >>| fun message' ->
+    let%map message' = map_file_attachments message ?container_headers:None ~f in
     Email_content.set_content t (Message message')
   | Ok (Multipart (mp : Email_content.Multipart.t)) ->
-    Deferred.List.map mp.parts
-      ~f:(map_file_attachments ~f ~container_headers:mp.container_headers)
-    >>| fun parts' ->
+    let%map parts' =
+      Deferred.List.map mp.parts
+        ~f:(map_file_attachments ~f ~container_headers:mp.container_headers)
+    in
     let mp' = {mp with Email_content.Multipart.parts = parts'} in
     Email_content.set_content t (Multipart mp')
 

@@ -24,7 +24,7 @@ val to_bigstring : t -> Bigstring.t
 val of_char : char -> t
 
 (*
-   For the library to fulfil it's purpose of minimal overhead
+   For the library to fulfill it's purpose of minimal overhead
    string concatenation, the output functions must be tightly
    coupled with the low-level representation.
 
@@ -43,3 +43,5 @@ end
 
 val fold : t -> init:'accum -> f:('accum -> Underlying.t -> 'accum) -> 'accum
 val iter : t -> f:(Underlying.t -> unit) -> unit
+
+val is_suffix : t -> suffix:string -> bool

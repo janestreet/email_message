@@ -50,6 +50,20 @@ module Underlying = struct
     | Bigstring bstr -> Async.Writer.write_bigstring writer bstr
     | Char c -> Async.Writer.write_char writer c
   ;;
+
+  let is_suffix t ~suffix =
+    let is_suffix () =
+      match t with
+      | String t -> String.is_suffix t ~suffix
+      | Bigstring t ->
+        String.length suffix <= Bigstring.length t
+        && String.equal suffix (Bigstring.to_string t
+                                  ~pos:(Bigstring.length t - String.length suffix)
+                                  ~len:(String.length suffix))
+      | Char c -> String.length suffix = 1 && String.get suffix 0 = c
+    in
+    String.is_empty suffix || is_suffix ()
+  ;;
 end
 
 type t =
@@ -178,3 +192,25 @@ let rec fold t ~init ~f =
 let iter t ~f = fold t ~init:() ~f:(fun () -> f)
 
 
+
+let rec is_suffix t ~suffix =
+  if String.is_empty suffix
+  then true
+  else if length t < String.length suffix
+  then false
+  else (
+    match t with
+    | Leaf u -> Underlying.is_suffix u ~suffix
+    | List (_, []) -> false
+    | List (_, [t]) -> is_suffix t ~suffix
+    | List (len, hd::tl) ->
+      let tl = List (len - length hd, tl) in
+      if length tl >= String.length suffix
+      then is_suffix tl ~suffix
+      else (
+        let suffix_hd = String.slice suffix 0 (String.length suffix - length tl) in
+        let suffix_tl =
+          String.slice suffix (String.length suffix - length tl) (String.length suffix)
+        in
+        is_suffix hd ~suffix:suffix_hd && is_suffix tl ~suffix:suffix_tl))
+;;

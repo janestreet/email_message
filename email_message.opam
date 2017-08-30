@@ -12,11 +12,11 @@ depends: [
   "async"
   "core"
   "core_extended"
-  "jbuilder"                {build & >= "1.0+beta8"}
   "ppx_driver"
   "ppx_jane"
   "re2"
   "cryptokit"
+  "jbuilder"                {build & >= "1.0+beta12"}
   "magic-mime"
   "ocaml-migrate-parsetree" {>= "0.4"}
   "ounit"

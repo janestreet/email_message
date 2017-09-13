@@ -19,7 +19,6 @@ depends: [
   "jbuilder"                {build & >= "1.0+beta12"}
   "magic-mime"
   "ocaml-migrate-parsetree" {>= "0.4"}
-  "ounit"
 ]
 available: [ ocaml-version >= "4.04.1" ]
 descr: "

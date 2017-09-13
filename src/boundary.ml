@@ -1,5 +1,4 @@
 open Core
-open Core_extended.Std
 
 
 type t = string [@@deriving sexp, bin_io, compare, hash]

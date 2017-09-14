@@ -1,7 +1,7 @@
 open! Core
 
 (** Immutable sequences of bytes which can be windowed efficiently. *)
-type t = private Bigstring.t [@@deriving sexp, bin_io, compare, hash]
+type t = private Bigstring.t [@@deriving sexp_of, compare, hash]
 
 val of_bigstring : Bigstring.t -> t
 val to_bigstring : t -> Bigstring.t
@@ -27,3 +27,7 @@ val of_bigbuffer_volatile : Bigbuffer.t -> t
 val of_string_monoid : String_monoid.t -> t
 
 val substr_index : ?pos:int -> t -> pattern:t -> int option
+
+module Stable : sig
+  module V1 : sig type nonrec t = t [@@deriving sexp, bin_io] end
+end

@@ -1,13 +1,13 @@
 open Core
 
 module type S = sig
-  type t = private string [@@deriving sexp, bin_io, hash]
+  type t = private string [@@deriving sexp_of]
   val of_string : string -> t
   val to_lowercase_string : t -> string
   val equal_string : t -> string -> bool
 
-  include Comparable.S_binable with type t := t
-  include Hashable.S_binable with type t := t
+  include Comparable.S_plain with type t := t
+  include Hashable.S_plain with type t := t
 end
 
 (** Case-insensitive strings *)

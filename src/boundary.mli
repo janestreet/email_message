@@ -1,6 +1,6 @@
 open! Core
 
-type t [@@deriving sexp, bin_io, compare, hash]
+type t [@@deriving sexp_of]
 
 (** Creates a boundary from the value of the "boundary" parameter in a
     Content-type header (RFC2046, p.19)
@@ -37,3 +37,7 @@ module Close : String_monoidable.S with type t := t
 module Open_first : String_monoidable.S with type t := t
 
 include Stringable.S with type t := t
+
+module Stable : sig
+  module V1 : sig type nonrec t=t [@@deriving sexp, bin_io] end
+end

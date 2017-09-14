@@ -12,19 +12,19 @@ module Whitespace : sig
   type t =
     [ `Raw (* Leave whitespace unchanged *)
     | `Normalize (* Cleanup leading and trailing whitespace on each line *)
-    ] [@@deriving sexp]
+    ] [@@deriving sexp_of]
   val default : t (* `Normalize *)
 end
 
 module Name : sig
   (* Case insensitive *)
-  type t = string [@@deriving sexp, bin_io, compare, hash]
+  type t = string [@@deriving sexp_of, compare, hash]
 
   val of_string : string -> t
   val to_string : t -> string
 
-  include Comparable.S with type t := t
-  include Hashable.S with type t := t
+  include Comparable.S_plain with type t := t
+  include Hashable.S_plain with type t := t
 
   (* Short hand for [let is a b = equal a (of_string b)] *)
   val is : t -> string -> bool
@@ -40,7 +40,7 @@ module Common : sig
 end
 
 module Value : sig
-  type t = string [@@deriving sexp, bin_io, compare, hash]
+  type t = string [@@deriving sexp_of, compare, hash]
 
   (** Normalize the whitespace for processing/
       if [whitespace == `Raw] this does nothing.
@@ -52,19 +52,17 @@ module Value : sig
       lines with a tab (remove any other leading/trailing space on every line). *)
   val to_string : ?whitespace:Whitespace.t -> t -> string
 
-  include Comparable.S with type t := t
-  include Hashable.S with type t := t
+  include Comparable.S_plain with type t := t
+  include Hashable.S_plain with type t := t
 end
 
 
 (* The add and set functions are same as in Field_list, except they add a space
    before the value. *)
-type t [@@deriving sexp, bin_io, compare, hash]
+type t [@@deriving compare, hash, sexp_of]
 
 include String_monoidable.S with type t := t
 val to_string : t -> string
-
-val hash : t -> int
 
 val empty : t
 val append : t -> t -> t
@@ -88,6 +86,10 @@ val set_at_bottom : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.
 val add_all           : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list -> t
 val add_all_at_bottom : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list -> t
 
+(* If headers with this name already exist, concatenates them all using a coma,
+   and appending the new value. Otherwise creates a new header. *)
+val smash_and_add : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
+
 val filter : ?whitespace:Whitespace.t -> t -> f:(name:Name.t -> value:Value.t -> bool) -> t
 
 (** rewrite header values, preserving original whitespace where possible.
@@ -102,3 +104,15 @@ val filter : ?whitespace:Whitespace.t -> t -> f:(name:Name.t -> value:Value.t ->
     [ map ~whitespace:`Keep ~f:(fun ~name:_ ~value -> Value.of_string ~whitespace:`Strip value) ].
 *)
 val map : ?whitespace:Whitespace.t -> t -> f:(name:Name.t -> value:Value.t -> Value.t) -> t
+
+module Stable : sig
+  module Name : sig
+    module V1 : sig type t = Name.t [@@deriving sexp, bin_io] end
+  end
+
+  module Value : sig
+    module V1 : sig type t = Value.t [@@deriving sexp, bin_io] end
+  end
+
+  module V1 : sig type nonrec t = t [@@deriving sexp, bin_io] end
+end

@@ -1,6 +1,6 @@
 open! Core
 open Async
-open Email_message.Std
+open Email_message
 open Expect_test_helpers
 
 open Email

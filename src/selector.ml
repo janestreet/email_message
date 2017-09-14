@@ -1,3 +1,18 @@
+module Stable = struct
+  open Core.Core_stable
+
+  module Base = struct
+    module V1 = struct
+      type t =
+        [ `exists_header of string * Re2.Regex.t
+        | `all_headers   of string * Re2.Regex.t
+        ] [@@deriving sexp]
+    end
+  end
+  module V1 = struct
+    type t = Base.V1.t Blang.V1.t [@@deriving sexp]
+  end
+end
 open Core
 open Re2
 
@@ -6,7 +21,7 @@ module Base = struct
     (* When adding to this type, don't forget to add to examples below. *)
     [ `exists_header of string * Regex.t
     | `all_headers   of string * Regex.t
-    ] [@@deriving sexp]
+    ] [@@deriving sexp_of]
 
   let matches t email =
     match t with
@@ -29,7 +44,7 @@ module Base = struct
     ]
 end
 
-type t = Base.t Blang.t [@@deriving sexp]
+type t = Base.t Blang.t [@@deriving sexp_of]
 
 let matches t email =
   Blang.eval t (fun base -> Base.matches base email)

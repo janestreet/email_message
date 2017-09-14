@@ -7,15 +7,26 @@ module Base : sig
   type t =
     [ `exists_header of string * Regex.t
     | `all_headers   of string * Regex.t
-    ] [@@deriving sexp]
+    ] [@@deriving sexp_of]
 
   val matches : t -> Email.t -> bool
 
   val examples : t list
 end
 
-type t = Base.t Blang.t [@@deriving sexp]
+type t = Base.t Blang.t [@@deriving sexp_of]
 
 val matches : t -> Email.t -> bool
 
 val example : t
+
+module Stable : sig
+  module Base : sig
+    module V1 : sig
+      type t = [ | Base.t ] [@@deriving sexp]
+    end
+  end
+  module V1 : sig
+    type nonrec t = t [@@deriving sexp]
+  end
+end

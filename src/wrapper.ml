@@ -1,12 +1,27 @@
+module Stable = struct
+  open Core.Core_stable
+  module Email_simple = Email_simple.Stable
+  module Email_address = Email_address.Stable
+  module V1 = struct
+    type t =
+      { header  : Email_simple.Content.V1.t
+      ; from    : [`Keep | `Change_to of Email_address.V1.t]
+      ; to_     : [`Keep | `Change_to of Email_address.V1.t list]
+      ; cc      : [`Keep | `Change_to of Email_address.V1.t list]
+      ; subject : [`Keep | `Prepend of string]
+      } [@@deriving sexp, bin_io]
+  end
+end
+
 open Core
 
-type t =
+type t = Stable.V1.t =
   { header  : Email_simple.Content.t
   ; from    : [`Keep | `Change_to of Email_address.t]
   ; to_     : [`Keep | `Change_to of Email_address.t list]
   ; cc      : [`Keep | `Change_to of Email_address.t list]
   ; subject : [`Keep | `Prepend of string]
-  } [@@deriving bin_io]
+  } [@@deriving sexp_of]
 
 let create ?(from=`Keep) ?(to_=`Keep) ?(cc=`Keep) ?(subject=`Keep) header =
   { header; from; to_; cc; subject }

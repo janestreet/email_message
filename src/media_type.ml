@@ -1,7 +1,7 @@
 open Core
 
 module Params = struct
-  type t = (Headers.Name.t * string) list [@@deriving sexp]
+  type t = (Headers.Name.t * string) list [@@deriving sexp_of]
 
   let last t name =
     let name = Headers.Name.of_string name in
@@ -13,7 +13,7 @@ type t = {
   mime_type : Rfc.RFC2045.Token.t;
   mime_subtype : Rfc.RFC2045.Token.t;
   params : Params.t;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let is ?mime_type ?mime_subtype t =
   Option.value_map mime_type ~default:true

@@ -1,7 +1,14 @@
-open Core
+module Stable = struct
+  open !Core.Core_stable
+  module V1 = struct
+    type t = Core.Bigstring.t_frozen [@@deriving sexp, bin_io, compare, hash]
+  end
+end
 
+open Core
 open Bigstring
-type t = t_frozen [@@deriving sexp, bin_io, compare, hash]
+
+type t = Stable.V1.t [@@deriving sexp_of, compare, hash]
 
 let to_bigstring t = t
 let of_bigstring t = t

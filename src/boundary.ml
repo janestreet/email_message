@@ -1,7 +1,14 @@
+module Stable = struct
+  open Core.Core_stable
+  module V1 = struct
+    type t = string [@@deriving sexp, bin_io, compare]
+  end
+end
+
 open Core
 
 
-type t = string [@@deriving sexp, bin_io, compare, hash]
+type t = string [@@deriving sexp_of, compare, hash]
 let create = Fn.id
 
 module Generator = struct

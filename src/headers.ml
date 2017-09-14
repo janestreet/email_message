@@ -1,19 +1,39 @@
+module Stable = struct
+  open Core.Core_stable
+
+  module Name = struct
+    module V1 = struct
+      type t = string [@@deriving bin_io, compare, hash, sexp]
+    end
+  end
+
+  module Value = struct
+    module V1 = struct
+      type t = string [@@deriving bin_io, compare, hash, sexp]
+    end
+  end
+
+  module V1 = struct
+    type t = (Name.V1.t * string) list [@@deriving bin_io, compare, hash, sexp]
+  end
+end
+
 open Core
 
 module Whitespace = struct
   type t =
     [ `Raw (* Leave whitespace unchanged *)
     | `Normalize (* Cleanup leading and trailing whitespace on each line *)
-    ] [@@deriving sexp]
+    ] [@@deriving sexp_of]
   let default : t = `Normalize
 end
 
 module Name : sig
-  type t = string [@@deriving sexp, bin_io, compare, hash]
+  type t = string [@@deriving sexp_of, compare, hash]
   val of_string : string -> t
   val to_string : t -> string
-  include Comparable.S with type t := t
-  include Hashable.S with type t := t
+  include Comparable.S_plain with type t := t
+  include Hashable.S_plain with type t := t
   val is : t -> string -> bool
 end = struct
   include Mimestring.Case_insensitive
@@ -22,12 +42,12 @@ end = struct
 end
 
 module Value : sig
-  type t = string [@@deriving sexp, bin_io, compare, hash]
+  type t = string [@@deriving sexp_of, compare, hash]
   val of_string : ?whitespace:Whitespace.t -> string -> t
   val to_string : ?whitespace:Whitespace.t -> t -> string
   val of_string_to_string : ?whitespace:Whitespace.t -> string -> string
-  include Comparable.S with type t := t
-  include Hashable.S with type t := t
+  include Comparable.S_plain with type t := t
+  include Hashable.S_plain with type t := t
 end = struct
   include String
   let of_string ?(whitespace=Whitespace.default) str =
@@ -49,7 +69,7 @@ module Common = struct
   let message_id = "Message-ID"
 end
 
-type t = (Name.t * string) list [@@deriving sexp, bin_io, compare, hash]
+type t = (Name.t * string) list [@@deriving sexp_of, compare, hash]
 
 let to_string_monoid t =
   List.map t ~f:(fun (name,value) ->
@@ -149,6 +169,12 @@ let map ?whitespace t ~f =
       else Value.of_string_to_string ?whitespace value'
     in
     name, value)
+
+let smash_and_add ?whitespace t ~name ~value =
+  let values = find_all ?whitespace t name in
+  let t = filter t ~f:(fun ~name:name' ~value:_ -> Name.(name <> name')) in
+  let value = String.concat (values @ [value]) ~sep:", " in
+  add_at_bottom t ~name ~value
 
 let names = List.map ~f:fst
 

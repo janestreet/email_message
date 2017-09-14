@@ -1,9 +1,10 @@
 open! Core
 open Async
-open Email_message.Std
+open Email_message
+open Email_message.Private
 open Expect_test_helpers
 
-open Email_message.Boundary
+open Boundary
 
 
 let boundary = create "BOUNDARY"

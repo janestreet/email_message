@@ -1,8 +1,9 @@
 open! Core
 open Async
+open Email_message.Private
 open Expect_test_helpers
 
-open Email_message.Rfc.RFC2045.Token
+open Rfc.RFC2045.Token
 
 let%expect_test "RFC2045.Token" =
   let is_valid_or_quote strs =

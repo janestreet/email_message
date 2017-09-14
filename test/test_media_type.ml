@@ -1,9 +1,10 @@
 open! Core
 open Async
-open Email_message.Std
+open Email_message
+open Email_message.Private
 open Expect_test_helpers
 
-open Email_message.Media_type
+open Media_type
 
 let last headers =
   let result = Option.value_exn (last headers) in

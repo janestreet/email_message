@@ -40,7 +40,7 @@ module Attachment : sig
 end
 
 module Content : sig
-  type t = private Email.t [@@deriving bin_io, sexp_of]
+  type t = private Email.t [@@deriving sexp_of]
 
   val of_email : Email.t -> t
 
@@ -181,4 +181,10 @@ module Expert : sig
     -> extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> t list
     -> t
+end
+
+module Stable : sig
+  module Content : sig
+    module V1 : sig type t = Content.t [@@deriving sexp, bin_io] end
+  end
 end

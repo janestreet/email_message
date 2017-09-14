@@ -1,4 +1,4 @@
-open Core
+open! Core
 (* This module exposes a function to add a custom wrapper around an existing email. Gmail
    will result in the following formatting:
 
@@ -13,7 +13,7 @@ open Core
    (6)
 
    where (1)-(6) are taken from the original email. *)
-type t [@@deriving bin_io]
+type t [@@deriving sexp_of]
 
 (* Create a [Wrapper.t] that can be used to wrap emails *)
 val create
@@ -32,3 +32,7 @@ val create_from_email
 
 (* Transform an email by wrapping it according to the [Wrapper.t] *)
 val add :  t -> Email.t -> Email.t
+
+module Stable : sig
+  module V1 : sig type nonrec t = t [@@deriving sexp, bin_io] end
+end

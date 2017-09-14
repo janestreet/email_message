@@ -1,3 +1,25 @@
+module Stable = struct
+  open Core.Core_stable
+  module Encoding = struct
+    module V1 = struct
+      type t =
+        [ `Base64
+        | `Bit7
+        | `Bit8
+        | `Binary
+        | `Quoted_printable
+        | `Unknown of string
+        ] [@@deriving sexp, bin_io]
+    end
+  end
+  module V1 = struct
+    type t =
+      { encoding : Encoding.V1.t
+      ; content  : Bigstring_shared.Stable.V1.t
+      } [@@deriving sexp, bin_io]
+  end
+end
+
 open Core
 
 module Encoding = struct
@@ -9,14 +31,11 @@ module Encoding = struct
     | `Bit8
     | `Binary
     | `Quoted_printable
-    ]
-  [@@deriving sexp, bin_io, compare, hash]
-
-  type t =
+    ] [@@deriving sexp_of, compare, hash]
+  type t = (* Stable.Encoding.V1.t = *)
     [ known
     | `Unknown of string
-    ] [@@deriving sexp, bin_io, compare, hash]
-  ;;
+    ] [@@deriving sexp_of, compare, hash]
 
   let of_string encoding =
     match encoding |> String.strip |> String.lowercase with
@@ -59,10 +78,10 @@ module Encoding = struct
     | None   -> default
 end
 
-type t =
+type t = Stable.V1.t =
   { encoding : Encoding.t
   ; content  : Bigstring_shared.t
-  } [@@deriving sexp, bin_io, compare, hash]
+  } [@@deriving sexp_of, compare, hash]
 
 let encoding t = t.encoding
 let encoded_contents t = t.content

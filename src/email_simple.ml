@@ -1,3 +1,9 @@
+module Stable = struct
+  module Content = struct
+    module V1 = Email.Stable.V1
+  end
+end
+
 open! Core
 open Re2.Std
 module Crypto = Crypto.Cryptokit
@@ -142,7 +148,7 @@ module Expert = struct
 end
 
 module Mimetype = struct
-  type t = string
+  type t = string [@@deriving sexp_of]
   let text = "text/plain"
   let html = "text/html"
   let pdf = "application/pdf"
@@ -176,7 +182,7 @@ module Attachment = struct
        lazily. *)
     ; raw_data : Bigstring_shared.t Or_error.t Lazy.t
     ; md5      : string Or_error.t Lazy.t
-    } [@@deriving fields]
+    } [@@deriving fields, sexp_of]
 
   let raw_data t = Lazy.force t.raw_data
   let md5 t      = Lazy.force t.md5
@@ -232,7 +238,7 @@ module Attachment = struct
 end
 
 module Content = struct
-  type t = Email.t [@@deriving bin_io, sexp_of]
+  type t = Email.t [@@deriving sexp_of]
   let of_email = ident
 
   let create ~content_type ?(encoding=Mimetype.guess_encoding content_type) ?(extra_headers=[]) content =

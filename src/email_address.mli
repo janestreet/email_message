@@ -1,6 +1,6 @@
 open! Core
 
-type t [@@deriving bin_io, sexp, compare, hash]
+type t [@@deriving sexp_of, compare, hash]
 
 (* Case-insensitive. *)
 module Domain : Mimestring.S with type t=string
@@ -45,17 +45,20 @@ val local_address : unit -> t
 
 (* Hash and comparisons are based on the address part (local_part + domain)
    only. *)
-include Comparable.S_binable with type t := t
-include Hashable.S_binable with type t := t
+include Comparable.S_plain with type t := t
+include Hashable.S_plain with type t := t
 
 module Caseless : sig
-  type nonrec t = t [@@deriving sexp, bin_io, compare, hash]
-  include Comparable.S_binable with type t := t
-  include Hashable.S_binable with type t := t
+  type nonrec t = t [@@deriving sexp_of, compare, hash]
+  include Comparable.S_plain with type t := t
+  include Hashable.S_plain with type t := t
 end
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving bin_io, sexp]
+    type nonrec t = t [@@deriving bin_io, sexp, compare]
+    include Comparable.Stable.V1.S
+      with type comparable := t
+       and type comparator_witness := comparator_witness
   end
 end

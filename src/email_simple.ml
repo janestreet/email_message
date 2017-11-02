@@ -85,7 +85,7 @@ module Expert = struct
     Email_content.to_email ~headers (Multipart multipart)
 
   let create_raw
-        ?(from=Email_address.local_address () |> Email_address.to_string)
+        ?(from=Email_address1.local_address () |> Email_address.to_string)
         ~to_
         ?(cc=[])
         ?(reply_to=[])
@@ -188,12 +188,12 @@ module Attachment = struct
   let md5 t      = Lazy.force t.md5
 
   let to_hex digest =
-    let result = String.create (String.length digest * 2) in
+    let result = Bytes.create (String.length digest * 2) in
     let hex = "0123456789ABCDEF" in
     for i = 0 to String.length digest - 1 do
       let c = int_of_char digest.[i] in
-      result.[2*i] <- hex.[c lsr 4];
-      result.[2*i+1] <- hex.[c land 0xF]
+      Bytes.set result (2*i) hex.[c lsr 4];
+      Bytes.set result (2*i+1) hex.[c land 0xF]
     done;
     result
 

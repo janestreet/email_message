@@ -1,9 +1,14 @@
-open! Core
+open Core_kernel
+
+module Domain : sig
+  type t = String.Caseless.t [@@deriving sexp_of, compare]
+  include Stringable with type t := t
+  include Comparator.S
+    with type t := t
+     and type comparator_witness = String.Caseless.comparator_witness
+end
 
 type t [@@deriving sexp_of, compare, hash]
-
-(* Case-insensitive. *)
-module Domain : Mimestring.S with type t=string
 
 val create : ?prefix:string -> ?domain:Domain.t -> string -> t
 
@@ -41,8 +46,6 @@ val prefix : t -> string option
     added before the given prefix. *)
 val set_prefix : t -> string option -> t
 
-val local_address : unit -> t
-
 (* Hash and comparisons are based on the address part (local_part + domain)
    only. *)
 include Comparable.S_plain with type t := t
@@ -56,7 +59,9 @@ end
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving bin_io, sexp, compare]
+    include Stable
+      with type t = t
+       and type comparator_witness = comparator_witness
     include Comparable.Stable.V1.S
       with type comparable := t
        and type comparator_witness := comparator_witness

@@ -86,8 +86,8 @@ val set_at_bottom : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.
 val add_all           : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list -> t
 val add_all_at_bottom : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list -> t
 
-(* If headers with this name already exist, concatenates them all using a coma,
-   and appending the new value. Otherwise creates a new header. *)
+(** If headers with this name already exist, concatenates the values for all separated by
+    a comma, and appends the new value. Otherwise, creates a new header. *)
 val smash_and_add : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
 
 val filter : ?whitespace:Whitespace.t -> t -> f:(name:Name.t -> value:Value.t -> bool) -> t

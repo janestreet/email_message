@@ -12,9 +12,11 @@ depends: [
   "async"
   "core"
   "core_extended"
+  "core_kernel"
   "ppx_driver"
   "ppx_jane"
   "re2"
+  "angstrom"
   "cryptokit"
   "jbuilder"                {build & >= "1.0+beta12"}
   "magic-mime"

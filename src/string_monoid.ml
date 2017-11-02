@@ -17,12 +17,12 @@ module Underlying = struct
     match src with
     | String src ->
       (fun ?(src_pos=0) ?src_len:(len=(String.length src)) ~dst ?(dst_pos=0) () ->
-         String.blit ~src ~src_pos ~len ~dst ~dst_pos)
+         Bytes.blit ~src ~src_pos ~len ~dst ~dst_pos)
     | Bigstring src -> Bigstring.To_string.blito ~src
     | Char c ->
       (fun ?(src_pos=0) ?(src_len=1) ~dst ?(dst_pos=0) () ->
          match src_pos, src_len with
-         | 0, 1     -> dst.[dst_pos] <- c
+         | 0, 1     -> Bytes.set dst dst_pos c
          | (0|1), 0 -> ()
          | _, _     -> invalid_arg "index out of bounds")
   ;;
@@ -155,7 +155,7 @@ let blit ~(dst_blit:blitter) t =
 ;;
 
 let to_string t =
-  let dst = String.create (length t) in
+  let dst = Bytes.create (length t) in
   blit ~dst_blit:(Underlying.blit_string ~dst) t;
   dst
 ;;

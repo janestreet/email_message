@@ -13,11 +13,11 @@ module Underlying = struct
     | Char _ -> 1
   ;;
 
-  let blit_string ~src =
+  let blit_bytes ~src =
     match src with
     | String src ->
       (fun ?(src_pos=0) ?src_len:(len=(String.length src)) ~dst ?(dst_pos=0) () ->
-         Bytes.blit ~src ~src_pos ~len ~dst ~dst_pos)
+         Bytes.From_string.blit ~src ~src_pos ~len ~dst ~dst_pos)
     | Bigstring src -> Bigstring.To_string.blito ~src
     | Char c ->
       (fun ?(src_pos=0) ?(src_len=1) ~dst ?(dst_pos=0) () ->
@@ -156,8 +156,8 @@ let blit ~(dst_blit:blitter) t =
 
 let to_string t =
   let dst = Bytes.create (length t) in
-  blit ~dst_blit:(Underlying.blit_string ~dst) t;
-  dst
+  blit ~dst_blit:(Underlying.blit_bytes ~dst) t;
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
 ;;
 
 let to_bigstring t =

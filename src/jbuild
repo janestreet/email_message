@@ -1,6 +1,7 @@
 (library
  ((name email_message)
   (public_name email_message)
+  (flags (:standard -safe-string))
   (libraries (
     async
     core_extended.base64

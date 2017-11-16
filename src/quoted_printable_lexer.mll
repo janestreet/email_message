@@ -4,8 +4,6 @@
  * to be of type (int -> 'a -> 'a t), not (len:int -> 'a -> 'a t) *)
 module C = Core
 
-module String = Bytes
-
 module Quoted_printable = struct
 
   (* Quoted printable functions *)

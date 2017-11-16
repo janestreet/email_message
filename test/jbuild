@@ -1,5 +1,6 @@
 (library (
   (name email_message_test)
+  (flags (:standard -safe-string))
   (libraries (async core email_message expect_test_helpers))
   (preprocess (pps (ppx_jane ppx_driver.runner)))
 ))

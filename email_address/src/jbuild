@@ -1,6 +1,7 @@
 (library
  ((name email_address)
   (public_name email_message.email_address)
+  (flags (:standard -safe-string))
   (libraries (
     angstrom
     core_kernel

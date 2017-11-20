@@ -18,7 +18,7 @@ module Underlying = struct
     | String src ->
       (fun ?(src_pos=0) ?src_len:(len=(String.length src)) ~dst ?(dst_pos=0) () ->
          Bytes.From_string.blit ~src ~src_pos ~len ~dst ~dst_pos)
-    | Bigstring src -> Bigstring.To_string.blito ~src
+    | Bigstring src -> Bigstring.To_bytes.blito ~src
     | Char c ->
       (fun ?(src_pos=0) ?(src_len=1) ~dst ?(dst_pos=0) () ->
          match src_pos, src_len with

@@ -40,7 +40,7 @@ let to_lexbuf t =
   Lexing.from_function
     (fun dst n ->
        let read = min n (len - !offset) in
-       Bigstring.To_string.blit
+       Bigstring.To_bytes.blit
          ~src:t
          ~src_pos:!offset
          ~len:read

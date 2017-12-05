@@ -7,7 +7,7 @@ open Email.Content
 
 let parse s =
   let email = Email.of_string s in
-  let unparsed = Email.raw_content email in
+  let unparsed = Email.raw_content email |> Email.Raw_content.to_bigstring_shared in
   let parsed = parse email |> ok_exn in
   print_s [%message "" ~_:(parsed : t)];
   let round_tripped = to_bigstring_shared parsed in

@@ -58,5 +58,6 @@ val map_data
   -> f:(Octet_stream.t -> Octet_stream.t)
   -> Email.t
 
+val to_raw_content      : t -> Email_raw_content.t
 val to_bigstring_shared : t -> Bigstring_shared.t
-val to_string_monoid : t -> String_monoid.t
+val to_string_monoid    : t -> String_monoid.t

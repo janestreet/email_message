@@ -71,12 +71,12 @@ end
 
 type t = (Name.t * string) list [@@deriving sexp_of, compare, hash]
 
-let to_string_monoid t =
+let to_string_monoid ?(eol = `LF) t =
   List.map t ~f:(fun (name,value) ->
-    String_monoid.concat_string [(name :> string); ":"; value; "\n"])
+    String_monoid.concat_string [(name :> string); ":"; value; Lf_or_crlf.to_string eol])
   |> String_monoid.concat
 
-let to_string t = String_monoid.to_string (to_string_monoid t)
+let to_string ?eol t = String_monoid.to_string (to_string_monoid ?eol t)
 
 let empty = []
 let append = List.append
@@ -159,16 +159,19 @@ let add_all_at_bottom ?whitespace t ts =
 let filter ?whitespace t ~f =
   List.filter t ~f:(fun (name,value) -> f ~name ~value:(Value.of_string ?whitespace value))
 
-let map ?whitespace t ~f =
+let map' ?whitespace t ~f =
   List.map t ~f:(fun ((name:Name.t),(value_raw:string)) ->
     let value = Value.of_string ?whitespace value_raw in
-    let value' = f ~name ~value in
+    let name', value' = f ~name ~value in
     let value =
       if String.equal (value :> string) value'
       then value_raw
       else Value.of_string_to_string ?whitespace value'
     in
-    name, value)
+    name', value)
+
+let map ?whitespace t ~f =
+  map' ?whitespace t ~f:(fun ~name ~value -> name, f ~name ~value)
 
 let smash_and_add ?whitespace t ~name ~value =
   let values = find_all ?whitespace t name in

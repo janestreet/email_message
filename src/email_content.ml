@@ -83,7 +83,7 @@ and parse ?container_headers email =
   content_of_bigstring_shared
     ?container_headers
     ~headers:(Email.headers email)
-    (Email.raw_content email)
+    (Email.raw_content email |> Email_raw_content.to_bigstring_shared)
 ;;
 
 let to_string_monoid = function
@@ -98,6 +98,11 @@ let to_bigstring_shared t =
   to_string_monoid t
   |> String_monoid.to_bigstring
   |> Bigstring_shared.of_bigstring
+;;
+
+let to_raw_content t =
+  to_bigstring_shared t
+  |> Email_raw_content.of_bigstring_shared
 ;;
 
 let rec multipart_map_data ~on_unparsable_content mp ~f =
@@ -118,7 +123,8 @@ and map_data ~on_unparsable_content email ~f =
   match parse email with
   | Ok content ->
     let content = content_map_data content ~on_unparsable_content ~f in
-    Email.set_raw_content email (to_bigstring_shared content)
+    Email.set_raw_content email
+      (to_bigstring_shared content |> Email_raw_content.of_bigstring_shared)
   | Error e ->
     match on_unparsable_content with
     | `Skip -> email
@@ -130,6 +136,10 @@ let map_data ?(on_unparsable_content = `Skip) email ~f =
   map_data ~on_unparsable_content email ~f
 ;;
 
-let to_email ~headers t = Email.create ~headers ~raw_content:(to_bigstring_shared t)
+let to_email ~headers t =
+  Email.create
+    ~headers
+    ~raw_content:(to_bigstring_shared t |> Email_raw_content.of_bigstring_shared)
+;;
 
 let set_content email t = to_email ~headers:(Email.headers email) t

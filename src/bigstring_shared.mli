@@ -19,6 +19,13 @@ val sub : ?pos:int -> ?len:int -> t -> t
 
 val foldi : t -> init:'b -> f:(int -> 'b -> char -> 'b) -> 'b
 
+(** [include_empty_last_line] determines whether a string that ends in "\n" has an empty
+    string as the last line.
+
+    [iter_lines] and [split_lines] do not include an empty last line. *)
+val lines_seq : ?include_empty_last_line:unit -> t -> t Sequence.t
+
+val iter_lines : t -> f:(t -> unit) -> unit
 val split_lines : t -> t list
 
 (** Gets a bigstring from a bigbuffer with minimal memory overhead. *)

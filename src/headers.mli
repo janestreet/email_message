@@ -61,8 +61,9 @@ end
    before the value. *)
 type t [@@deriving compare, hash, sexp_of]
 
-include String_monoidable.S with type t := t
-val to_string : t -> string
+(** [eol] defaults to `LF *)
+val to_string_monoid : ?eol:Lf_or_crlf.t -> t -> String_monoid.t
+val to_string        : ?eol:Lf_or_crlf.t -> t -> string
 
 val empty : t
 val append : t -> t -> t
@@ -99,11 +100,21 @@ val filter : ?whitespace:Whitespace.t -> t -> f:(name:Name.t -> value:Value.t ->
     If the [~value] and [f ~name ~value] are the same no change will be made (white space is preserved).
 
     Particularly the following is an identity transform:
-    [ map ~whitespace:`Strip ~f:(fun ~name:_ ~value -> Value.of_string ~whitespace:`Strip value) ].
+    [ map ~whitespace:`Normalize ~f:(fun ~name:_ ~value -> Value.of_string ~whitespace:`Normalize value) ].
     By contrast the following will 'normalize' the whitespace on all headers.
-    [ map ~whitespace:`Keep ~f:(fun ~name:_ ~value -> Value.of_string ~whitespace:`Strip value) ].
+    [ map ~whitespace:`Raw ~f:(fun ~name:_ ~value -> Value.of_string ~whitespace:`Normalize value) ].
 *)
-val map : ?whitespace:Whitespace.t -> t -> f:(name:Name.t -> value:Value.t -> Value.t) -> t
+val map
+  :  ?whitespace:Whitespace.t
+  -> t
+  -> f:(name:Name.t -> value:Value.t -> Value.t)
+  -> t
+
+val map'
+  :  ?whitespace:Whitespace.t
+  -> t
+  -> f:(name:Name.t -> value:Value.t -> Name.t * Value.t)
+  -> t
 
 module Stable : sig
   module Name : sig

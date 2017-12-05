@@ -40,15 +40,21 @@ module Underlying = struct
   ;;
 
   let output_channel ~channel = function
-    | String str -> Out_channel.output_string channel str
-    | Bigstring bstr -> Bigstring.really_output channel bstr
-    | Char c -> Out_channel.output_char channel c
+    | String    str  -> Out_channel.output_string channel str
+    | Bigstring bstr -> Bigstring.really_output   channel bstr
+    | Char      c    -> Out_channel.output_char   channel c
   ;;
 
   let output_unix ~writer = function
-    | String str -> Async.Writer.write writer str
+    | String    str  -> Async.Writer.write           writer str
     | Bigstring bstr -> Async.Writer.write_bigstring writer bstr
-    | Char c -> Async.Writer.write_char writer c
+    | Char      c    -> Async.Writer.write_char      writer c
+  ;;
+
+  let output_bigbuffer ~bigbuffer = function
+    | String    s    -> Bigbuffer.add_string    bigbuffer s
+    | Bigstring bstr -> Bigbuffer.add_bigstring bigbuffer bstr
+    | Char      c    -> Bigbuffer.add_char      bigbuffer c
   ;;
 
   let is_suffix t ~suffix =
@@ -181,6 +187,10 @@ let output_channel t channel =
 
 let output_unix t writer =
   output ~dst_output:(Underlying.output_unix ~writer) t
+;;
+
+let output_bigbuffer t bigbuffer =
+  output ~dst_output:(Underlying.output_bigbuffer ~bigbuffer) t
 ;;
 
 let rec fold t ~init ~f =

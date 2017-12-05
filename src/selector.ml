@@ -23,18 +23,16 @@ module Base = struct
     | `all_headers   of string * Regex.t
     ] [@@deriving sexp_of]
 
-  let matches t email =
+  let matches' t headers =
     match t with
     | `exists_header (header, regex) ->
-      let headers =
-        Headers.find_all (Email.headers email) header
-      in
+      let headers = Headers.find_all headers header in
       List.exists headers ~f:(Regex.matches regex)
     | `all_headers (header, regex) ->
-      let headers =
-        Headers.find_all (Email.headers email) header
-      in
+      let headers = Headers.find_all headers header in
       List.for_all headers ~f:(Regex.matches regex)
+
+  let matches t email = matches' t (Email.headers email)
 
   let examples =
     [ `exists_header ("cc",
@@ -46,8 +44,10 @@ end
 
 type t = Base.t Blang.t [@@deriving sexp_of]
 
-let matches t email =
-  Blang.eval t (fun base -> Base.matches base email)
+let matches' t headers =
+  Blang.eval t (fun base -> Base.matches' base headers)
+
+let matches t email = matches' t (Email.headers email)
 
 let example : t =
   Blang.and_ (List.map Base.examples ~f:Blang.base)

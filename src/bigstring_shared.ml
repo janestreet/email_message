@@ -63,45 +63,104 @@ let foldi t ~init ~f =
 ;;
 
 (* Copied from String.split_lines. *)
-let split_lines =
+let iter_lines_rev t ~f =
   let back_up_at_newline ~t ~pos ~eol =
     pos := !pos - (if !pos > 0 && get t (!pos - 1) = '\r' then 2 else 1);
     eol := !pos + 1;
   in
-  fun t ->
-    let n = length t in
-    if n = 0
-    then []
-    else
-      (* Invariant: [-1 <= pos < eol]. *)
-      let pos = ref (n - 1) in
-      let eol = ref n in
-      let ac = ref [] in
-      (* We treat the end of the string specially, because if the string ends with a
-         newline, we don't want an extra empty string at the end of the output. *)
-      if get t !pos = '\n' then back_up_at_newline ~t ~pos ~eol;
-      while !pos >= 0 do
-        if get t !pos <> '\n'
-        then decr pos
-        else
-          (* Becuase [pos < eol], we know that [start <= eol]. *)
-          let start = !pos + 1 in
-          ac := sub t ~pos:start ~len:(!eol - start) :: !ac;
-          back_up_at_newline ~t ~pos ~eol
-      done;
-      sub t ~pos:0 ~len:!eol :: !ac
+  let n = length t in
+  if n = 0
+  then ()
+  else begin
+    (* Invariant: [-1 <= pos < eol]. *)
+    let pos = ref (n - 1) in
+    let eol = ref n in
+    (* We treat the end of the string specially, because if the string ends with a
+       newline, we don't want an extra empty string at the end of the output. *)
+    if get t !pos = '\n' then back_up_at_newline ~t ~pos ~eol;
+    while !pos >= 0 do
+      if get t !pos <> '\n'
+      then decr pos
+      else
+        (* Becuase [pos < eol], we know that [start <= eol]. *)
+        let start = !pos + 1 in
+        f (sub t ~pos:start ~len:(!eol - start));
+        back_up_at_newline ~t ~pos ~eol
+    done;
+    f (sub t ~pos:0 ~len:!eol)
+  end
 ;;
 
-let%test_unit _ =
+let split_lines t =
+  let acc = ref [] in
+  iter_lines_rev t ~f:(fun line -> acc := line :: !acc);
+  !acc
+;;
+
+let lines_seq ?include_empty_last_line t =
+  let open Sequence.Generator in
+  let rec traverse ~sol ~pos =
+    let prev_char_is_cr = pos <> 0 && get t (pos -1) = '\r' in
+    if pos = length t
+    then begin
+      (* Safe because [length t > 0] *)
+      if Option.is_some include_empty_last_line || not (get t (pos - 1) = '\n')
+      then begin
+        let len = pos - sol in
+        yield (sub t ~pos:sol ~len)
+        >>= fun () ->
+        return ()
+      end else return ()
+    end
+    else begin
+      if get t pos <> '\n'
+      then traverse ~sol ~pos:(pos + 1)
+      else begin
+        let len = pos - sol - (if prev_char_is_cr then 1 else 0) in
+        yield (sub t ~pos:sol ~len)
+        >>= fun () ->
+        let pos' = pos + 1 in
+        traverse ~sol:pos' ~pos:pos'
+      end
+    end
+  in
+  if length t = 0
+  then Sequence.empty
+  else Sequence.Generator.run (traverse ~sol:0 ~pos:0)
+;;
+
+let iter_lines t ~f = Sequence.iter (lines_seq t) ~f
+
+let%expect_test "split_lines and iter_lines" =
+  let split_lines t =
+    split_lines (of_string t)
+    |> List.map ~f:to_string
+  in
+  let split_lines_via_iter_lines t =
+    let acc = ref [] in
+    iter_lines (of_string t) ~f:(fun line -> acc := line :: !acc);
+    List.rev_map !acc ~f:to_string
+  in
+  let impls =
+    [ "Bigstring.iter_lines_rev", split_lines
+    ; "Bigstring.iter_lines",     split_lines_via_iter_lines
+    ; "String.split_lines",       String.split_lines
+    ]
+  in
   List.iter ~f:(fun s ->
-    let actual = split_lines (of_string s) |> List.map ~f:to_string in
-    let expect = String.split_lines s in
-    if actual <> expect
-    then failwiths "split_lines bug" (s, `actual actual , `expect expect)
-           [%sexp_of:
-             string *
-             [ `actual of string list ] *
-             [ `expect of string list ]])
+    let results = List.map impls ~f:(fun (desc, f) -> desc, f s) in
+    let all_equal =
+      List.dedup_and_sort results ~compare:(fun (_, r1) (_, r2) ->
+        [%compare: string list] r1 r2)
+      |> List.length
+      |> Int.equal 1
+    in
+    if not all_equal
+    then
+      raise_s
+        [%message "Mismatching implementations"
+                    ~input:(s : string)
+                    ~_:(results : (string * string list) list)])
     [ "";
       "\n";
       "a";

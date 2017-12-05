@@ -9,14 +9,16 @@ module Base : sig
     | `all_headers   of string * Regex.t
     ] [@@deriving sexp_of]
 
-  val matches : t -> Email.t -> bool
+  val matches  : t -> Email.t         -> bool
+  val matches' : t -> Headers.t -> bool
 
   val examples : t list
 end
 
 type t = Base.t Blang.t [@@deriving sexp_of]
 
-val matches : t -> Email.t -> bool
+val matches  : t -> Email.t -> bool
+val matches' : t -> Headers.t -> bool
 
 val example : t
 

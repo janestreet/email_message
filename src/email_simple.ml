@@ -495,28 +495,39 @@ let parse_attachment ?container_headers t =
       Some (Attachment.of_content ~headers ~filename content)
 ;;
 
-let rec map_file_attachments ?container_headers t ~f =
+let mapi_file_attachments ?container_headers t ~f =
   let open Async in
-  match Email_content.parse ?container_headers t with
-  | Error _ -> return t
-  | Ok (Data _data) ->
-    begin match parse_attachment ?container_headers t with
-    | None -> return t
-    | Some attachment ->
-      match%map f attachment with
-      | `Keep -> t
-      | `Replace t -> t
-    end
-  | Ok (Message message) ->
-    let%map message' = map_file_attachments message ?container_headers:None ~f in
-    Email_content.set_content t (Message message')
-  | Ok (Multipart (mp : Email_content.Multipart.t)) ->
-    let%map parts' =
-      Deferred.List.map mp.parts
-        ~f:(map_file_attachments ~f ~container_headers:mp.container_headers)
-    in
-    let mp' = {mp with Email_content.Multipart.parts = parts'} in
-    Email_content.set_content t (Multipart mp')
+  let i = ref 0 in
+  let rec loop ?container_headers t ~f =
+    match Email_content.parse ?container_headers t with
+    | Error _ -> return t
+    | Ok (Data _data) ->
+      begin match parse_attachment ?container_headers t with
+      | None -> return t
+      | Some attachment ->
+        let cur_i = !i in
+        incr i;
+        match%map f cur_i attachment with
+        | `Keep -> t
+        | `Replace t -> t
+      end
+    | Ok (Message message) ->
+      let%map message' = loop message ?container_headers:None ~f in
+      Email_content.set_content t (Message message')
+    | Ok (Multipart (mp : Email_content.Multipart.t)) ->
+      let%map parts' =
+        Deferred.List.map mp.parts
+          ~f:(loop ~f ~container_headers:mp.container_headers)
+      in
+      let mp' = {mp with Email_content.Multipart.parts = parts'} in
+      Email_content.set_content t (Multipart mp')
+  in
+  loop ?container_headers t ~f
+;;
+
+let map_file_attachments t ~f =
+  mapi_file_attachments t ~f:(fun (_ : int) attachment -> f attachment)
+;;
 
 let rec all_attachments ?container_headers t =
   match Email_content.parse ?container_headers t with
@@ -531,8 +542,8 @@ let rec all_attachments ?container_headers t =
       ~f:(all_attachments ~container_headers:mp.container_headers)
 ;;
 
-let map_file_attachments = map_file_attachments ?container_headers:None
-let all_attachments = all_attachments ?container_headers:None
+let mapi_file_attachments = mapi_file_attachments ?container_headers:None
+let all_attachments       = all_attachments       ?container_headers:None
 
 let find_attachment t name =
   List.find (all_attachments t) ~f:(fun attachment ->

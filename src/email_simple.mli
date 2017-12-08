@@ -152,6 +152,11 @@ val map_file_attachments
   -> f : (Attachment.t -> [`Keep | `Replace of t] Async.Deferred.t)
   -> t Async.Deferred.t
 
+val mapi_file_attachments
+  :  t
+  -> f : (int -> Attachment.t -> [`Keep | `Replace of t] Async.Deferred.t)
+  -> t Async.Deferred.t
+
 module Expert : sig
   val create_raw
     :  ?from:string (* defaults to <user@host> *)

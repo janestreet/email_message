@@ -18,5 +18,5 @@ module Expert : sig
 end
 
 module Stable : sig
-  module V1 : sig type nonrec t = t [@@deriving sexp] end
+  module V1 : sig type nonrec t = t [@@deriving bin_io, sexp] end
 end

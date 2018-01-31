@@ -64,7 +64,7 @@ let%expect_test "parse one" =
     [%expect {|
       (raised (
         "Failed to parse email address"
-        (error     "email > local_part: take_while1")
+        (error     "email > local_part: count_while1")
         (input_str "  "))) |}]
   in
   parse "local";

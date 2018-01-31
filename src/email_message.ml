@@ -17,7 +17,8 @@ module String_monoid = String_monoid
 module Email_message_stable = struct
   module Email         = struct
     include Email.Stable
-    module Simple = Email_simple.Stable
+    module Raw_content = Email_raw_content.Stable
+    module Simple      = Email_simple.Stable
   end
   module Email_address = Email_address.Stable
   module Email_wrapper = Email_wrapper.Stable

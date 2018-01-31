@@ -29,7 +29,9 @@ module Generator = struct
       else
         generate ()
     in
-    generate ()
+    if am_running_inline_test
+    then "TEST-BOUNDARY"
+    else generate ()
   ;;
 
   let generate ?text ?suggest () =
@@ -41,7 +43,7 @@ module Generator = struct
 
 end
 
-let generate = Generator.generate;;
+let generate = Generator.generate
 
 module Open = struct
 

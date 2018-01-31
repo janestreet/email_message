@@ -191,46 +191,95 @@ let%expect_test "[all_attachments] and [map_attachments]" =
              \n\
              \n--BOUNDARY--"))))) |}]
   in
+  (* Look into message/rfc822 for attachments *)
   let%bind () =
     parse_attachments
-      "Content-Type: message/rfc822\n\
-       Content-Disposition: attachment\n\
+      "Content-Type: multipart/mixed; boundary=\"BOUNDARY1\"\n\
        \n\
-       Content-Type: multipart/mixed; boundary=\"BOUNDARY\"\n\
+       --BOUNDARY1\n\
        \n\
-       --BOUNDARY\n\
+       Testing\n\
+       \n\
+       --BOUNDARY1\n\
+       Content-Type: message/rfc822\n\
+       \n\
+       Subject: We should parse into this message for attachments\n\
+       Content-Type: multipart/mixed; boundary=\"BOUNDARY2\"\n\
+       \n\
+       --BOUNDARY2\n\
        Content-Type: text/x-python; charset=US-ASCII; name=\"script.py\"\n\
        Content-Disposition: attachment; filename=\"script.py\"\n\
        Content-Transfer-Encoding: base64\n\
        \n\
        VGhpcyBhdHRhY2htZW50IGlzIGJsYWNrbGlzdGVk\n\
-       --BOUNDARY--"
+       --BOUNDARY2--\n\
+       \n\
+       --BOUNDARY1\n\
+       Content-Type: message/rfc822\n\
+       Content-Disposition: attachment\n\
+       \n\
+       Content-Type: multipart/mixed; boundary=\"BOUNDARY3\"\n\
+       \n\
+       --BOUNDARY3\n\
+       Content-Type: text/x-python; charset=US-ASCII; name=\"script2.py\"\n\
+       Content-Disposition: attachment; filename=\"script2.py\"\n\
+       Content-Transfer-Encoding: base64\n\
+       \n\
+       VGhpcyBhdHRhY2htZW50IGlzIGJsYWNrbGlzdGVk\n\
+       --BOUNDARY3--\n\
+       \n\
+       --BOUNDARY1--"
   in
-  let%bind () = [%expect {|
-        ((attachments
-          ((unnamed-attachment
-             "Content-Type: multipart/mixed; boundary=\"BOUNDARY\"\
-            \n\
-            \n--BOUNDARY\
-            \nContent-Type: text/x-python; charset=US-ASCII; name=\"script.py\"\
-            \nContent-Disposition: attachment; filename=\"script.py\"\
-            \nContent-Transfer-Encoding: base64\
-            \n\
-            \nVGhpcyBhdHRhY2htZW50IGlzIGJsYWNrbGlzdGVk\
-            \n--BOUNDARY--")
-           (script.py "This attachment is blacklisted")))
-         (stripped
-          ((headers
-            ((Content-Type " message/rfc822") (Content-Disposition " attachment")))
-           (raw_content
-            ( "Content-Type: multipart/mixed; boundary=\"BOUNDARY\"\
-             \n\
-             \n--BOUNDARY\
-             \nContent-Transfer-Encoding: quoted-printable\
-             \nContent-Type: text/plain\
-             \n\
-             \n<REPLACED>\
-             \n--BOUNDARY--"))))) |}]
+  let%bind () =
+    [%expect {|
+    ((attachments
+      ((script.py "This attachment is blacklisted")
+       (unnamed-attachment
+         "Content-Type: multipart/mixed; boundary=\"BOUNDARY3\"\
+        \n\
+        \n--BOUNDARY3\
+        \nContent-Type: text/x-python; charset=US-ASCII; name=\"script2.py\"\
+        \nContent-Disposition: attachment; filename=\"script2.py\"\
+        \nContent-Transfer-Encoding: base64\
+        \n\
+        \nVGhpcyBhdHRhY2htZW50IGlzIGJsYWNrbGlzdGVk\
+        \n--BOUNDARY3--\
+        \n")
+       (script2.py "This attachment is blacklisted")))
+     (stripped
+      ((headers ((Content-Type " multipart/mixed; boundary=\"BOUNDARY1\"")))
+       (raw_content
+        ( "--BOUNDARY1\
+         \n\
+         \nTesting\
+         \n\
+         \n--BOUNDARY1\
+         \nContent-Type: message/rfc822\
+         \n\
+         \nSubject: We should parse into this message for attachments\
+         \nContent-Type: multipart/mixed; boundary=\"BOUNDARY2\"\
+         \n\
+         \n--BOUNDARY2\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \nContent-Type: text/plain\
+         \n\
+         \n<REPLACED>\
+         \n--BOUNDARY2--\
+         \n\
+         \n--BOUNDARY1\
+         \nContent-Type: message/rfc822\
+         \nContent-Disposition: attachment\
+         \n\
+         \nContent-Type: multipart/mixed; boundary=\"BOUNDARY3\"\
+         \n\
+         \n--BOUNDARY3\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \nContent-Type: text/plain\
+         \n\
+         \n<REPLACED>\
+         \n--BOUNDARY3--\
+         \n\
+         \n--BOUNDARY1--"))))) |}]
   in
   return ()
 ;;

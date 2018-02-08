@@ -1,6 +1,14 @@
+open Core.Core_stable
+
 module Stable = struct
   module Content = struct
     module V1 = Email.Stable.V1
+  end
+
+  module Mimetype = struct
+    module V1 = struct
+      type t = string [@@deriving sexp]
+    end
   end
 end
 
@@ -148,7 +156,7 @@ module Expert = struct
 end
 
 module Mimetype = struct
-  type t = string [@@deriving sexp_of]
+  type t = Stable.Mimetype.V1.t [@@deriving sexp_of]
   let text = "text/plain"
   let html = "text/html"
   let pdf = "application/pdf"

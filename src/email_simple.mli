@@ -192,4 +192,8 @@ module Stable : sig
   module Content : sig
     module V1 : sig type t = Content.t [@@deriving sexp, bin_io] end
   end
+
+  module Mimetype : sig
+    module V1 : sig type t = Mimetype.t [@@deriving sexp] end
+  end
 end

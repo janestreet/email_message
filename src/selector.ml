@@ -4,8 +4,8 @@ module Stable = struct
   module Base = struct
     module V1 = struct
       type t =
-        [ `exists_header of string * Re2.Regex.t
-        | `all_headers   of string * Re2.Regex.t
+        [ `exists_header of string * Re2.t
+        | `all_headers   of string * Re2.t
         ] [@@deriving sexp]
     end
   end
@@ -14,7 +14,7 @@ module Stable = struct
   end
 end
 open Core
-open Re2
+module Regex = Re2
 
 module Base = struct
   type t =

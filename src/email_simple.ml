@@ -13,7 +13,6 @@ module Stable = struct
 end
 
 open! Core
-open Re2.Std
 module Crypto = Crypto.Cryptokit
 module Hash = Crypto.Hash
 

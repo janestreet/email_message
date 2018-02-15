@@ -1,7 +1,7 @@
 open! Core
 
 module Mimetype : sig
-  type t = string
+  type t = string [@@deriving sexp_of]
   val text : t
   val html : t
   val pdf : t

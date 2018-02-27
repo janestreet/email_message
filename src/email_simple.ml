@@ -1,6 +1,17 @@
 open Core.Core_stable
 
 module Stable = struct
+  module Attachment = struct
+    module Id = struct
+      module V1 = struct
+        type t =
+          { filename : string
+          ; path     : int list
+          } [@@deriving bin_io, compare, sexp]
+      end
+    end
+  end
+
   module Content = struct
     module V1 = Email.Stable.V1
   end
@@ -180,16 +191,42 @@ end
 
 type attachment_name = string
 
+module Path : sig
+  type t
+
+  val root : t
+
+  val child : t -> int -> t
+
+  val to_int_list : t -> int list
+end = struct
+  type t = int list
+
+  let root = []
+
+  let child t i = i :: t
+  let to_int_list t = List.rev t
+end
+
 module Attachment = struct
+  module Id = struct
+    type t = Stable.Attachment.Id.V1.t =
+      { filename : string
+      ; path     : int list
+      } [@@deriving compare, fields, sexp_of]
+  end
+
   type t =
-    { headers : Headers.t
-    ; filename : string
+    { headers        : Headers.t
+    ; id             : Id.t
     ; embedded_email : Email.t option
     (* These are expensive operations. Ensure they are only computed once, and
        lazily. *)
-    ; raw_data : Bigstring_shared.t Or_error.t Lazy.t
-    ; md5      : string Or_error.t Lazy.t
+    ; raw_data       : Bigstring_shared.t Or_error.t Lazy.t
+    ; md5            : string Or_error.t Lazy.t
     } [@@deriving fields, sexp_of]
+
+  let filename t = Id.filename t.id
 
   let raw_data t = Lazy.force t.raw_data
   let md5 t      = Lazy.force t.md5
@@ -204,7 +241,7 @@ module Attachment = struct
     done;
     Bytes.unsafe_to_string ~no_mutation_while_string_reachable:result
 
-  let of_content' ?embedded_email ~headers ~filename content =
+  let of_content' ?embedded_email ~headers ~filename ~path content =
     let raw_data =
       lazy (
         Or_error.try_with (fun () ->
@@ -223,12 +260,13 @@ module Attachment = struct
             |> to_hex)
       )
     in
-    { headers; filename; embedded_email; raw_data; md5 }
+    let id = { Id.filename; path = Path.to_int_list path } in
+    { headers; id; embedded_email; raw_data; md5 }
 
-  let of_content ~headers ~filename content =
-    of_content' ~headers ~filename (lazy content)
+  let of_content ~headers ~filename ~path content =
+    of_content' ~headers ~filename ~path (lazy content)
 
-  let of_embedded_email ~headers ~filename embedded_email =
+  let of_embedded_email ~headers ~filename ~path embedded_email =
     let content =
       lazy begin
         Email.to_bigstring_shared embedded_email
@@ -236,7 +274,7 @@ module Attachment = struct
              ~encoding:(Octet_stream.Encoding.of_headers_or_default headers)
       end
     in
-    of_content' ~embedded_email ~headers ~filename content
+    of_content' ~embedded_email ~headers ~filename ~path content
 
   let to_file t file =
     match raw_data t with
@@ -488,7 +526,7 @@ let all_related_parts = Content.all_related_parts
 let find_related = Content.find_related
 let inline_parts =  Content.inline_parts
 
-let parse_attachment ?container_headers t =
+let parse_attachment ?container_headers ~path t =
   match Content.content_disposition t with
   | `Inline -> None
   | `Attachment filename ->
@@ -497,60 +535,67 @@ let parse_attachment ?container_headers t =
     | Error _ -> None
     | Ok (Email_content.Multipart _) -> None
     | Ok (Message email) ->
-      Some (Attachment.of_embedded_email ~headers ~filename email)
+      Some (Attachment.of_embedded_email ~headers ~filename ~path email)
     | Ok (Data content) ->
-      Some (Attachment.of_content ~headers ~filename content)
+      Some (Attachment.of_content ~headers ~filename ~path content)
 ;;
 
-let mapi_file_attachments ?container_headers t ~f =
-  let open Async in
-  let i = ref 0 in
-  let rec loop ?container_headers t ~f =
+let map_and_collect_attachments ?include_message_rfc822_attachments t ~f =
+  let all_attachments = ref [] in
+  let handle_possible_attachment ?container_headers ~path t =
+    match parse_attachment ?container_headers ~path t with
+    | None -> t
+    | Some attachment ->
+      all_attachments := attachment :: !all_attachments;
+      match f attachment with
+      | `Keep -> t
+      | `Replace t -> t
+  in
+  let rec loop ?container_headers t ~path =
     match Email_content.parse ?container_headers t with
-    | Error _ -> return t
+    | Error _ -> t
     | Ok (Data _data) ->
-      begin match parse_attachment ?container_headers t with
-      | None -> return t
-      | Some attachment ->
-        let cur_i = !i in
-        incr i;
-        match%map f cur_i attachment with
-        | `Keep -> t
-        | `Replace t -> t
-      end
+      handle_possible_attachment ?container_headers ~path t
     | Ok (Message message) ->
-      let%map message' = loop message ?container_headers:None ~f in
+      let () =
+        match include_message_rfc822_attachments with
+        | None -> ()
+        | Some () ->
+          (* Run [handle_possible_attachment] purely for its side effect of adding an
+             attachment to [all_attachments]. It is a mistake to replace the content of a
+             message/rfc822 attachment. *)
+          ignore (handle_possible_attachment ?container_headers ~path t : t)
+      in
+      let message' =
+        loop message ?container_headers:None ~path:(Path.child path 0)
+      in
       Email_content.set_content t (Message message')
     | Ok (Multipart (mp : Email_content.Multipart.t)) ->
-      let%map parts' =
-        Deferred.List.map mp.parts
-          ~f:(loop ~f ~container_headers:mp.container_headers)
+      let parts' =
+        List.mapi mp.parts ~f:(fun i t ->
+          loop ~container_headers:mp.container_headers ~path:(Path.child path i) t)
       in
       let mp' = {mp with Email_content.Multipart.parts = parts'} in
       Email_content.set_content t (Multipart mp')
   in
-  loop ?container_headers t ~f
+  let message = loop ?container_headers:None ~path:Path.root t in
+  message, List.rev !all_attachments
 ;;
 
+(* Don't include message/rfc822 attachments because nested attachments would make this
+   interface really confusing. *)
 let map_file_attachments t ~f =
-  mapi_file_attachments t ~f:(fun (_ : int) attachment -> f attachment)
+  let (email, _) = map_and_collect_attachments t ~f in
+  email
 ;;
 
-let rec all_attachments ?container_headers t =
-  match Email_content.parse ?container_headers t with
-  | Error _ -> []
-  | Ok (Data _data) ->
-    Option.value_map ~default:[] (parse_attachment ?container_headers t) ~f:(fun a -> [a])
-  | Ok (Message message) ->
-    Option.value_map ~default:[] (parse_attachment ?container_headers t) ~f:(fun a -> [a])
-    @ (all_attachments ?container_headers:None message)
-  | Ok (Multipart (mp : Email_content.Multipart.t)) ->
-    List.concat_map mp.parts
-      ~f:(all_attachments ~container_headers:mp.container_headers)
+let all_attachments t =
+  let (_, attachments) =
+    map_and_collect_attachments ~include_message_rfc822_attachments:() t
+      ~f:(fun _ -> `Keep)
+  in
+  attachments
 ;;
-
-let mapi_file_attachments = mapi_file_attachments ?container_headers:None
-let all_attachments       = all_attachments       ?container_headers:None
 
 let find_attachment t name =
   List.find (all_attachments t) ~f:(fun attachment ->

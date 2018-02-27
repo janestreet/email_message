@@ -23,7 +23,15 @@ type attachment_name = string
 (* For parsing attachments. Use [create ~attachments] to add attachments.
    Convenience functions for email parts that have "Content-Disposition: attachment" *)
 module Attachment : sig
+  module Id : sig
+    type t [@@deriving compare, sexp_of]
+  end
+
   type t
+
+  (** In a given email, each attachment has a unique [Id.t] that is determined by the
+      email structure. *)
+  val id : t -> Id.t
 
   (** The headers surrounding this attachment *)
   val headers : t -> Headers.t
@@ -149,13 +157,8 @@ val inline_parts : t -> Content.t list
 
 val map_file_attachments
   :  t
-  -> f : (Attachment.t -> [`Keep | `Replace of t] Async.Deferred.t)
-  -> t Async.Deferred.t
-
-val mapi_file_attachments
-  :  t
-  -> f : (int -> Attachment.t -> [`Keep | `Replace of t] Async.Deferred.t)
-  -> t Async.Deferred.t
+  -> f : (Attachment.t -> [`Keep | `Replace of t])
+  -> t
 
 module Expert : sig
   val create_raw
@@ -189,8 +192,16 @@ module Expert : sig
 end
 
 module Stable : sig
+  module Attachment : sig
+    module Id : sig
+      module V1 : sig
+        type t = Attachment.Id.t [@@deriving bin_io, sexp]
+      end
+    end
+  end
+
   module Content : sig
-    module V1 : sig type t = Content.t [@@deriving sexp, bin_io] end
+    module V1 : sig type t = Content.t [@@deriving bin_io, sexp] end
   end
 
   module Mimetype : sig

@@ -58,12 +58,7 @@ module Caseless : sig
 end
 
 module Stable : sig
-  module V1 : sig
-    include Stable
-      with type t = t
-       and type comparator_witness = comparator_witness
-    include Comparable.Stable.V1.S
-      with type comparable := t
-       and type comparator_witness := comparator_witness
-  end
+  module V1 : Stable_comparable.V1
+    with type t = t
+    with type comparator_witness = comparator_witness
 end

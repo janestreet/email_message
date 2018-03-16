@@ -11,7 +11,7 @@
     magic-mime
     re2
     ))
-  (preprocess (pps (ppx_jane ppx_driver.runner)))
+  (preprocess (pps (ppx_jane ppxlib.runner)))
  ))
 
 (ocamllex (email_lexer media_type_lexer quoted_printable_lexer))

@@ -71,6 +71,13 @@ module Content : sig
     -> string
     -> t
 
+  (** Plain text e-mail that also includes an html version so it's displayed
+      monospace in gmail. *)
+  val text_monospace
+    : ?extra_headers:(Headers.Name.t * Headers.Value.t) list
+    -> string
+    -> t
+
   val of_file
     :  ?content_type:Mimetype.t
     -> ?encoding:(Octet_stream.Encoding.known)

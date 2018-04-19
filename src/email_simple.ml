@@ -43,7 +43,7 @@ let utc_offset_string time ~zone =
     String.concat
       [ (if Time.Span.(<) utc_offset Time.Span.zero then "-" else "+");
         Time.Ofday.to_string_trimmed
-          (Time.Ofday.of_span_since_start_of_day (Time.Span.abs utc_offset));
+          (Time.Ofday.of_span_since_start_of_day_exn (Time.Span.abs utc_offset));
       ]
 
 let rfc822_date now =
@@ -322,6 +322,31 @@ module Content = struct
 
   let alternatives ?extra_headers =
     create_multipart ?extra_headers ~content_type:Mimetype.multipart_alternative
+
+  let html_pre str =
+    (* This was copy&pasted from [markup.ml] in [html] library
+       to avoid adding a dependency on the whole [html] library
+       just for this. *)
+    let html_encode s =
+      let escape =
+        [ "&", "&amp;"
+        ; "<", "&lt;"
+        ; ">", "&gt;"
+        ; "\"", "&quot;"
+        ; "'", "&#39;"
+        ]
+      in
+      List.fold ~init:s escape ~f:(fun acc (pattern, with_) ->
+        String.substr_replace_all acc ~pattern ~with_)
+    in
+    "<html><pre>" ^ html_encode str ^ "</pre></html>"
+
+  let text_monospace ?extra_headers content =
+    alternatives ?extra_headers
+      [
+        text ?encoding:None content;
+        html ?encoding:None (html_pre content);
+      ]
 
   let mixed ?extra_headers =
     create_multipart ?extra_headers ~content_type:Mimetype.multipart_mixed

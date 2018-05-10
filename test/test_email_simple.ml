@@ -64,6 +64,8 @@ let parse_attachments s =
          (stripped : Email.t)])
 ;;
 
+let parse_attachments' l = parse_attachments (String.concat l ~sep:"\n")
+
 let%expect_test "[all_attachments] and [map_attachments]" =
   parse_attachments
     "Content-Type: multipart/mixed; boundary=BOUNDARY1\n\
@@ -278,4 +280,61 @@ let%expect_test "[all_attachments] and [map_attachments]" =
          \n--BOUNDARY1--"))))) |}]
   in
   return ()
+;;
+
+let%expect_test "long attachment name" =
+  parse_attachments'
+    [ "Content-Type: multipart/mixed; boundary=BOUNDARY1"
+    ; ""
+    ; "--BOUNDARY1"
+    ; "Content-Type: multipart/alternative; boundary=BOUNDARY2"
+    ; ""
+    ; "--BOUNDARY2"
+    ; "Content-Type: text/plain; charset=UTF-8"
+    ; ""
+    ; "Simple body"
+    ; ""
+    ; "--BOUNDARY2"
+    ; "Content-Type: text/html; charset=UTF-8"
+    ; ""
+    ; "<div>Simple body</div>"
+    ; ""
+    ; "--BOUNDARY2--"
+    ; "--BOUNDARY1"
+    ; "Content-Type: text/plain; charset=US-ASCII; name=\"attachment name"
+    ; " that wraps.txt\""
+    ; "Content-Disposition: attachment; filename=\"attachment name"
+    ; " that wraps.txt\""
+    ; "Content-Transfer-Encoding: base64"
+    ; ""
+    ; "Zm9v"
+    ; "--BOUNDARY1--"
+    ];
+  [%expect {|
+    ((attachments
+      ((((filename  "attachment name\
+                   \nthat wraps.txt") (path (1))) foo)))
+     (stripped
+      ((headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1")))
+       (raw_content
+        ( "--BOUNDARY1\
+         \nContent-Type: multipart/alternative; boundary=BOUNDARY2\
+         \n\
+         \n--BOUNDARY2\
+         \nContent-Type: text/plain; charset=UTF-8\
+         \n\
+         \nSimple body\
+         \n\
+         \n--BOUNDARY2\
+         \nContent-Type: text/html; charset=UTF-8\
+         \n\
+         \n<div>Simple body</div>\
+         \n\
+         \n--BOUNDARY2--\
+         \n--BOUNDARY1\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \nContent-Type: text/plain\
+         \n\
+         \n<REPLACED>\
+         \n--BOUNDARY1--"))))) |}]
 ;;

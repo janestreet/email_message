@@ -382,18 +382,12 @@ module Content = struct
 
   let attachment_name t =
     let open Option.Monad_infix in
-    let quoted_re = Re2.create "\"(.*)\"" in
     let unquote name =
-      let f name =
-        match
-          Or_error.try_with (fun () ->
-            Re2.replace_exn (Or_error.ok_exn quoted_re) name ~f:(fun match_ ->
-              Re2.Match.get_exn ~sub:(`Index 1) match_))
-        with
-        | Error _ -> name
-        | Ok name -> name
-      in
-      Option.map name ~f
+      Option.map name ~f:(fun name ->
+        let len = String.length name in
+        if len > 2 && String.get name 0 = '"' && String.get name (len - 1) = '"'
+        then String.sub name ~pos:1 ~len:(len - 2)
+        else name)
     in
     Option.first_some
       begin

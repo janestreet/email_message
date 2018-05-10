@@ -145,3 +145,36 @@ let%expect_test "weird headers" =
   in
   return ()
 ;;
+
+(* RFC 2822 Section 2.2.3:
+
+   {v
+
+ The general rule is that wherever this standard allows for folding white space (not
+ simply WSP characters), a CRLF may be inserted before any WSP. For example, the header
+ field:
+
+ Subject: This is a test
+
+ can be represented as:
+
+ Subject: This
+  is a test
+
+   v}
+*)
+let%expect_test "Folding whitespace" =
+  parse
+    ([ "Subject: This is a multiline"
+     ; " subject"
+     ; ""
+     ; "body"
+     ] |> String.concat ~sep:"\n");
+  let%bind () = [%expect {|
+        ((headers ((Subject  " This is a multiline\
+                            \n subject")))
+         (raw_content (body)))
+        Successfully roundtripped: true |}]
+  in
+  return ()
+;;

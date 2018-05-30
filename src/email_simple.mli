@@ -155,6 +155,14 @@ val cc : t -> Email_address.t list option
 val subject : t -> string option
 val id : t -> string option
 
+(* [extract_body ?content_type t] returns the body associated with the email part that
+   matches the [content_type] mimetype, or none if [t] does not contain a body or part of
+   type [content_type]. *)
+val extract_body
+  :  ?content_type:Mimetype.t  (** default: [Mimetype.text] *)
+  -> t
+  -> string option
+
 val all_attachments : t -> Attachment.t list
 val find_attachment : t -> attachment_name -> Attachment.t option
 val all_related_parts : t -> (attachment_name * Content.t) list

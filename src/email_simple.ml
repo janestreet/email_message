@@ -541,6 +541,33 @@ let subject =
 let id =
   decode_last_header "Message-Id" ~f:Fn.id
 
+let extract_body ?(content_type = Mimetype.text) email =
+  let rec loop email =
+    match Email_content.parse email with
+    | Error _ -> None
+    | Ok (Message _) -> None
+    | Ok (Multipart parts) ->
+      (* Recursively find the first valid body matching the requested content_type *)
+      List.find_map parts.parts ~f:loop
+    | Ok (Data stream) ->
+      let content_type' =
+        Content.content_type (Content.of_email email)
+      in
+      if String.(=) content_type' content_type
+      then (
+        match Octet_stream.decode stream with
+        | Some decoded ->
+          Some (Bigstring_shared.to_string decoded)
+        | None ->
+          Async.Log.Global.sexp [%message
+            "Failed to decode octet stream"
+              (stream : Octet_stream.t)];
+          None)
+      else None
+  in
+  loop email
+;;
+
 let all_related_parts = Content.all_related_parts
 let find_related = Content.find_related
 let inline_parts =  Content.inline_parts

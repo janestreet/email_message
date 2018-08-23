@@ -42,6 +42,7 @@ val address_part_string
 val set_address_part : t -> string -> t Or_error.t
 
 val prefix : t -> string option
+
 (** [set_prefix] will remove angle brackets if given [None], otherwise angle brackets are
     added before the given prefix. *)
 val set_prefix : t -> string option -> t

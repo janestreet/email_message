@@ -4,6 +4,7 @@
 module RFC2045 : sig
   module Token : sig
     include Mimestring.S
+
     (** True if the string doesn't need to be quoted *)
     val is_valid          : string -> bool
     (* Quotes a string if necessary *)

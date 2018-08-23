@@ -46,6 +46,7 @@ module Value : sig
       if [whitespace == `Raw] this does nothing.
       if [whitespace = `Normalize] (default), strip leading/trailing whitespace on every line. *)
   val of_string : ?whitespace:Whitespace.t -> string -> t
+
   (** Normalize the whitespace for transport (insert the appropriate leading space).
       if [whitespace == `Raw] this does nothing.
       if [whitespace == `Normalize] (default), insert a leading space and indent subsequent

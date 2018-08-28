@@ -18,7 +18,7 @@ module Stable = struct
 
   module Mimetype = struct
     module V1 = struct
-      type t = string [@@deriving sexp]
+      type t = string [@@deriving compare, sexp]
     end
   end
 end
@@ -166,16 +166,23 @@ module Expert = struct
 end
 
 module Mimetype = struct
-  type t = Stable.Mimetype.V1.t [@@deriving sexp_of]
+  type t = Stable.Mimetype.V1.t [@@deriving compare, sexp_of]
   let text = "text/plain"
   let html = "text/html"
   let pdf = "application/pdf"
   let jpg = "image/jpeg"
   let png = "image/png"
+  let csv = "text/csv"
 
   let multipart_mixed = "multipart/mixed"
   let multipart_alternative = "multipart/alternative"
   let multipart_related = "multipart/related"
+
+  let of_string t = t
+
+  let equal = [%compare.equal: t]
+
+  let arg = Command.Arg_type.create of_string
 
   let from_extension ext =
     Magic_mime_external.Mime_types.map_extension ext

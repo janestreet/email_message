@@ -1,16 +1,24 @@
 open! Core
 
 module Mimetype : sig
-  type t = string [@@deriving sexp_of]
+  type t = private string [@@deriving compare, sexp_of]
+
   val text : t
   val html : t
   val pdf : t
   val jpg : t
   val png : t
+  val csv : t
 
   val multipart_mixed : t
   val multipart_related : t
   val multipart_alternative : t
+
+  val of_string : string -> t
+
+  val equal : t -> t -> bool
+
+  val arg : t Command.Arg_type.t
 
   val from_filename : string -> t
   val from_extension : string -> t

@@ -25,10 +25,10 @@ module Quoted_printable = struct
         max_len : int;
         text : C.Bigbuffer.t;
 
-        (** Invariant: The length of `word' is always less than `max_len' *)
+        (* Invariant: The length of `word' is always less than `max_len' *)
         word : C.Bigbuffer.t;
 
-        (** Invariant: `pos' is always less than `max_len' *)
+        (* Invariant: `pos' is always less than `max_len' *)
         mutable pos  : int;
       }
     ;;
@@ -50,8 +50,8 @@ module Quoted_printable = struct
       end
     ;;
 
-    (** Adds the current word to the buffer, wrapping it to the
-      next line if necessary *)
+    (* Adds the current word to the buffer, wrapping it to the
+       next line if necessary *)
     let commit_word t =
       if t.pos + C.Bigbuffer.length t.word >= t.max_len then add_break t;
 
@@ -224,4 +224,3 @@ let encode_quoted_printable len lexbuf =
 ;;
 
 }
-

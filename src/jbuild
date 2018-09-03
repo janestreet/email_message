@@ -1,7 +1,6 @@
 (library
  ((name email_message)
   (public_name email_message)
-  (preprocess (pps (ppx_jane -dont-check-doc-comments-attachment ppxlib.runner)))
   (libraries (
     async
     core_extended.base64
@@ -12,6 +11,7 @@
     re2
     core.uuid
     ))
+  (preprocess (pps (ppx_jane ppxlib.runner)))
  ))
 
 (ocamllex (email_lexer media_type_lexer quoted_printable_lexer))

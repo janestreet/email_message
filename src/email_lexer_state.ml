@@ -2,14 +2,12 @@ open Core;;
 
 module State = struct
   type t = [
+    | `Header
     (** Initial state, parsing headers *)
-      `Header  |
-
-      (** Parsing the body of the message. The details are in the body state. *)
-      `Content |
-
-      (** The message should end here. If it doesn't, it's an error *)
-      `Expected_eof
+    | `Content
+    (** Parsing the body of the message. The details are in the body state. *)
+    | `Expected_eof
+    (** The message should end here. If it doesn't, it's an error *)
   ]
   ;;
 

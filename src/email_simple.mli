@@ -18,7 +18,7 @@ module Mimetype : sig
 
   val equal : t -> t -> bool
 
-  val arg : t Command.Arg_type.t
+  val arg_type : t Command.Arg_type.t
 
   val from_filename : string -> t
   val from_extension : string -> t

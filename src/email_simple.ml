@@ -182,7 +182,7 @@ module Mimetype = struct
 
   let equal = [%compare.equal: t]
 
-  let arg = Command.Arg_type.create of_string
+  let arg_type = Command.Arg_type.create of_string
 
   let from_extension ext =
     Magic_mime_external.Mime_types.map_extension ext

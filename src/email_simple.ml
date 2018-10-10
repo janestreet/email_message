@@ -31,7 +31,7 @@ let make_id () =
   sprintf !"<%s/%s+%{Uuid}@%s>"
     (Unix.getlogin ())
     (Sys.executable_name |> Filename.basename)
-    (Uuid.create ())
+    (Uuid_unix.create ())
     (Unix.gethostname ())
 
 let utc_offset_string time ~zone =

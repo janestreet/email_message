@@ -23,7 +23,7 @@ module Generator = struct
   *)
   let generate_raw ?(validate=(Fn.const true)) () =
     let rec generate () =
-      let boundary = sprintf !"--_::%{Uuid}::_--" (Uuid.create ()) in
+      let boundary = sprintf !"--_::%{Uuid}::_--" (Uuid_unix.create ()) in
       if validate boundary then
         boundary
       else

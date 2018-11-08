@@ -63,5 +63,5 @@ let email_list =
 let parse_only x =
   skip_whitespace *> x <* skip_whitespace <* end_of_input
 
-let email_only = parse_only email
+let email_only      = parse_only email
 let email_list_only = parse_only email_list

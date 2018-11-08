@@ -38,7 +38,9 @@ module Stable = struct
       let of_string ?default_domain input_str =
         let open Core_kernel in
         let open! Int.Replace_polymorphic_compare in
-        match Angstrom.parse_string Email_address_parser_stable_v1.email_only input_str with
+        match
+          Angstrom.parse_string Email_address_parser_stable_v1.email_only input_str
+        with
         | Error error ->
           Or_error.error_s [%message
             "Failed to parse email address"

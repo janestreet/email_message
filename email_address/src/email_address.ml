@@ -149,7 +149,11 @@ include Hashable.Make_plain(T)
 
 module Caseless = struct
   module T = struct
-    type nonrec t = t [@@deriving sexp, bin_io, compare, hash]
+    type nonrec t = t =
+      { prefix : String.Stable.V1.t option [@compare.ignore] [@hash.ignore]
+      ; local_part : Stable_caseless_string.V1.t
+      ; domain : Stable_caseless_string.V1.t option
+      } [@@deriving compare, hash, sexp]
   end
   include T
   include Hashable.Make_plain(T)

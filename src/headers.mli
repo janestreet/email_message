@@ -11,13 +11,16 @@ open! Core
 module Whitespace : sig
   type t =
     [ `Raw (* Leave whitespace unchanged *)
-    | `Normalize (* Cleanup leading and trailing whitespace on each line *)
-    ] [@@deriving sexp_of]
-  val default : t (* `Normalize *)
+    | `Normalize (* Cleanup leading and trailing whitespace on each line *) ]
+  [@@deriving sexp_of]
+
+  val default : t
+  (* `Normalize *)
 end
 
 module Name : sig
   (* Case insensitive *)
+
   type t = string [@@deriving sexp_of, compare, hash]
 
   val of_string : string -> t
@@ -27,6 +30,7 @@ module Name : sig
   include Hashable.S_plain with type t := t
 
   (* Short hand for [let is a b = equal a (of_string b)] *)
+
   val is : t -> string -> bool
 end
 
@@ -60,39 +64,45 @@ end
 
 (* The add and set functions are same as in Field_list, except they add a space
    before the value. *)
+
 type t [@@deriving compare, hash, sexp_of]
 
 (** [eol] defaults to `LF *)
 val to_string_monoid : ?eol:Lf_or_crlf.t -> t -> String_monoid.t
-val to_string        : ?eol:Lf_or_crlf.t -> t -> string
 
+val to_string : ?eol:Lf_or_crlf.t -> t -> string
 val empty : t
 val append : t -> t -> t
-
 val of_list : whitespace:Whitespace.t -> (Name.t * Value.t) list -> t
 val to_list : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list
-
 val last : ?whitespace:Whitespace.t -> t -> Name.t -> Value.t option
 val find_all : ?whitespace:Whitespace.t -> t -> Name.t -> Value.t list
 val names : t -> Name.t list
-
-val add           : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
+val add : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
 val add_at_bottom : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
+val add_if_missing : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
 
-val add_if_missing           : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
-val add_at_bottom_if_missing : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
+val add_at_bottom_if_missing
+  :  ?whitespace:Whitespace.t
+  -> t
+  -> name:Name.t
+  -> value:Value.t
+  -> t
 
-val set           : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
+val set : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
 val set_at_bottom : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
-
-val add_all           : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list -> t
+val add_all : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list -> t
 val add_all_at_bottom : ?whitespace:Whitespace.t -> t -> (Name.t * Value.t) list -> t
 
 (** If headers with this name already exist, concatenates the values for all separated by
     a comma, and appends the new value. Otherwise, creates a new header. *)
 val smash_and_add : ?whitespace:Whitespace.t -> t -> name:Name.t -> value:Value.t -> t
 
-val filter : ?whitespace:Whitespace.t -> t -> f:(name:Name.t -> value:Value.t -> bool) -> t
+val filter
+  :  ?whitespace:Whitespace.t
+  -> t
+  -> f:(name:Name.t -> value:Value.t -> bool)
+  -> t
 
 (** rewrite header values, preserving original whitespace where possible.
 
@@ -119,12 +129,18 @@ val map'
 
 module Stable : sig
   module Name : sig
-    module V1 : sig type t = Name.t [@@deriving sexp, bin_io] end
+    module V1 : sig
+      type t = Name.t [@@deriving sexp, bin_io]
+    end
   end
 
   module Value : sig
-    module V1 : sig type t = Value.t [@@deriving sexp, bin_io] end
+    module V1 : sig
+      type t = Value.t [@@deriving sexp, bin_io]
+    end
   end
 
-  module V1 : sig type nonrec t = t [@@deriving sexp, bin_io] end
+  module V1 : sig
+    type nonrec t = t [@@deriving sexp, bin_io]
+  end
 end

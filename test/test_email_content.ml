@@ -2,7 +2,6 @@ open! Core
 open Async
 open Email_message
 open Expect_test_helpers
-
 open Email.Content
 
 let parse s =
@@ -15,11 +14,10 @@ let parse s =
 ;;
 
 let%expect_test "simple content" =
-  parse
-    "From: foo@bar.com\n\
-     \n\
-     hello world";
-  let%bind () = [%expect {|
+  parse "From: foo@bar.com\n\nhello world";
+  let%bind () =
+    [%expect
+      {|
         (Data (
           (encoding Bit7)
           (content  "hello world"))) |}]
@@ -29,21 +27,18 @@ let%expect_test "simple content" =
 
 let%expect_test "simple multipart" =
   parse
-    "Content-Type: multipart/alternative; boundary=BOUNDARY\n\
-     \n\
+    "Content-Type: multipart/alternative; boundary=BOUNDARY\n\n\
      --BOUNDARY\n\
-     Content-Type: text/plain; charset=UTF-8\n\
-     \n\
-     Simple body\n\
-     \n\
+     Content-Type: text/plain; charset=UTF-8\n\n\
+     Simple body\n\n\
      --BOUNDARY\n\
      Content-Type: text/html; charset=UTF-8\n\
-     Content-Transfer-Encoding: quoted-printable\n\
-     \n\
-     <div>Simple body</div>\n\
-     \n\
+     Content-Transfer-Encoding: quoted-printable\n\n\
+     <div>Simple body</div>\n\n\
      --BOUNDARY--";
-  let%bind () = [%expect {|
+  let%bind () =
+    [%expect
+      {|
         (Multipart (
           (boundary BOUNDARY)
           (prologue ())
@@ -63,30 +58,25 @@ let%expect_test "simple multipart" =
 
 let%expect_test "nested multipart" =
   parse
-    "Content-Type: multipart/mixed; boundary=BOUNDARY1\n\
-     \n\
+    "Content-Type: multipart/mixed; boundary=BOUNDARY1\n\n\
      --BOUNDARY1\n\
-     Content-Type: multipart/alternative; boundary=BOUNDARY2\n\
-     \n\
+     Content-Type: multipart/alternative; boundary=BOUNDARY2\n\n\
      --BOUNDARY2\n\
-     Content-Type: text/plain; charset=UTF-8\n\
-     \n\
-     Simple body\n\
-     \n\
+     Content-Type: text/plain; charset=UTF-8\n\n\
+     Simple body\n\n\
      --BOUNDARY2\n\
-     Content-Type: text/html; charset=UTF-8\n\
-     \n\
-     <div>Simple body</div>\n\
-     \n\
+     Content-Type: text/html; charset=UTF-8\n\n\
+     <div>Simple body</div>\n\n\
      --BOUNDARY2--\n\
      --BOUNDARY1\n\
      Content-Type: text/plain; charset=US-ASCII; name=\"attachment.txt\"\n\
      Content-Disposition: attachment; filename=\"attachment.txt\"\n\
-     Content-Transfer-Encoding: base64\n\
-     \n\
+     Content-Transfer-Encoding: base64\n\n\
      Zm9v\n\
      --BOUNDARY1--";
-  let%bind () = [%expect {|
+  let%bind () =
+    [%expect
+      {|
         (Multipart (
           (boundary BOUNDARY1)
           (prologue ())
@@ -106,13 +96,10 @@ let%expect_test "nested multipart" =
 ;;
 
 let%expect_test "message/rfc822" =
-  parse
-    "Content-Type: message/rfc822\n\
-     \n\
-     From: foo@bar.com\n\
-     \n\
-     Sample body";
-  let%bind () = [%expect {|
+  parse "Content-Type: message/rfc822\n\nFrom: foo@bar.com\n\nSample body";
+  let%bind () =
+    [%expect
+      {|
         (Message ((headers ((From " foo@bar.com"))) (raw_content ("Sample body")))) |}]
   in
   return ()

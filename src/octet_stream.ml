@@ -1,5 +1,6 @@
 module Stable = struct
   open Core.Core_stable
+
   module Encoding = struct
     module V1 = struct
       type t =
@@ -8,15 +9,17 @@ module Stable = struct
         | `Bit8
         | `Binary
         | `Quoted_printable
-        | `Unknown of string
-        ] [@@deriving sexp, bin_io]
+        | `Unknown of string ]
+      [@@deriving sexp, bin_io]
     end
   end
+
   module V1 = struct
     type t =
       { encoding : Encoding.V1.t
-      ; content  : Bigstring_shared.Stable.V1.t
-      } [@@deriving sexp, bin_io]
+      ; content : Bigstring_shared.Stable.V1.t
+      }
+    [@@deriving sexp, bin_io]
   end
 end
 
@@ -30,21 +33,24 @@ module Encoding = struct
     | `Bit7
     | `Bit8
     | `Binary
-    | `Quoted_printable
-    ] [@@deriving sexp_of, compare, hash]
-  type t = (* Stable.Encoding.V1.t = *)
+    | `Quoted_printable ]
+  [@@deriving sexp_of, compare, hash]
+
+  type t =
+    (* Stable.Encoding.V1.t = *)
     [ known
-    | `Unknown of string
-    ] [@@deriving sexp_of, compare, hash]
+    | `Unknown of string ]
+  [@@deriving sexp_of, compare, hash]
 
   let of_string encoding =
     match encoding |> String.strip |> String.lowercase with
-    | "base64"           -> `Base64
-    | "7bit"             -> `Bit7
-    | "8bit"             -> `Bit8
-    | "binary"           -> `Binary
+    | "base64" -> `Base64
+    | "7bit" -> `Bit7
+    | "8bit" -> `Bit8
+    | "binary" -> `Binary
     | "quoted-printable" -> `Quoted_printable
-    | unknown            -> `Unknown unknown
+    | unknown -> `Unknown unknown
+  ;;
 
   let to_string = function
     | `Base64 -> "base64"
@@ -53,44 +59,47 @@ module Encoding = struct
     | `Binary -> "binary"
     | `Quoted_printable -> "quoted-printable"
     | `Unknown unknown -> unknown
+  ;;
 
-  let default  = `Bit7
+  let default = `Bit7
   let default' = `Bit7
 
   let of_headers ?(ignore_base64_for_multipart = true) headers =
     Headers.last headers "content-transfer-encoding"
     |> Option.map ~f:of_string
     |> function
-    | Some `Base64 when ignore_base64_for_multipart ->
+    | Some `Base64
+      when ignore_base64_for_multipart ->
       let is_multipart =
-        match Media_type.last headers with
+        match Media_type.from_headers headers with
         | Some media_type -> Media_type.is_multipart media_type
         | None -> false
       in
-      if is_multipart
-      then Some default
-      else Some `Base64
+      if is_multipart then Some default else Some `Base64
     | _ as encoding -> encoding
+  ;;
 
   let of_headers_or_default ?ignore_base64_for_multipart headers =
     match of_headers ?ignore_base64_for_multipart headers with
     | Some t -> t
-    | None   -> default
+    | None -> default
+  ;;
 end
 
 type t = Stable.V1.t =
   { encoding : Encoding.t
-  ; content  : Bigstring_shared.t
-  } [@@deriving sexp_of, compare, hash]
+  ; content : Bigstring_shared.t
+  }
+[@@deriving sexp_of, compare, hash]
 
 let encoding t = t.encoding
 let encoded_contents t = t.content
 let encoded_contents_string t = Bigstring_shared.to_string (encoded_contents t)
-
 let of_bigstring_shared ~encoding content = { encoding; content }
 
 let of_string ~encoding str =
   of_bigstring_shared ~encoding (Bigstring_shared.of_string str)
+;;
 
 let empty = of_bigstring_shared ~encoding:Encoding.default Bigstring_shared.empty
 
@@ -100,15 +109,20 @@ module Identity = struct
 end
 
 module Base64 = struct
-  include Base64.Make(struct
+  include Base64.Make (struct
       let char62 = '+'
       let char63 = '/'
       let pad_char = '='
       let pad_when_encoding = true
+
       (* Permissive - ignore anything that would be an invalid base64 character... *)
       let ignore_char = function
-        | '0'..'9' | 'a'..'z' | 'A'..'Z' | '+' | '/' | '=' -> false
+        | '0' .. '9'
+        | 'a' .. 'z'
+        | 'A' .. 'Z'
+        | '+' | '/' | '=' -> false
         | _ -> true
+      ;;
     end)
 
   let decode bstr =
@@ -118,24 +132,24 @@ module Base64 = struct
     (* Ignore unconsumed data *)
     |> fst
     |> Bigstring_shared.of_string
+  ;;
 
   let split ~len =
     let rec go acc bstr =
-      if Bigstring_shared.length bstr <= len then
-        List.rev (bstr :: acc)
+      if Bigstring_shared.length bstr <= len
+      then List.rev (bstr :: acc)
       else
         go (Bigstring_shared.sub bstr ~len :: acc) (Bigstring_shared.sub bstr ~pos:len)
     in
     go []
+  ;;
 
   let encoded_line_length = 76
   let decoded_block_length = encoded_line_length / 4 * 3
 
   let encode bstr =
     split ~len:decoded_block_length bstr
-    |> List.map ~f:(fun bstr ->
-      Bigstring_shared.to_string bstr
-      |> encode)
+    |> List.map ~f:(fun bstr -> Bigstring_shared.to_string bstr |> encode)
     |> String_monoid.concat_string ~sep:"\n"
     |> Bigstring_shared.of_string_monoid
   ;;
@@ -150,7 +164,8 @@ module Quoted_printable = struct
        interpreted as EOL.  *)
     let bigbuffer, _ =
       Quoted_printable_lexer.decode_quoted_printable
-        (Bigstring_shared.length bstr) (Bigstring_shared.to_lexbuf bstr)
+        (Bigstring_shared.length bstr)
+        (Bigstring_shared.to_lexbuf bstr)
     in
     Bigstring_shared.of_bigbuffer_volatile bigbuffer
   ;;
@@ -167,21 +182,23 @@ end
 
 let decode t =
   match t.encoding with
-  | `Base64           -> Some (Base64.decode t.content)
+  | `Base64 -> Some (Base64.decode t.content)
   | `Quoted_printable -> Some (Quoted_printable.decode t.content)
-  | `Bit7             -> Some (Identity.decode t.content)
-  | `Bit8             -> Some (Identity.decode t.content)
-  | `Binary           -> Some (Identity.decode t.content)
-  | `Unknown _        -> None
+  | `Bit7 -> Some (Identity.decode t.content)
+  | `Bit8 -> Some (Identity.decode t.content)
+  | `Binary -> Some (Identity.decode t.content)
+  | `Unknown _ -> None
+;;
 
 let encode ~encoding bstr =
   let bstr =
     match encoding with
-    | `Base64           -> Base64.encode bstr
+    | `Base64 -> Base64.encode bstr
     | `Quoted_printable -> Quoted_printable.encode bstr
-    | `Bit7             -> Identity.encode bstr
-    | `Bit8             -> Identity.encode bstr
-    | `Binary           -> Identity.encode bstr
+    | `Bit7 -> Identity.encode bstr
+    | `Bit8 -> Identity.encode bstr
+    | `Binary -> Identity.encode bstr
   in
   let encoding = (encoding :> Encoding.t) in
   of_bigstring_shared ~encoding bstr
+;;

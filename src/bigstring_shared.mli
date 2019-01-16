@@ -16,7 +16,6 @@ val empty : t
 
 val length : t -> int
 val sub : ?pos:int -> ?len:int -> t -> t
-
 val foldi : t -> init:'b -> f:(int -> 'b -> char -> 'b) -> 'b
 
 (** [include_empty_last_line] determines whether a string that ends in "\n" has an empty
@@ -32,9 +31,10 @@ val split_lines : t -> t list
 val of_bigbuffer_volatile : Bigbuffer.t -> t
 
 val of_string_monoid : String_monoid.t -> t
-
 val substr_index : ?pos:int -> t -> pattern:t -> int option
 
 module Stable : sig
-  module V1 : sig type nonrec t = t [@@deriving sexp, bin_io] end
+  module V1 : sig
+    type nonrec t = t [@@deriving sexp, bin_io]
+  end
 end

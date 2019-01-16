@@ -1,5 +1,4 @@
 open Core
-
 open Email_address
 
 module Compare_result = struct
@@ -10,7 +9,8 @@ module Compare_result = struct
     ; hash_equal : bool
     ; caseless_compare_equal : bool
     ; caseless_hash_equal : bool
-    } [@@deriving fields]
+    }
+  [@@deriving fields]
 
   let columns =
     let c = Ascii_table.Column.create in
@@ -21,14 +21,14 @@ module Compare_result = struct
     ; c "caseless compare =" (Fn.compose Bool.to_string caseless_compare_equal)
     ; c "caseless hash =" (Fn.compose Bool.to_string caseless_hash_equal)
     ]
+  ;;
 end
 
 let%expect_test "compare" =
   let compare (a, b) =
     let a_address = of_string_exn a in
     let b_address = of_string_exn b in
-    { Compare_result.
-      a
+    { Compare_result.a
     ; b
     ; compare_equal = [%compare.equal: t] a_address b_address
     ; hash_equal = Int.equal (hash a_address) (hash b_address)
@@ -37,14 +37,13 @@ let%expect_test "compare" =
     }
   in
   let results =
-    List.map ~f:compare
-      [ "a@b.com", "a@B.COM"
-      ; "a@b.com", "A@b.com"
-      ; "a@b.com", "A@B.COM"
-      ]
+    List.map
+      ~f:compare
+      [ "a@b.com", "a@B.COM"; "a@b.com", "A@b.com"; "a@b.com", "A@B.COM" ]
   in
   print_endline (Ascii_table.to_string Compare_result.columns results);
-  [%expect {|
+  [%expect
+    {|
     ┌─────────┬─────────┬───────────┬────────┬────────────────────┬─────────────────┐
     │ A       │ B       │ compare = │ hash = │ caseless compare = │ caseless hash = │
     ├─────────┼─────────┼───────────┼────────┼────────────────────┼─────────────────┤

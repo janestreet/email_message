@@ -8,6 +8,7 @@ module Case_insensitive = struct
 
       let compare = Core_kernel.String.Caseless.compare
       let comparator = Core_kernel.String.Caseless.comparator
+
       type comparator_witness = Core_kernel.String.Caseless.comparator_witness
 
       let hash = Core_kernel.String.Caseless.hash
@@ -16,7 +17,6 @@ module Case_insensitive = struct
   end
 
   open Core_kernel
-
   include String.Caseless
 
   let of_string = Fn.id
@@ -29,6 +29,7 @@ open Core_kernel
 
 module type S = sig
   type t [@@deriving sexp]
+
   val of_string : string -> t
   val to_lowercase_string : t -> string
   val equal_string : t -> string -> bool
@@ -38,7 +39,7 @@ module type S = sig
 end
 
 let quote_escape =
-  unstage (String.Escaping.escape ~escapeworthy:['"'; '\\'] ~escape_char:'\\')
+  unstage (String.Escaping.escape ~escapeworthy:[ '"'; '\\' ] ~escape_char:'\\')
 ;;
 
-let quote str = String.concat ["\""; quote_escape str; "\""];;
+let quote str = String.concat [ "\""; quote_escape str; "\"" ]

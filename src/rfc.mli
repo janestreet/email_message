@@ -6,12 +6,13 @@ module RFC2045 : sig
     include Mimestring.S
 
     (** True if the string doesn't need to be quoted *)
-    val is_valid          : string -> bool
+    val is_valid : string -> bool
+
     (* Quotes a string if necessary *)
+
     val is_valid_or_quote : string -> string
   end
 end
-
 (*
    module RFC2822 : sig
    (** Adds EOL and WSP to a string so it can be safely inserted as a header

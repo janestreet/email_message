@@ -2,7 +2,6 @@ open! Core
 open Async
 open Email_message.Private
 open Expect_test_helpers
-
 open Rfc.RFC2045.Token
 
 let%expect_test "RFC2045.Token" =
@@ -10,14 +9,10 @@ let%expect_test "RFC2045.Token" =
     let results = List.map strs ~f:(fun str -> str, is_valid_or_quote str) in
     print_s [%message "" ~_:(results : (string * string) list)]
   in
-  is_valid_or_quote
-    ["abcdefghijkl"
-    ; "abc=dka"
-    ; ""
-    ; "\""
-    ];
+  is_valid_or_quote [ "abcdefghijkl"; "abc=dka"; ""; "\"" ];
   let%bind () =
-  [%expect {|
+    [%expect
+      {|
     ((abcdefghijkl abcdefghijkl)
      (abc=dka      "\"abc=dka\"")
      (""           "\"\"")
@@ -44,7 +39,8 @@ let%expect_test "RFC2045.Token" =
     ; "\x7F"
     ; "\x80"
     ];
-  [%expect {|
+  [%expect
+    {|
     ((abcdefghijkl (Is_valid true))
      (LoremIpsum   (Is_valid true))
      (3.141        (Is_valid true))

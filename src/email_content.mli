@@ -21,15 +21,34 @@ open! Core
 *)
 
 module Multipart : sig
-  type t =
-    { boundary          : Boundary.t
-    ; prologue          : Bigstring_shared.t option
-    ; epilogue          : Bigstring_shared.t option
-    ; parts             : Email.t list
+  type t = private
+    { boundary : Boundary.t
+    ; prologue : Bigstring_shared.t option
+    ; epilogue : Bigstring_shared.t option
+    ; parts : Email.t list
     (** [container_headers] is informational only for use when further processing parts.
         it is ignored by [to_email]. *)
     ; container_headers : Headers.t
     }
+  [@@deriving fields, sexp_of]
+
+  val create
+    :  ?boundary:Boundary.t
+    -> ?prologue:Bigstring_shared.t
+    -> ?epilogue:Bigstring_shared.t
+    -> ?container_headers:Headers.t
+    -> Email.t list
+    -> t
+
+  val set
+    :  t
+    -> ?boundary:Boundary.t
+    -> ?prologue:Bigstring_shared.t option
+    -> ?epilogue:Bigstring_shared.t option
+    -> ?parts:Email.t list
+    -> ?container_headers:Headers.t
+    -> unit
+    -> t
 end
 
 type t =
@@ -38,14 +57,10 @@ type t =
   | Data of Octet_stream.t
 [@@deriving sexp_of]
 
-
 (** [parse ?container_headers email] parses the content of [email]. The default content
     type of a multipart body changes based on the container headers.
     This only comes into play if the container had "Content-Type: multipart/digest". *)
-val parse
-  :  ?container_headers:Headers.t
-  -> Email.t
-  -> t Or_error.t
+val parse : ?container_headers:Headers.t -> Email.t -> t Or_error.t
 
 val to_email : headers:Headers.t -> t -> Email.t
 val set_content : Email.t -> t -> Email.t
@@ -53,11 +68,11 @@ val set_content : Email.t -> t -> Email.t
 (** Allow changing the message content to mask the actual data but retain the
     structure *)
 val map_data
-  :  ?on_unparsable_content:[`Skip | `Raise]  (** default [`Skip] *)
+  :  ?on_unparsable_content:[`Skip | `Raise] (** default [`Skip] *)
   -> Email.t
   -> f:(Octet_stream.t -> Octet_stream.t)
   -> Email.t
 
-val to_raw_content      : t -> Email_raw_content.t
+val to_raw_content : t -> Email_raw_content.t
 val to_bigstring_shared : t -> Bigstring_shared.t
-val to_string_monoid    : t -> String_monoid.t
+val to_string_monoid : t -> String_monoid.t

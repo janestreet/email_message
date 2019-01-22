@@ -116,7 +116,7 @@ module Stable = struct
     include Stable_no_v1_bin_io.V1
 
     include Binable.Of_binable
-        (Bigstring)
+        (Bigstring.Stable.V1)
         (struct
           type nonrec t = t
 

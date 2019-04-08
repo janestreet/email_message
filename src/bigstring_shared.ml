@@ -9,6 +9,7 @@ end
 type t = Stable.V1.t [@@deriving sexp_of, compare, hash]
 
 open Core
+open Poly
 open Bigstring
 
 let to_bigstring t = t

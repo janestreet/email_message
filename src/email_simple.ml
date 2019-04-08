@@ -25,6 +25,7 @@ module Stable = struct
 end
 
 open! Core
+open Poly
 module Crypto = Crypto.Cryptokit
 module Hash = Crypto.Hash
 

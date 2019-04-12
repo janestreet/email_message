@@ -172,6 +172,8 @@ module Mimetype = struct
 
   let text = "text/plain"
   let html = "text/html"
+  let html_charset charset = sprintf "text/html; charset=\"%s\"" charset
+  let html_utf8 = html_charset "UTF-8"
   let pdf = "application/pdf"
   let jpg = "image/jpeg"
   let png = "image/png"

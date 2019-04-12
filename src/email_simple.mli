@@ -5,6 +5,8 @@ module Mimetype : sig
 
   val text : t
   val html : t
+  val html_charset : string -> t
+  val html_utf8 : t
   val pdf : t
   val jpg : t
   val png : t

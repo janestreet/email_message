@@ -38,28 +38,6 @@ let make_id () =
     (Unix.gethostname ())
 ;;
 
-let utc_offset_string time ~zone =
-  let utc_offset = Time.utc_offset time ~zone in
-  let is_utc = Time.Span.( = ) utc_offset Time.Span.zero in
-  if is_utc
-  then "Z"
-  else
-    String.concat
-      [ (if Time.Span.( < ) utc_offset Time.Span.zero then "-" else "+")
-      ; Time.Ofday.to_string_trimmed
-          (Time.Ofday.of_span_since_start_of_day_exn (Time.Span.abs utc_offset))
-      ]
-;;
-
-let rfc822_date now =
-  let zone = force Time.Zone.local in
-  let offset_string =
-    utc_offset_string ~zone now |> String.filter ~f:(fun c -> Char.( <> ) c ':')
-  in
-  let now_string = Time.format now "%a, %d %b %Y %H:%M:%S" ~zone in
-  sprintf "%s %s" now_string offset_string
-;;
-
 let bigstring_shared_to_file data file =
   let open Async in
   Deferred.Or_error.try_with (fun () ->
@@ -123,7 +101,7 @@ module Expert = struct
     in
     let date =
       match date with
-      | None -> rfc822_date (Time.now ())
+      | None -> Email_date.rfc822_date (Time.now ())
       | Some date -> date
     in
     let headers =
@@ -529,7 +507,7 @@ let create
     ~subject
     ?id
     ?in_reply_to
-    ?date:(Option.map date ~f:rfc822_date)
+    ?date:(Option.map date ~f:Email_date.rfc822_date)
     ?auto_generated
     ?extra_headers
     ?attachments

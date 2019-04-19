@@ -11,6 +11,7 @@ module Email_address = Email_address1
 module Email_headers = Headers
 module Email_selector = Selector
 module Email_wrapper = Wrapper
+module Email_date = Email_date
 module Mimestring = Mimestring
 module Octet_stream = Octet_stream
 module String_monoid = String_monoid

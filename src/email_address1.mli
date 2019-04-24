@@ -8,9 +8,9 @@ module Domain : sig
 end
 
 include
-module type of struct
-  include Email_address
-end
+  module type of struct
+    include Email_address
+  end
   with module Domain := Email_address.Domain
 
 val local_address : unit -> t

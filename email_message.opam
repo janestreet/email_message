@@ -10,16 +10,16 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
-  "ocaml" {>= "4.07.0" & < "4.08.0"}
+  "ocaml" {>= "4.07.0"}
   "async"
   "core"
-  "core_extended"
   "core_kernel"
   "ppx_jane"
   "re2"
   "angstrom"
+  "base64"
   "cryptokit"
-  "dune"          {build & >= "1.5.1"}
+  "dune"        {build & >= "1.5.1"}
   "magic-mime"
 ]
 synopsis: "E-mail message parser"

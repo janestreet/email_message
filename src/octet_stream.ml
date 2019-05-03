@@ -109,49 +109,76 @@ module Identity = struct
 end
 
 module Base64 = struct
-  include Base64.Make (struct
-      let char62 = '+'
-      let char63 = '/'
-      let pad_char = '='
-      let pad_when_encoding = true
+  let buffer_size = 1024
+  let empty_bytes = Bytes.create 0
 
-      (* Permissive - ignore anything that would be an invalid base64 character... *)
-      let ignore_char = function
-        | '0' .. '9'
-        | 'a' .. 'z'
-        | 'A' .. 'Z'
-        | '+' | '/' | '=' -> false
-        | _ -> true
-      ;;
-    end)
-
-  let decode bstr =
-    bstr
-    |> Bigstring_shared.to_string
-    |> decode
-    (* Ignore unconsumed data *)
-    |> fst
-    |> Bigstring_shared.of_string
-  ;;
-
-  let split ~len =
-    let rec go acc bstr =
-      if Bigstring_shared.length bstr <= len
-      then List.rev (bstr :: acc)
-      else
-        go (Bigstring_shared.sub bstr ~len :: acc) (Bigstring_shared.sub bstr ~pos:len)
+  let decode (src : Bigstring_shared.t) =
+    let src = (src :> Bigstring.t) in
+    let dst = Bigbuffer.create ((Bigstring.length src + 3) / 4 * 3) in
+    let buffer = Bytes.create buffer_size in
+    let decoder = Base64_rfc2045.decoder `Manual in
+    let rec loop ~pos =
+      match Base64_rfc2045.decode decoder with
+      | `Await ->
+        if pos = Bigstring.length src
+        then (
+          (* Signal end of input. *)
+          Base64_rfc2045.src decoder empty_bytes 0 0;
+          loop ~pos)
+        else (
+          let len = Int.min (Bigstring.length src - pos) buffer_size in
+          Bigstring.To_bytes.blit ~src ~src_pos:pos ~dst:buffer ~dst_pos:0 ~len;
+          Base64_rfc2045.src decoder buffer 0 len;
+          loop ~pos:(pos + len))
+      | `Wrong_padding -> (* Ignore padding issues. *)
+        loop ~pos
+      | `End -> Bigstring_shared.of_bigbuffer_volatile dst
+      | `Flush str ->
+        Bigbuffer.add_string dst str;
+        loop ~pos
+      | `Malformed _unparsed -> (* Ignored invalid characters. *)
+        loop ~pos
     in
-    go []
+    loop ~pos:0
   ;;
 
-  let encoded_line_length = 76
-  let decoded_block_length = encoded_line_length / 4 * 3
+  let encoded_length input =
+    (* 3 characters becomes 4 *)
+    let base64_3_4_expanded_length = (Bigstring.length input + 2) / 3 * 4 in
+    (* "\r\n" is added for line breaks *)
+    let base64_rfc2045_line_length = 76 in
+    let base64_rfc2045_lines =
+      (base64_3_4_expanded_length + (base64_rfc2045_line_length - 1))
+      / base64_rfc2045_line_length
+    in
+    base64_rfc2045_lines * (base64_rfc2045_line_length + String.length "\r\n")
+  ;;
 
-  let encode bstr =
-    split ~len:decoded_block_length bstr
-    |> List.map ~f:(fun bstr -> Bigstring_shared.to_string bstr |> encode)
-    |> String_monoid.concat_string ~sep:"\n"
-    |> Bigstring_shared.of_string_monoid
+  let encode (src : Bigstring_shared.t) =
+    let src = (src :> Bigstring.t) in
+    let dst = Bigbuffer.create (encoded_length src) in
+    let encoder = Base64_rfc2045.encoder `Manual in
+    let buffer = Bytes.create buffer_size in
+    Base64_rfc2045.dst encoder buffer 0 buffer_size;
+    let rec flush = function
+      | `Ok -> ()
+      | `Partial ->
+        let len = buffer_size - Base64_rfc2045.dst_rem encoder in
+        assert (len > 0);
+        Bigbuffer.add_subbytes dst buffer ~pos:0 ~len;
+        Base64_rfc2045.dst encoder buffer 0 buffer_size;
+        flush (Base64_rfc2045.encode encoder `Await)
+    in
+    let rec loop ~pos =
+      if pos >= Bigstring.length src
+      then (
+        flush (Base64_rfc2045.encode encoder `End);
+        Bigstring_shared.of_bigbuffer_volatile dst)
+      else (
+        flush (Base64_rfc2045.encode encoder (`Char (Bigstring.get src pos)));
+        loop ~pos:(pos + 1))
+    in
+    loop ~pos:0
   ;;
 end
 

@@ -2,12 +2,12 @@ open Core
 
 module State : sig
   type t =
-    [ `Header  (** Initial state, parsing headers *)
-    | `Content
-    (** Parsing the body of the message. The details are in the body state. *)
-    | `Expected_eof  (** The message should end here. If it doesn't, it's an error *) ]
+    [ `Header (** Initial state, parsing headers *)
+    | `Content (** Parsing the body of the message. The details are in the body state. *)
+    | `Expected_eof (** The message should end here. If it doesn't, it's an error *)
+    ]
 
-  val initial : [`Header]
+  val initial : [ `Header ]
 end
 
 module Content : sig

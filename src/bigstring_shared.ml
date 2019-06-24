@@ -46,7 +46,7 @@ let to_lexbuf t =
 let foldi t ~init ~f =
   let len = length t in
   let rec loop init pos =
-    if pos >= len then init else loop (f pos init (t.{pos})) (pos + 1)
+    if pos >= len then init else loop (f pos init t.{pos}) (pos + 1)
   in
   loop init 0
 ;;

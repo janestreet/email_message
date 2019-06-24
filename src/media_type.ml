@@ -93,8 +93,7 @@ let from_headers headers =
 
 let set_headers headers t =
   match from_headers headers with
-  | Some t'
-    when [%compare.equal: t] t t' -> headers
+  | Some t' when [%compare.equal: t] t t' -> headers
   | _ -> Headers.set_at_bottom headers ~name:"Content-Type" ~value:(to_string t)
 ;;
 

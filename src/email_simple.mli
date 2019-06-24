@@ -181,7 +181,7 @@ val find_attachment : t -> attachment_name -> Attachment.t option
 val all_related_parts : t -> (attachment_name * Content.t) list
 val find_related : t -> attachment_name -> Content.t option
 val inline_parts : t -> Content.t list
-val map_file_attachments : t -> f:(Attachment.t -> [`Keep | `Replace of t]) -> t
+val map_file_attachments : t -> f:(Attachment.t -> [ `Keep | `Replace of t ]) -> t
 
 module Expert : sig
   val create_raw

@@ -20,10 +20,10 @@ type t [@@deriving sexp_of]
 (* Create a [Wrapper.t] that can be used to wrap emails *)
 
 val create
-  :  ?from:[`Keep | `Change_to of Email_address.t] (* default: `Keep *)
-  -> ?to_:[`Keep | `Change_to of Email_address.t list] (* default: `Keep *)
-  -> ?cc:[`Keep | `Change_to of Email_address.t list] (* default: `Keep *)
-  -> ?subject:[`Keep | `Prepend of string] (* default: `Keep *)
+  :  ?from:[ `Keep | `Change_to of Email_address.t ] (* default: `Keep *)
+  -> ?to_:[ `Keep | `Change_to of Email_address.t list ] (* default: `Keep *)
+  -> ?cc:[ `Keep | `Change_to of Email_address.t list ] (* default: `Keep *)
+  -> ?subject:[ `Keep | `Prepend of string ] (* default: `Keep *)
   -> Email_simple.Content.t
   -> t
 

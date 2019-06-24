@@ -9,7 +9,8 @@ module Stable = struct
         | `Bit8
         | `Binary
         | `Quoted_printable
-        | `Unknown of string ]
+        | `Unknown of string
+        ]
       [@@deriving sexp, bin_io]
     end
   end
@@ -33,13 +34,15 @@ module Encoding = struct
     | `Bit7
     | `Bit8
     | `Binary
-    | `Quoted_printable ]
+    | `Quoted_printable
+    ]
   [@@deriving sexp_of, compare, hash]
 
   type t =
     (* Stable.Encoding.V1.t = *)
     [ known
-    | `Unknown of string ]
+    | `Unknown of string
+    ]
   [@@deriving sexp_of, compare, hash]
 
   let of_string encoding =
@@ -68,8 +71,7 @@ module Encoding = struct
     Headers.last headers "content-transfer-encoding"
     |> Option.map ~f:of_string
     |> function
-    | Some `Base64
-      when ignore_base64_for_multipart ->
+    | Some `Base64 when ignore_base64_for_multipart ->
       let is_multipart =
         match Media_type.from_headers headers with
         | Some media_type -> Media_type.is_multipart media_type
@@ -130,13 +132,15 @@ module Base64 = struct
           Bigstring.To_bytes.blit ~src ~src_pos:pos ~dst:buffer ~dst_pos:0 ~len;
           Base64_rfc2045.src decoder buffer 0 len;
           loop ~pos:(pos + len))
-      | `Wrong_padding -> (* Ignore padding issues. *)
+      | `Wrong_padding ->
+        (* Ignore padding issues. *)
         loop ~pos
       | `End -> Bigstring_shared.of_bigbuffer_volatile dst
       | `Flush str ->
         Bigbuffer.add_string dst str;
         loop ~pos
-      | `Malformed _unparsed -> (* Ignored invalid characters. *)
+      | `Malformed _unparsed ->
+        (* Ignored invalid characters. *)
         loop ~pos
     in
     loop ~pos:0

@@ -11,10 +11,12 @@ open! Core
 module Whitespace : sig
   type t =
     [ `Raw (* Leave whitespace unchanged *)
-    | `Normalize (* Cleanup leading and trailing whitespace on each line *) ]
+    | `Normalize (* Cleanup leading and trailing whitespace on each line *)
+    ]
   [@@deriving sexp_of]
 
   val default : t
+
   (* `Normalize *)
 end
 

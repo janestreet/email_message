@@ -30,7 +30,7 @@ module RFC2045 = struct
     include (Mimestring.Case_insensitive : Mimestring.S)
 
     let is_valid str =
-      not (String.is_empty str)
+      (not (String.is_empty str))
       && String.for_all str ~f:(function
         | '('
         | ')'

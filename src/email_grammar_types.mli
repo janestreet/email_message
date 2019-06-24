@@ -5,6 +5,7 @@ type header = (string * string) list
 type content_offset =
   [ `Content_offset of int
   | `Bad_headers of int
-  | `Truncated ]
+  | `Truncated
+  ]
 
-type message = [`Message of header * content_offset]
+type message = [ `Message of header * content_offset ]

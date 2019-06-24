@@ -68,7 +68,7 @@ val set_content : Email.t -> t -> Email.t
 (** Allow changing the message content to mask the actual data but retain the
     structure *)
 val map_data
-  :  ?on_unparsable_content:[`Skip | `Raise] (** default [`Skip] *)
+  :  ?on_unparsable_content:[ `Skip | `Raise ] (** default [`Skip] *)
   -> Email.t
   -> f:(Octet_stream.t -> Octet_stream.t)
   -> Email.t

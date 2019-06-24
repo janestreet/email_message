@@ -6,10 +6,10 @@ module Stable = struct
   module V1 = struct
     type t =
       { header : Email_simple.Content.V1.t
-      ; from : [`Keep | `Change_to of Email_address.V1.t]
-      ; to_ : [`Keep | `Change_to of Email_address.V1.t list]
-      ; cc : [`Keep | `Change_to of Email_address.V1.t list]
-      ; subject : [`Keep | `Prepend of string]
+      ; from : [ `Keep | `Change_to of Email_address.V1.t ]
+      ; to_ : [ `Keep | `Change_to of Email_address.V1.t list ]
+      ; cc : [ `Keep | `Change_to of Email_address.V1.t list ]
+      ; subject : [ `Keep | `Prepend of string ]
       }
     [@@deriving sexp, bin_io]
   end
@@ -19,10 +19,10 @@ open Core
 
 type t = Stable.V1.t =
   { header : Email_simple.Content.t
-  ; from : [`Keep | `Change_to of Email_address.t]
-  ; to_ : [`Keep | `Change_to of Email_address.t list]
-  ; cc : [`Keep | `Change_to of Email_address.t list]
-  ; subject : [`Keep | `Prepend of string]
+  ; from : [ `Keep | `Change_to of Email_address.t ]
+  ; to_ : [ `Keep | `Change_to of Email_address.t list ]
+  ; cc : [ `Keep | `Change_to of Email_address.t list ]
+  ; subject : [ `Keep | `Prepend of string ]
   }
 [@@deriving sexp_of]
 
@@ -34,26 +34,22 @@ let create_from_email email =
   let get_header x = Headers.last ~whitespace:`Raw (Email.headers email) x in
   let from =
     match get_header "From" with
-    | None
-    | Some "" -> `Keep
+    | None | Some "" -> `Keep
     | Some from -> `Change_to (Email_address.of_string_exn from)
   in
   let to_ =
     match get_header "To" with
-    | None
-    | Some "" -> `Keep
+    | None | Some "" -> `Keep
     | Some to_ -> `Change_to (Email_address.list_of_string_exn to_)
   in
   let cc =
     match get_header "Cc" with
-    | None
-    | Some "" -> `Keep
+    | None | Some "" -> `Keep
     | Some cc -> `Change_to (Email_address.list_of_string_exn cc)
   in
   let subject =
     match get_header "Subject" with
-    | None
-    | Some "" -> `Keep
+    | None | Some "" -> `Keep
     | Some subject -> `Prepend subject
   in
   let email =

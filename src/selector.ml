@@ -5,7 +5,8 @@ module Stable = struct
     module V1 = struct
       type t =
         [ `exists_header of string * Re2.t
-        | `all_headers of string * Re2.t ]
+        | `all_headers of string * Re2.t
+        ]
       [@@deriving sexp]
     end
   end
@@ -22,7 +23,8 @@ module Base = struct
   type t =
     (* When adding to this type, don't forget to add to examples below. *)
     [ `exists_header of string * Regex.t
-    | `all_headers of string * Regex.t ]
+    | `all_headers of string * Regex.t
+    ]
   [@@deriving sexp_of]
 
   let matches' t headers =

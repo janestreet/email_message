@@ -61,7 +61,8 @@ let split t bstr =
   in
   let rec find_boundary pos =
     match Bigstring_shared.substr_index bstr ~pos ~pattern:t with
-    | None -> (* No more occurrences of [BOUNDARY] so definitely at EOF *)
+    | None ->
+      (* No more occurrences of [BOUNDARY] so definitely at EOF *)
       `Eof
     | Some pos ->
       let no_prologue = pos = 0 in
@@ -113,8 +114,7 @@ let split t bstr =
   let parts, epilogue, has_prologue = loop 0 [] true in
   match List.rev parts with
   | [] -> Some bstr, [], epilogue
-  | prologue :: parts
-    when has_prologue -> Some prologue, parts, epilogue
+  | prologue :: parts when has_prologue -> Some prologue, parts, epilogue
   | parts -> None, parts, epilogue
 ;;
 
@@ -218,8 +218,8 @@ let join_without_checking_for_conflicts ?prologue ~parts ?epilogue t =
       String_monoid.plus
         (Bigstring_shared.to_string_monoid prologue)
         (Bigstring_shared.to_string_monoid epilogue)
-    | Some content, None
-    | None, Some content -> Bigstring_shared.to_string_monoid content
+    | Some content, None | None, Some content ->
+      Bigstring_shared.to_string_monoid content
     | None, None -> String_monoid.of_string "\n")
   else (
     (* Different types of boundaries that may appear in a message *)

@@ -20,7 +20,7 @@ let%expect_test "RFC2045.Token" =
   in
   let is_valid strs =
     let results = List.map strs ~f:(fun str -> str, `Is_valid (is_valid str)) in
-    print_s [%message "" ~_:(results : (string * [`Is_valid of bool]) list)]
+    print_s [%message "" ~_:(results : (string * [ `Is_valid of bool ]) list)]
   in
   is_valid
     [ "abcdefghijkl"

@@ -2,7 +2,8 @@ open! Core
 
 type t =
   [ `LF
-  | `CRLF ]
+  | `CRLF
+  ]
 
 let to_string = function
   | `LF -> "\n"

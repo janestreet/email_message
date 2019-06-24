@@ -23,7 +23,8 @@ open Core
 module Whitespace = struct
   type t =
     [ `Raw (* Leave whitespace unchanged *)
-    | `Normalize (* Cleanup leading and trailing whitespace on each line *) ]
+    | `Normalize (* Cleanup leading and trailing whitespace on each line *)
+    ]
   [@@deriving sexp_of]
 
   let default : t = `Normalize
@@ -126,8 +127,8 @@ let add ?whitespace t ~name ~value =
   let name = Name.of_string name in
   let value = Value.of_string_to_string ?whitespace value in
   let rec add acc = function
-    | (name', _) :: _ as fields
-      when Name.equal name name' -> List.rev acc @ [ name, value ] @ fields
+    | (name', _) :: _ as fields when Name.equal name name' ->
+      List.rev acc @ [ name, value ] @ fields
     | field :: fields -> add (field :: acc) fields
     | [] -> (name, value) :: t
   in
@@ -142,8 +143,8 @@ let set ?whitespace t ~name ~value =
   let name = Name.of_string name in
   let value = Value.of_string_to_string ?whitespace value in
   let rec set acc = function
-    | (name', _) :: fields
-      when Name.equal name name' -> List.rev acc @ [ name, value ] @ fields
+    | (name', _) :: fields when Name.equal name name' ->
+      List.rev acc @ [ name, value ] @ fields
     | field :: fields -> set (field :: acc) fields
     | [] -> (name, value) :: t
   in

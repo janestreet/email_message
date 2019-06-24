@@ -199,8 +199,7 @@ module Attachment = struct
   type t =
     { headers : Headers.t
     ; id : Id.t
-    ; embedded_email :
-        Email.t option
+    ; embedded_email : Email.t option
     (* These are expensive operations. Ensure they are only computed once, and
        lazily. *)
     ; raw_data : Bigstring_shared.t Or_error.t Lazy.t

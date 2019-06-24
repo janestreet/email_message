@@ -9,12 +9,14 @@ module Encoding : sig
     | `Bit7
     | `Bit8
     | `Binary
-    | `Quoted_printable ]
+    | `Quoted_printable
+    ]
   [@@deriving sexp_of, compare, hash]
 
   type t =
     [ known
-    | `Unknown of string ]
+    | `Unknown of string
+    ]
   [@@deriving sexp_of, compare, hash]
 
   (* RFC 2045 says 7bit should be assumed if the Content-Transfer-Encoding heading is

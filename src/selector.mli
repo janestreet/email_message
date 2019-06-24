@@ -6,7 +6,8 @@ module Base : sig
 
   type t =
     [ `exists_header of string * Re2.t
-    | `all_headers of string * Re2.t ]
+    | `all_headers of string * Re2.t
+    ]
   [@@deriving sexp_of]
 
   val matches : t -> Email.t -> bool
@@ -23,7 +24,7 @@ val example : t
 module Stable : sig
   module Base : sig
     module V1 : sig
-      type t = [ | Base.t] [@@deriving sexp]
+      type t = [ | Base.t ] [@@deriving sexp]
     end
   end
 

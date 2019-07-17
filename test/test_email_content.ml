@@ -47,7 +47,7 @@ let%expect_test "simple multipart" =
             ((headers ((Content-Type " text/plain; charset=UTF-8")))
              (raw_content ("Simple body\n")))
             ((headers (
-               (Content-Type              " text/html; charset=UTF-8")
+               (Content-Type " text/html; charset=UTF-8")
                (Content-Transfer-Encoding " quoted-printable")))
              (raw_content ("<div>Simple body</div>\n")))))
           (container_headers ((

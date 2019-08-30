@@ -31,7 +31,7 @@ let create ?(from = `Keep) ?(to_ = `Keep) ?(cc = `Keep) ?(subject = `Keep) heade
 ;;
 
 let create_from_email email =
-  let get_header x = Headers.last ~whitespace:`Raw (Email.headers email) x in
+  let get_header x = Headers.last ~normalize:`None (Email.headers email) x in
   let from =
     match get_header "From" with
     | None | Some "" -> `Keep
@@ -83,8 +83,8 @@ let content_of_email email =
 let add { header; from; to_; cc; subject } email =
   let content = Email_simple.Content.mixed [ header; content_of_email email ] in
   let headers = Email.headers email in
-  let get_headers x = Headers.find_all ~whitespace:`Raw headers x in
-  let get_header x = Headers.last ~whitespace:`Raw headers x in
+  let get_headers x = Headers.find_all ~normalize:`None headers x in
+  let get_header x = Headers.last ~normalize:`None headers x in
   let from =
     match from with
     | `Keep -> get_header "From" |> Option.value ~default:""

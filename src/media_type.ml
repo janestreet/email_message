@@ -87,7 +87,7 @@ let to_string t =
 
 let from_headers headers =
   Option.bind
-    (Headers.last ~whitespace:`Raw headers "Content-Type")
+    (Headers.last ~normalize:`None headers "Content-Type")
     ~f:(fun field -> Option.try_with (fun () -> of_string field))
 ;;
 

@@ -200,14 +200,14 @@ module Expert : sig
     -> t
 
   val content
-    :  whitespace:Headers.Whitespace.t
+    :  normalize_headers:Headers.Normalize.encode
     -> extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> encoding:Octet_stream.Encoding.known
     -> string
     -> t
 
   val multipart
-    :  whitespace:Headers.Whitespace.t
+    :  normalize_headers:Headers.Normalize.encode
     -> content_type:Mimetype.t
     -> extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> t list

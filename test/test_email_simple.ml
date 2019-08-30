@@ -5,14 +5,14 @@ open Expect_test_helpers
 open Email.Simple
 
 let%expect_test "[Expert.content]" =
-  let content ~whitespace ~encoding ~extra_headers str =
+  let content ~normalize_headers ~encoding ~extra_headers str =
     let result =
-      Expert.content ~whitespace ~encoding ~extra_headers str |> Email.to_string
+      Expert.content ~normalize_headers ~encoding ~extra_headers str |> Email.to_string
     in
     printf "%s" result
   in
   content
-    ~whitespace:`Raw
+    ~normalize_headers:`None
     ~encoding:`Quoted_printable
     ~extra_headers:[ "header1", "value1"; "header2", "value2" ]
     "x";
@@ -25,7 +25,11 @@ let%expect_test "[Expert.content]" =
 
     x |}]
   in
-  content ~whitespace:`Normalize ~encoding:`Quoted_printable ~extra_headers:[] "x\n";
+  content
+    ~normalize_headers:`Whitespace
+    ~encoding:`Quoted_printable
+    ~extra_headers:[]
+    "x\n";
   let%bind () = [%expect {|
     Content-Transfer-Encoding: quoted-printable
 

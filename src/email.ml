@@ -43,7 +43,7 @@ let of_bigstring_shared bstr =
            pos.Lexing.pos_lnum
            (pos.Lexing.pos_cnum - pos.Lexing.pos_bol))
   in
-  let headers = Headers.of_list ~whitespace:`Raw headers in
+  let headers = Headers.of_list ~normalize:`None headers in
   let raw_content =
     match content_offset with
     | `Truncated -> None

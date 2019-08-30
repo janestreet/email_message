@@ -46,7 +46,7 @@ let bigstring_shared_to_file data file =
       Writer.flushed w))
 ;;
 
-let last_header t name = Headers.last (Email.headers t) name
+let last_header ?normalize t name = Headers.last ?normalize (Email.headers t) name
 
 let add_headers t headers' =
   Email.modify_headers t ~f:(fun headers -> Headers.add_all headers headers')
@@ -57,26 +57,26 @@ let set_header_at_bottom t ~name ~value =
 ;;
 
 module Expert = struct
-  let content ~whitespace ~extra_headers ~encoding body =
+  let content ~normalize_headers ~extra_headers ~encoding body =
     let headers =
       [ ( "Content-Transfer-Encoding"
         , Octet_stream.Encoding.to_string (encoding :> Octet_stream.Encoding.t) )
       ]
       @ extra_headers
     in
-    let headers = Headers.of_list ~whitespace headers in
+    let headers = Headers.of_list ~normalize:normalize_headers headers in
     let octet_stream =
       body |> Bigstring_shared.of_string |> Octet_stream.encode ~encoding
     in
     Email_content.to_email ~headers (Data octet_stream)
   ;;
 
-  let multipart ~whitespace ~content_type ~extra_headers parts =
+  let multipart ~normalize_headers ~content_type ~extra_headers parts =
     (* [Multipart.create] will generate a suitable boundary, and [to_email] will ensure
        that this is added to the [Content-Type] header. *)
     let multipart = Email_content.Multipart.create parts in
     let headers = [ "Content-Type", content_type ] @ extra_headers in
-    let headers = Headers.of_list ~whitespace headers in
+    let headers = Headers.of_list ~normalize:normalize_headers headers in
     Email_content.to_email ~headers (Multipart multipart)
   ;;
 
@@ -126,7 +126,7 @@ module Expert = struct
     | [] -> add_headers content headers
     | attachments ->
       multipart
-        ~whitespace:`Normalize
+        ~normalize_headers:`Whitespace
         ~content_type:"multipart/mixed"
         ~extra_headers:headers
         (set_header_at_bottom content ~name:"Content-Disposition" ~value:"inline"
@@ -277,7 +277,7 @@ module Content = struct
         content
     =
     Expert.content
-      ~whitespace:`Normalize
+      ~normalize_headers:`Whitespace
       ~extra_headers:(extra_headers @ [ "Content-Type", content_type ])
       ~encoding
       content
@@ -305,7 +305,8 @@ module Content = struct
   let create_multipart ?(extra_headers = []) ~content_type = function
     | [] -> failwith "at least one part is required"
     | [ content ] -> add_headers content extra_headers
-    | parts -> Expert.multipart ~whitespace:`Normalize ~content_type ~extra_headers parts
+    | parts ->
+      Expert.multipart ~normalize_headers:`Whitespace ~content_type ~extra_headers parts
   ;;
 
   let alternatives ?extra_headers =
@@ -323,7 +324,12 @@ module Content = struct
       List.fold ~init:s escape ~f:(fun acc (pattern, with_) ->
         String.substr_replace_all acc ~pattern ~with_)
     in
-    "<html><pre>" ^ html_encode str ^ "</pre></html>"
+    (* Gmail decided that text in "pre" elements should wrap by default
+       (white-space=pre-wrap), the white-space rule here prevents wrapping and takes
+       precendence over their rule. *)
+    "<html><pre style=\"white-space: pre !important;\">"
+    ^ html_encode str
+    ^ "</pre></html>"
   ;;
 
   let text_monospace ?extra_headers content =
@@ -338,7 +344,7 @@ module Content = struct
 
   let with_related ?(extra_headers = []) ~resources t =
     Expert.multipart
-      ~whitespace:`Normalize
+      ~normalize_headers:`Whitespace
       ~content_type:Mimetype.multipart_related
       ~extra_headers
       (add_headers t [ "Content-Disposition", "inline" ]
@@ -513,14 +519,19 @@ let create
     content
 ;;
 
-let decode_last_header name ~f t =
-  Option.bind (last_header t name) ~f:(fun v -> Option.try_with (fun () -> f v))
+let decode_last_header ?normalize name ~f t =
+  Option.bind (last_header ?normalize t name) ~f:(fun v ->
+    Option.try_with (fun () -> f v))
 ;;
 
 let from = decode_last_header "From" ~f:Email_address.of_string_exn
 let to_ = decode_last_header "To" ~f:Email_address.list_of_string_exn
 let cc = decode_last_header "Cc" ~f:Email_address.list_of_string_exn
-let subject = decode_last_header "Subject" ~f:Fn.id
+
+let subject =
+  decode_last_header ~normalize:`Whitespace_and_encoded_words "Subject" ~f:Fn.id
+;;
+
 let id = decode_last_header "Message-Id" ~f:Fn.id
 
 let extract_body ?(content_type = Mimetype.text) email =

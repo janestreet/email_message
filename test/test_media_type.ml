@@ -13,7 +13,7 @@ let from_headers headers =
 let%expect_test "[Media_type.last]" =
   let headers =
     [ "Content-Type", "multipart/mixed;\nboundary=\"BOUNDARY\"" ]
-    |> Email_headers.of_list ~whitespace:`Normalize
+    |> Email_headers.of_list ~normalize:`Whitespace
   in
   from_headers headers;
   let%bind () =

@@ -30,12 +30,15 @@ module Crypto = Crypto.Cryptokit
 module Hash = Crypto.Hash
 
 let make_id () =
-  sprintf
-    !"<%s/%s+%{Uuid}@%s>"
-    (Unix.getlogin ())
-    (Sys.executable_name |> Filename.basename)
-    (Uuid_unix.create ())
-    (Unix.gethostname ())
+  if am_running_inline_test
+  then "{AUTO-GENERATED-ID}"
+  else
+    sprintf
+      !"<%s/%s+%{Uuid}@%s>"
+      (Unix.getlogin ())
+      (Sys.executable_name |> Filename.basename)
+      (Uuid_unix.create ())
+      (Unix.gethostname ())
 ;;
 
 let bigstring_shared_to_file data file =

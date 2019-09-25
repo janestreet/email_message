@@ -138,6 +138,7 @@ let set_address_part t address_part = of_string (compose ~prefix:t.prefix ~addre
 let set_local_part t local_part = { t with local_part }
 let set_domain t domain = { t with domain }
 let set_prefix t prefix = { t with prefix }
+let arg_type = Command.Arg_type.create of_string_exn
 
 include Comparable.Make_plain_using_comparator (T)
 include Hashable.Make_plain (T)

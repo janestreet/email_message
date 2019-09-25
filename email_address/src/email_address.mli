@@ -49,6 +49,8 @@ val prefix : t -> string option
     added before the given prefix. *)
 val set_prefix : t -> string option -> t
 
+val arg_type : t Command.Arg_type.t
+
 (* Hash and comparisons are based on the address part (local_part + domain)
    only. *)
 

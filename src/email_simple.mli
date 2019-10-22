@@ -149,7 +149,7 @@ val create
   :  ?from:Email_address.t (* defaults to <user@host> *)
   -> to_:Email_address.t list
   -> ?cc:Email_address.t list
-  -> ?reply_to:Email_address.t list
+  -> ?reply_to:Email_address.t
   -> subject:string
   -> ?id:string
   -> ?in_reply_to:string
@@ -188,7 +188,7 @@ module Expert : sig
     :  ?from:string (* defaults to <user@host> *)
     -> to_:string list
     -> ?cc:string list
-    -> ?reply_to:string list
+    -> ?reply_to:string
     -> subject:string
     -> ?id:string
     -> ?in_reply_to:string

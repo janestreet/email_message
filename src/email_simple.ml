@@ -87,7 +87,7 @@ module Expert = struct
         ?(from = Email_address1.local_address () |> Email_address.to_string)
         ~to_
         ?(cc = [])
-        ?(reply_to = [])
+        ?reply_to
         ~subject
         ?id
         ?in_reply_to
@@ -112,9 +112,9 @@ module Expert = struct
       @ [ "From", from ]
       @ (if List.is_empty to_ then [] else [ "To", String.concat to_ ~sep:",\n\t" ])
       @ (if List.is_empty cc then [] else [ "Cc", String.concat cc ~sep:",\n\t" ])
-      @ (if List.is_empty reply_to
-         then []
-         else [ "Reply-To", String.concat reply_to ~sep:",\n\t" ])
+      @ (match reply_to with
+        | None -> []
+        | Some reply_to -> [ "Reply-To", reply_to ])
       @ [ "Subject", subject ]
       @ [ "Message-Id", id ]
       @ (match in_reply_to with
@@ -511,7 +511,7 @@ let create
     ?from:(Option.map from ~f:Email_address.to_string)
     ~to_:(List.map to_ ~f:Email_address.to_string)
     ?cc:(Option.map cc ~f:(List.map ~f:Email_address.to_string))
-    ?reply_to:(Option.map reply_to ~f:(List.map ~f:Email_address.to_string))
+    ?reply_to:(Option.map reply_to ~f:Email_address.to_string)
     ~subject
     ?id
     ?in_reply_to

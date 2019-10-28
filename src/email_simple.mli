@@ -4,8 +4,8 @@ module Mimetype : sig
   type t = private string [@@deriving compare, sexp_of]
 
   val text : t
+  val text_utf8 : t
   val html : t
-  val html_charset : string -> t
   val html_utf8 : t
   val pdf : t
   val jpg : t
@@ -57,14 +57,35 @@ module Content : sig
 
   val of_email : Email.t -> t
 
-  val create
+  val create_custom
     :  content_type:Mimetype.t
     -> ?encoding:Octet_stream.Encoding.known
     -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> string
     -> t
 
+  val create
+    :  content_type:Mimetype.t
+    -> ?encoding:Octet_stream.Encoding.known
+    -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
+    -> string
+    -> t
+  [@@deprecated "[since 2019-08] Renamed to [create_custom]"]
+
+  val html_utf8
+    :  ?encoding:Octet_stream.Encoding.known (* default: `Quoted_printable *)
+    -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
+    -> string
+    -> t
+
   val html
+    :  ?encoding:Octet_stream.Encoding.known (* default: `Quoted_printable *)
+    -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
+    -> string
+    -> t
+  [@@deprecated "[since 2019-08] Please specify the charset, e.g. [html_utf8]"]
+
+  val text_utf8
     :  ?encoding:Octet_stream.Encoding.known (* default: `Quoted_printable *)
     -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> string
@@ -75,13 +96,21 @@ module Content : sig
     -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> string
     -> t
+  [@@deprecated "[since 2019-08] Please specify the charset, e.g. [text_utf8]"]
 
   (** Plain text e-mail that also includes an html version so it's displayed
       monospace in gmail. *)
+  val text_monospace_utf8
+    :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
+    -> string
+    -> t
+
   val text_monospace
     :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> string
     -> t
+  [@@deprecated
+    "[since 2019-08] Please specify the charset, e.g. [text_monospace_utf8]"]
 
   val of_file
     :  ?content_type:Mimetype.t
@@ -169,7 +198,6 @@ val id : t -> string option
 (* [extract_body ?content_type t] returns the body associated with the email part that
    matches the [content_type] mimetype, or none if [t] does not contain a body or part of
    type [content_type]. *)
-
 val extract_body
   :  ?content_type:Mimetype.t (** default: [Mimetype.text] *)
   -> t

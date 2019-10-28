@@ -152,9 +152,9 @@ module Mimetype = struct
   type t = Stable.Mimetype.V1.t [@@deriving compare, sexp_of]
 
   let text = "text/plain"
+  let text_utf8 = "text/plain; charset=\"UTF-8\""
   let html = "text/html"
-  let html_charset charset = sprintf "text/html; charset=\"%s\"" charset
-  let html_utf8 = html_charset "UTF-8"
+  let html_utf8 = "text/html; charset=\"UTF-8\""
   let pdf = "application/pdf"
   let jpg = "image/jpeg"
   let png = "image/png"
@@ -273,7 +273,7 @@ module Content = struct
 
   let of_email = ident
 
-  let create
+  let create_custom
         ~content_type
         ?(encoding = Mimetype.guess_encoding content_type)
         ?(extra_headers = [])
@@ -286,6 +286,8 @@ module Content = struct
       content
   ;;
 
+  let create = create_custom
+
   let of_file ?content_type ?encoding ?extra_headers file =
     let open Async in
     let%map content = Reader.file_contents file in
@@ -297,12 +299,12 @@ module Content = struct
     create ~content_type ?encoding ?extra_headers content
   ;;
 
-  let html ?(encoding = `Quoted_printable) ?extra_headers content =
-    create ?extra_headers ~content_type:Mimetype.html ~encoding content
+  let html_utf8 ?(encoding = `Quoted_printable) ?extra_headers content =
+    create ?extra_headers ~content_type:Mimetype.html_utf8 ~encoding content
   ;;
 
-  let text ?(encoding = `Quoted_printable) ?extra_headers content =
-    create ?extra_headers ~content_type:Mimetype.text ~encoding content
+  let text_utf8 ?(encoding = `Quoted_printable) ?extra_headers content =
+    create ?extra_headers ~content_type:Mimetype.text_utf8 ~encoding content
   ;;
 
   let create_multipart ?(extra_headers = []) ~content_type = function
@@ -335,10 +337,10 @@ module Content = struct
     ^ "</pre></html>"
   ;;
 
-  let text_monospace ?extra_headers content =
+  let text_monospace_utf8 ?extra_headers content =
     alternatives
       ?extra_headers
-      [ text ?encoding:None content; html ?encoding:None (html_pre content) ]
+      [ text_utf8 ?encoding:None content; html_utf8 ?encoding:None (html_pre content) ]
   ;;
 
   let mixed ?extra_headers =
@@ -488,6 +490,22 @@ module Content = struct
       (match Octet_stream.decode content with
        | None -> Deferred.Or_error.errorf "The message payload used an unknown encoding"
        | Some content -> bigstring_shared_to_file content file)
+  ;;
+
+  (* The following are considered deprecated since they leave the charset unspecified
+     which has caused issues with some emails not displaying as expected. *)
+  let text ?(encoding = `Quoted_printable) ?extra_headers content =
+    create ?extra_headers ~content_type:Mimetype.text ~encoding content
+  ;;
+
+  let html ?(encoding = `Quoted_printable) ?extra_headers content =
+    create ?extra_headers ~content_type:Mimetype.html ~encoding content
+  ;;
+
+  let text_monospace ?extra_headers content =
+    alternatives
+      ?extra_headers
+      [ text ?encoding:None content; html ?encoding:None (html_pre content) ]
   ;;
 end
 

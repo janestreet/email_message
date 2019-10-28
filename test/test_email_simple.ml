@@ -37,7 +37,7 @@ let%expect_test "[Expert.content]" =
   return ()
 ;;
 
-let replacement = (Content.text "<REPLACED>" :> Email.t)
+let replacement = (Content.text_utf8 "<REPLACED>" :> Email.t)
 
 let parse_attachments s =
   let email = Email.of_string s in
@@ -99,7 +99,7 @@ let%expect_test "[all_attachments] and [map_attachments]" =
              \n--BOUNDARY2--\
              \n--BOUNDARY1\
              \nContent-Transfer-Encoding: quoted-printable\
-             \nContent-Type: text/plain\
+             \nContent-Type: text/plain; charset=\"UTF-8\"\
              \n\
              \n<REPLACED>\
              \n--BOUNDARY1--"))))) |}]
@@ -158,7 +158,7 @@ let%expect_test "[all_attachments] and [map_attachments]" =
              \n--BOUNDARY2--\
              \n--BOUNDARY1\
              \nContent-Transfer-Encoding: quoted-printable\
-             \nContent-Type: text/plain\
+             \nContent-Type: text/plain; charset=\"UTF-8\"\
              \n\
              \n<REPLACED>\
              \n--BOUNDARY1--\
@@ -228,7 +228,7 @@ let%expect_test "[all_attachments] and [map_attachments]" =
          \n\
          \n--BOUNDARY2\
          \nContent-Transfer-Encoding: quoted-printable\
-         \nContent-Type: text/plain\
+         \nContent-Type: text/plain; charset=\"UTF-8\"\
          \n\
          \n<REPLACED>\
          \n--BOUNDARY2--\
@@ -241,7 +241,7 @@ let%expect_test "[all_attachments] and [map_attachments]" =
          \n\
          \n--BOUNDARY3\
          \nContent-Transfer-Encoding: quoted-printable\
-         \nContent-Type: text/plain\
+         \nContent-Type: text/plain; charset=\"UTF-8\"\
          \n\
          \n<REPLACED>\
          \n--BOUNDARY3--\
@@ -303,7 +303,7 @@ let%expect_test "long attachment name" =
          \n--BOUNDARY2--\
          \n--BOUNDARY1\
          \nContent-Transfer-Encoding: quoted-printable\
-         \nContent-Type: text/plain\
+         \nContent-Type: text/plain; charset=\"UTF-8\"\
          \n\
          \n<REPLACED>\
          \n--BOUNDARY1--"))))) |}]

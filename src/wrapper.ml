@@ -64,7 +64,7 @@ let create_from_email email =
 ;;
 
 let content_of_email email =
-  Email_simple.Content.create
+  Email_simple.Content.create_custom
     ~content_type:(Email_simple.Mimetype.of_string "message/rfc822")
     (Email.to_string email)
 ;;

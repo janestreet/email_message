@@ -97,6 +97,8 @@ end
 module Common = struct
   let subject = "Subject"
   let to_ = "To"
+  let cc = "Cc"
+  let bcc = "Bcc"
   let from = "From"
   let date = "Date"
   let message_id = "Message-ID"

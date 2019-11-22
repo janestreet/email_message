@@ -44,6 +44,8 @@ end
 module Common : sig
   val subject : string
   val to_ : string
+  val cc : string
+  val bcc : string
   val from : string
   val date : string
   val message_id : string

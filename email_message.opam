@@ -19,7 +19,7 @@ depends: [
   "angstrom"
   "base64"
   "cryptokit"
-  "dune"        {>= "1.5.1"}
+  "dune"        {>= "2.0.0"}
   "magic-mime"
 ]
 synopsis: "E-mail message parser"

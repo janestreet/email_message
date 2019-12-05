@@ -73,7 +73,7 @@ module Stable = struct
           let of_string s = of_string_exn s
         end)
 
-      include Binable.Of_stringable.V1 (struct
+      include Binable.Of_stringable.V1 [@alert "-legacy"] (struct
           type nonrec t = t
 
           let to_string = to_string

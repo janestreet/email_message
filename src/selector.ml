@@ -7,12 +7,22 @@ module Stable = struct
         [ `exists_header of string * Re2.t
         | `all_headers of string * Re2.t
         ]
-      [@@deriving sexp]
+      [@@deriving bin_shape, sexp]
+
+      let%expect_test _ =
+        print_endline [%bin_digest: t];
+        [%expect {| cbce30b485bdbeb9e93285287a91e7f5 |}]
+      ;;
     end
   end
 
   module V1 = struct
-    type t = Base.V1.t Blang.V1.t [@@deriving sexp]
+    type t = Base.V1.t Blang.V1.t [@@deriving bin_shape, sexp]
+
+    let%expect_test _ =
+      print_endline [%bin_digest: t];
+      [%expect {| 96b50dce93691f115ea076e70421edf9 |}]
+    ;;
   end
 end
 

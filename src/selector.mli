@@ -24,11 +24,11 @@ val example : t
 module Stable : sig
   module Base : sig
     module V1 : sig
-      type t = [ | Base.t ] [@@deriving sexp]
+      type t = [ | Base.t ] [@@deriving bin_shape, sexp]
     end
   end
 
   module V1 : sig
-    type nonrec t = t [@@deriving sexp]
+    type nonrec t = t [@@deriving bin_shape, sexp]
   end
 end

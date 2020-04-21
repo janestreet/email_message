@@ -1,7 +1,8 @@
 open! Core
 open Async
 open Email_message
-open Expect_test_helpers
+open Expect_test_helpers_core
+open Expect_test_helpers_async
 open Email.Content
 
 let parse s =

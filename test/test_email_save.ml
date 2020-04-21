@@ -1,7 +1,7 @@
 open! Core
 open Async
 open Email_message
-open Expect_test_helpers
+open Expect_test_helpers_async
 
 let save ?eol_except_raw_content str =
   let email = Email.of_string str in

@@ -1,6 +1,7 @@
 open Core_kernel
 open Async_kernel
-open Expect_test_helpers
+open Expect_test_helpers_core
+open Expect_test_helpers_async
 open Email_address
 
 let%test_unit "check comparison" =

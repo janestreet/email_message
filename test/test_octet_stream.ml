@@ -1,7 +1,7 @@
 open! Core
 open Async
 open Email_message
-open Expect_test_helpers
+open Expect_test_helpers_async
 open Octet_stream
 
 let test ~encoding plaintext =

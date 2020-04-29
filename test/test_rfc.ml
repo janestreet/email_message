@@ -2,7 +2,6 @@ open! Core
 open Async
 open Email_message.Private
 open Expect_test_helpers_core
-open Expect_test_helpers_async
 open Rfc.RFC2045.Token
 
 let%expect_test "RFC2045.Token" =

@@ -205,6 +205,7 @@ module Attachment = struct
     ; embedded_email : Email.t option
     (* These are expensive operations. Ensure they are only computed once, and
        lazily. *)
+    ; decoded_filename : string Lazy.t
     ; raw_data : Bigstring_shared.t Or_error.t Lazy.t
     ; md5 : string Or_error.t Lazy.t
     ; sha256 : string Or_error.t Lazy.t
@@ -212,6 +213,7 @@ module Attachment = struct
   [@@deriving fields, sexp_of]
 
   let filename t = Id.filename t.id
+  let decoded_filename t = Lazy.force t.decoded_filename
   let raw_data t = Lazy.force t.raw_data
   let md5 t = Lazy.force t.md5
   let sha256 t = Lazy.force t.sha256
@@ -228,6 +230,13 @@ module Attachment = struct
   ;;
 
   let of_content' ?embedded_email ~headers ~filename ~path content =
+    let decoded_filename =
+      lazy
+        (Encoded_word.decode filename
+         |> function
+         | Ok s -> s
+         | Error _ -> filename)
+    in
     let raw_data =
       lazy
         (Or_error.try_with (fun () ->
@@ -244,7 +253,7 @@ module Attachment = struct
     let md5 = compute_hash ~hash:Hash.md5 in
     let sha256 = compute_hash ~hash:Hash.sha256 in
     let id = { Id.filename; path = Path.to_int_list path } in
-    { headers; id; embedded_email; raw_data; md5; sha256 }
+    { headers; id; embedded_email; decoded_filename; raw_data; md5; sha256 }
   ;;
 
   let of_content ~headers ~filename ~path content =

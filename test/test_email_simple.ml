@@ -1,7 +1,6 @@
 open! Core
 open Async
 open Email_message
-open Expect_test_helpers_async
 open Email.Simple
 
 let%expect_test "[Expert.content]" =

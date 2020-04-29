@@ -49,6 +49,10 @@ module Attachment : sig
   val md5 : t -> string Or_error.t
   val sha256 : t -> string Or_error.t
   val filename : t -> attachment_name
+
+  (** [filename] decoded as per [Encoded_word.decode] *)
+  val decoded_filename : t -> attachment_name
+
   val to_file : t -> string -> unit Async.Deferred.Or_error.t
 end
 

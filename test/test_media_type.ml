@@ -3,7 +3,6 @@ open Async
 open Email_message
 open Email_message.Private
 open Expect_test_helpers_core
-open Expect_test_helpers_async
 open Media_type
 
 let from_headers headers =

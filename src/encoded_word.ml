@@ -17,6 +17,7 @@ let charset =
     ; string_ci "UTF-8" >>| const `Utf8
     ; string_ci "ISO-8859-1" >>| const `Latin1
     ; string_ci "ISO-8859-2" >>| const `Latin2
+    ; string_ci "GB2312" >>| const `GB2312
     ]
 ;;
 
@@ -60,6 +61,7 @@ let parser_ : string Angstrom.t =
   | `Utf8
   | `Latin1
   | `Latin2
+  | `GB2312
     -> return data
 ;;
 

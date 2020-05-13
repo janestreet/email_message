@@ -16,7 +16,7 @@ depends: [
   "core_kernel"
   "ppx_jane"
   "re2"
-  "angstrom"
+  "angstrom"    {>= "0.14.1"}
   "base64"
   "cryptokit"
   "dune"        {>= "2.0.0"}

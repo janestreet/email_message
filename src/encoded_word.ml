@@ -104,7 +104,8 @@ let parser_many : string Angstrom.t =
 ;;
 
 let decode str =
-  Angstrom.parse_string parser_many str |> Result.map_error ~f:Error.of_string
+  Angstrom.parse_string ~consume:Prefix parser_many str
+  |> Result.map_error ~f:Error.of_string
 ;;
 
 let%expect_test _ =

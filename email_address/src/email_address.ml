@@ -38,7 +38,10 @@ module Stable = struct
         let open Core_kernel in
         let open! Int.Replace_polymorphic_compare in
         match
-          Angstrom.parse_string Email_address_parser_stable_v1.email_only input_str
+          Angstrom.parse_string
+            ~consume:Prefix
+            Email_address_parser_stable_v1.email_only
+            input_str
         with
         | Error error ->
           Or_error.error_s
@@ -106,7 +109,10 @@ include T
 
 let list_of_string ?default_domain input_str =
   match
-    Angstrom.parse_string Email_address_parser_stable_v1.email_list_only input_str
+    Angstrom.parse_string
+      ~consume:Prefix
+      Email_address_parser_stable_v1.email_list_only
+      input_str
   with
   | Error error ->
     Or_error.error_s

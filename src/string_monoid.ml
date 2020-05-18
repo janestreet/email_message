@@ -40,7 +40,7 @@ module Underlying = struct
 
   let output_channel ~channel = function
     | String str -> Out_channel.output_string channel str
-    | Bigstring bstr -> Bigstring.really_output channel bstr
+    | Bigstring bstr -> Bigstring_unix.really_output channel bstr
     | Char c -> Out_channel.output_char channel c
   ;;
 

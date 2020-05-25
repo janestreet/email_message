@@ -193,6 +193,9 @@ val create
   -> Content.t
   -> t
 
+(** A unique value to be used in a Message-Id header *)
+val make_id : unit -> Headers.Value.t
+
 val from : t -> Email_address.t option
 val to_ : t -> Email_address.t list option
 val cc : t -> Email_address.t list option

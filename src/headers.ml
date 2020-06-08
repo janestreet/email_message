@@ -75,7 +75,7 @@ end = struct
     | `Whitespace -> normalize_string str
     | `Whitespace_and_encoded_words ->
       (match Encoded_word.decode str with
-       | Ok str -> str
+       | Ok str -> normalize_string str
        | Error _ -> normalize_string str)
   ;;
 

@@ -604,7 +604,7 @@ let parse_attachment ?container_headers ~path t =
      | Ok (Data content) -> Some (Attachment.of_content ~headers ~filename ~path content))
 ;;
 
-let map_file_attachments t ~f =
+let map_attachments t ~f =
   let handle_possible_attachment ?container_headers ~path t =
     parse_attachment ?container_headers ~path t
     |> function
@@ -619,9 +619,12 @@ let map_file_attachments t ~f =
     | Error _ -> `Unchanged
     | Ok (Data _data) -> handle_possible_attachment ?container_headers ~path t
     | Ok (Message message) ->
-      (match loop message ?container_headers:None ~path:(Path.child path 0) with
-       | `Unchanged -> `Unchanged
-       | `Changed message' -> `Changed (Email_content.set_content t (Message message')))
+      (match handle_possible_attachment ?container_headers ~path t with
+       | `Changed t' -> `Changed t'
+       | `Unchanged ->
+         (match loop message ?container_headers:None ~path:(Path.child path 0) with
+          | `Unchanged -> `Unchanged
+          | `Changed message' -> `Changed (Email_content.set_content t (Message message'))))
     | Ok (Multipart (mp : Email_content.Multipart.t)) ->
       (match
          List.fold_mapi mp.parts ~init:`Unchanged ~f:(fun i change_status t ->
@@ -642,25 +645,13 @@ let map_file_attachments t ~f =
 ;;
 
 let all_attachments t =
-  let all_attachments = ref [] in
-  let handle_possible_attachment ?container_headers ~path t =
-    parse_attachment ?container_headers ~path t
-    |> Option.iter ~f:(fun attachment ->
-      all_attachments := attachment :: !all_attachments)
+  let all_attachments = Queue.create () in
+  let (_ : t) =
+    map_attachments t ~f:(fun attachment ->
+      Queue.enqueue all_attachments attachment;
+      `Keep)
   in
-  let rec loop ?container_headers t ~path =
-    match Email_content.parse ?container_headers t with
-    | Error _ -> ()
-    | Ok (Data _data) -> handle_possible_attachment ?container_headers ~path t
-    | Ok (Message message) ->
-      handle_possible_attachment ?container_headers ~path t;
-      loop message ?container_headers:None ~path:(Path.child path 0)
-    | Ok (Multipart (mp : Email_content.Multipart.t)) ->
-      List.iteri mp.parts ~f:(fun i t ->
-        loop ~container_headers:mp.container_headers ~path:(Path.child path i) t)
-  in
-  loop ?container_headers:None ~path:Path.root t;
-  List.rev !all_attachments
+  Queue.to_list all_attachments
 ;;
 
 let find_attachment t name =

@@ -216,7 +216,10 @@ val find_attachment : t -> attachment_name -> Attachment.t option
 val all_related_parts : t -> (attachment_name * Content.t) list
 val find_related : t -> attachment_name -> Content.t option
 val inline_parts : t -> Content.t list
-val map_file_attachments : t -> f:(Attachment.t -> [ `Keep | `Replace of t ]) -> t
+
+(** [map_attachments] recurses into message/rfc822 parts. However, if a message/rfc822
+    part is replaced, there is no further recursion. *)
+val map_attachments : t -> f:(Attachment.t -> [ `Keep | `Replace of t ]) -> t
 
 module Expert : sig
   val create_raw

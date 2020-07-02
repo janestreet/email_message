@@ -113,7 +113,7 @@ let%expect_test "rfc822_date" =
   [%expect {| Wed, 31 Dec 1969 19:00:00 -0500 |}]
 ;;
 
-let%test_unit "rfc822_date round-trip" =
+let%test_unit ("rfc822_date round-trip"[@tags "64-bits-only"]) =
   let open! Quickcheck.Let_syntax in
   Quickcheck.test
     (* Unfortunately we cannot use Time.quickcheck_generator since that generates times
@@ -121,8 +121,8 @@ let%test_unit "rfc822_date round-trip" =
 
        unix time 3_000_000_000 is in the year 2065.
     *)
-    (let%map seconds_since_epoch = Int.gen_incl (-100) 3_000_000_000 in
-     Float.of_int seconds_since_epoch |> Time.Span.of_sec |> Time.of_span_since_epoch)
+    (let%map seconds_since_epoch = Int64.gen_incl (-100L) 3_000_000_000L in
+     Float.of_int64 seconds_since_epoch |> Time.Span.of_sec |> Time.of_span_since_epoch)
     ~sexp_of:[%sexp_of: Time.t]
     ~f:(fun time ->
       [%test_eq: Time.t] time (Email_date.rfc822_date time |> of_string_exn))

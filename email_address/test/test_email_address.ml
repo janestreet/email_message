@@ -78,9 +78,7 @@ let%expect_test "parse one" =
     [%expect {| ((prefix ("")) (local_part local) (domain (janestreet.com))) |}]
   in
   parse " John Doe <local> ";
-  let%bind () =
-    [%expect {| ((prefix ("John Doe ")) (local_part local) (domain ())) |}]
-  in
+  let%bind () = [%expect {| ((prefix ("John Doe ")) (local_part local) (domain ())) |}] in
   parse " John Doe <local@janestreet.com> ";
   let%bind () =
     [%expect {| ((prefix ("John Doe ")) (local_part local) (domain (janestreet.com))) |}]

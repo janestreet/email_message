@@ -88,13 +88,7 @@ val find_all : ?normalize:Normalize.decode -> t -> Name.t -> Value.t list
 val names : t -> Name.t list
 val add : ?normalize:Normalize.encode -> t -> name:Name.t -> value:Value.t -> t
 val add_at_bottom : ?normalize:Normalize.encode -> t -> name:Name.t -> value:Value.t -> t
-
-val add_if_missing
-  :  ?normalize:Normalize.encode
-  -> t
-  -> name:Name.t
-  -> value:Value.t
-  -> t
+val add_if_missing : ?normalize:Normalize.encode -> t -> name:Name.t -> value:Value.t -> t
 
 val add_at_bottom_if_missing
   :  ?normalize:Normalize.encode

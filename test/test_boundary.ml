@@ -57,8 +57,7 @@ let%expect_test "split" =
   in
   split "A\n--BOUNDARY\nP\n--BOUNDARY--\nB";
   let%bind () =
-    [%expect
-      {|
+    [%expect {|
       ((prologue (A))
        (parts    (P))
        (epilogue ("\nB"))) |}]

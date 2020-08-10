@@ -126,10 +126,7 @@ module Content : sig
   (* Combine 2 or more contents as alternative versions.
      List should be sorted from worst to best. *)
 
-  val alternatives
-    :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
-    -> t list
-    -> t
+  val alternatives : ?extra_headers:(Headers.Name.t * Headers.Value.t) list -> t list -> t
 
   (* Combine 2 or more contents that should be bundled together *)
 

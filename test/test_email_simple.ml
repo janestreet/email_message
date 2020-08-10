@@ -239,9 +239,7 @@ let%expect_test "[all_attachments] and [map_attachments]" =
   (* There is a message/rfc822 attachment with attachments within. If we strip the
      message/rfc822 attachment, that also results in the nested attachments being removed.
   *)
-  parse_attachments'
-    ~replace_attachment:(fun ~name:_ -> true)
-    nested_message_rfc822_email;
+  parse_attachments' ~replace_attachment:(fun ~name:_ -> true) nested_message_rfc822_email;
   let%bind () =
     [%expect
       {|

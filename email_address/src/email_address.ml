@@ -116,8 +116,7 @@ let list_of_string ?default_domain input_str =
   with
   | Error error ->
     Or_error.error_s
-      [%message
-        "Failed to parse email address(es)" (error : string) (input_str : string)]
+      [%message "Failed to parse email address(es)" (error : string) (input_str : string)]
   | Ok emails ->
     Or_error.return (List.map ~f:(with_default_domain ~default_domain) emails)
 ;;

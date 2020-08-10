@@ -161,8 +161,7 @@ let%expect_test "weird headers" =
 *)
 let%expect_test "Folding whitespace" =
   parse
-    ([ "Subject: This is a multiline"; " subject"; ""; "body" ]
-     |> String.concat ~sep:"\n");
+    ([ "Subject: This is a multiline"; " subject"; ""; "body" ] |> String.concat ~sep:"\n");
   let%bind () =
     [%expect
       {|

@@ -192,10 +192,7 @@ let add_all ?normalize t ts : t =
 ;;
 
 let add_all_at_bottom ?normalize t ts =
-  List.fold
-    ~init:t
-    ~f:(fun t (name, value) -> add_at_bottom ?normalize t ~name ~value)
-    ts
+  List.fold ~init:t ~f:(fun t (name, value) -> add_at_bottom ?normalize t ~name ~value) ts
 ;;
 
 let filter ?normalize t ~f =

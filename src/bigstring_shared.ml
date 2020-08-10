@@ -107,9 +107,7 @@ let lines_seq ?include_empty_last_line t =
       let pos' = pos + 1 in
       traverse ~sol:pos' ~pos:pos')
   in
-  if length t = 0
-  then Sequence.empty
-  else Sequence.Generator.run (traverse ~sol:0 ~pos:0)
+  if length t = 0 then Sequence.empty else Sequence.Generator.run (traverse ~sol:0 ~pos:0)
 ;;
 
 let iter_lines t ~f = Sequence.iter (lines_seq t) ~f

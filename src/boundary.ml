@@ -218,8 +218,7 @@ let join_without_checking_for_conflicts ?prologue ~parts ?epilogue t =
       String_monoid.plus
         (Bigstring_shared.to_string_monoid prologue)
         (Bigstring_shared.to_string_monoid epilogue)
-    | Some content, None | None, Some content ->
-      Bigstring_shared.to_string_monoid content
+    | Some content, None | None, Some content -> Bigstring_shared.to_string_monoid content
     | None, None -> String_monoid.of_string "\n")
   else (
     (* Different types of boundaries that may appear in a message *)

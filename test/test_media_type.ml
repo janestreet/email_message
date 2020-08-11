@@ -16,12 +16,10 @@ let%expect_test "[Media_type.last]" =
     |> Email_headers.of_list ~normalize:`Whitespace
   in
   from_headers headers;
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
     ((mime_type    multipart)
      (mime_subtype mixed)
-     (params ((boundary BOUNDARY)))) |}]
-  in
+     (params ((boundary BOUNDARY)))) |}];
   return ()
 ;;

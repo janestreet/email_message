@@ -15,24 +15,22 @@ let%expect_test "[Expert.content]" =
     ~encoding:`Quoted_printable
     ~extra_headers:[ "header1", "value1"; "header2", "value2" ]
     "x";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
     Content-Transfer-Encoding:quoted-printable
     header1:value1
     header2:value2
 
-    x |}]
-  in
+    x |}];
   content
     ~normalize_headers:`Whitespace
     ~encoding:`Quoted_printable
     ~extra_headers:[]
     "x\n";
-  let%bind () = [%expect {|
+  [%expect {|
     Content-Transfer-Encoding: quoted-printable
 
-    x |}] in
+    x |}];
   return ()
 ;;
 
@@ -89,9 +87,8 @@ let%expect_test "[all_attachments] and [map_attachments]" =
     ; "Zm9v"
     ; "--BOUNDARY1--"
     ];
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((attachments ((((filename attachment.txt) (path (1))) foo)))
          (stripped
           ((headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1")))
@@ -115,8 +112,7 @@ let%expect_test "[all_attachments] and [map_attachments]" =
              \nContent-Type: text/plain; charset=\"UTF-8\"\
              \n\
              \n<REPLACED>\
-             \n--BOUNDARY1--"))))) |}]
-  in
+             \n--BOUNDARY1--"))))) |}];
   (* - parse into "multipart/digest" parts
      - the "message/rfc822" content type is optional *)
   parse_attachments'
@@ -156,9 +152,8 @@ let%expect_test "[all_attachments] and [map_attachments]" =
     ; ""
     ; "--BOUNDARY--"
     ];
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((attachments ((((filename attachment.txt) (path (0 0 1))) foo)))
          (stripped
           ((headers
@@ -195,8 +190,7 @@ let%expect_test "[all_attachments] and [map_attachments]" =
              \nSubject: No content-Type in the message headers\
              \n\
              \n\
-             \n----==::BOUNDARY::000000::==----"))))) |}]
-  in
+             \n----==::BOUNDARY::000000::==----"))))) |}];
   (* Look into message/rfc822 for attachments *)
   let nested_message_rfc822_email =
     [ "Content-Type: multipart/mixed; boundary=\"BOUNDARY1\""
@@ -240,9 +234,8 @@ let%expect_test "[all_attachments] and [map_attachments]" =
      message/rfc822 attachment, that also results in the nested attachments being removed.
   *)
   parse_attachments' ~replace_attachment:(fun ~name:_ -> true) nested_message_rfc822_email;
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
     ((attachments
       ((((filename script.py) (path (1 0 0))) "This attachment is blacklisted")
        (((filename rfc822-part) (path (2)))
@@ -282,16 +275,14 @@ let%expect_test "[all_attachments] and [map_attachments]" =
          \nContent-Type: text/plain; charset=\"UTF-8\"\
          \n\
          \n<REPLACED>\
-         \n--BOUNDARY1--"))))) |}]
-  in
+         \n--BOUNDARY1--"))))) |}];
   (* If we don't strip the message/rfc822 attachment, then we can strip only the nested
      attachments. *)
   parse_attachments'
     ~replace_attachment:(fun ~name -> not (String.equal name "rfc822-part"))
     nested_message_rfc822_email;
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
     ((attachments
       ((((filename script.py) (path (1 0 0))) "This attachment is blacklisted")
        (((filename rfc822-part) (path (2)))
@@ -339,8 +330,7 @@ let%expect_test "[all_attachments] and [map_attachments]" =
          \n<REPLACED>\
          \n--BOUNDARY3--\
          \n\
-         \n--BOUNDARY1--"))))) |}]
-  in
+         \n--BOUNDARY1--"))))) |}];
   return ()
 ;;
 
@@ -400,5 +390,6 @@ let%expect_test "long attachment name" =
          \nContent-Type: text/plain; charset=\"UTF-8\"\
          \n\
          \n<REPLACED>\
-         \n--BOUNDARY1--"))))) |}]
+         \n--BOUNDARY1--"))))) |}];
+  return ()
 ;;

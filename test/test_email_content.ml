@@ -15,13 +15,11 @@ let parse s =
 
 let%expect_test "simple content" =
   parse "From: foo@bar.com\n\nhello world";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         (Data (
           (encoding Bit7)
-          (content  "hello world"))) |}]
-  in
+          (content  "hello world"))) |}];
   return ()
 ;;
 
@@ -36,9 +34,8 @@ let%expect_test "simple multipart" =
      Content-Transfer-Encoding: quoted-printable\n\n\
      <div>Simple body</div>\n\n\
      --BOUNDARY--";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         (Multipart (
           (boundary BOUNDARY)
           (prologue ())
@@ -51,8 +48,7 @@ let%expect_test "simple multipart" =
                (Content-Transfer-Encoding " quoted-printable")))
              (raw_content ("<div>Simple body</div>\n")))))
           (container_headers ((
-            Content-Type " multipart/alternative; boundary=BOUNDARY"))))) |}]
-  in
+            Content-Type " multipart/alternative; boundary=BOUNDARY"))))) |}];
   return ()
 ;;
 
@@ -74,9 +70,8 @@ let%expect_test "nested multipart" =
      Content-Transfer-Encoding: base64\n\n\
      Zm9v\n\
      --BOUNDARY1--";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         (Multipart (
           (boundary BOUNDARY1)
           (prologue ())
@@ -90,17 +85,14 @@ let%expect_test "nested multipart" =
                (Content-Disposition " attachment; filename=\"attachment.txt\"")
                (Content-Transfer-Encoding " base64")))
              (raw_content (Zm9v)))))
-          (container_headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1"))))) |}]
-  in
+          (container_headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1"))))) |}];
   return ()
 ;;
 
 let%expect_test "message/rfc822" =
   parse "Content-Type: message/rfc822\n\nFrom: foo@bar.com\n\nSample body";
-  let%bind () =
-    [%expect
-      {|
-        (Message ((headers ((From " foo@bar.com"))) (raw_content ("Sample body")))) |}]
-  in
+  [%expect
+    {|
+        (Message ((headers ((From " foo@bar.com"))) (raw_content ("Sample body")))) |}];
   return ()
 ;;

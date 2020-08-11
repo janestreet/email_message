@@ -57,178 +57,138 @@ let print_addr addr =
 let%expect_test "parse one" =
   let parse str = print_addr (of_string_exn str) in
   show_raise (fun () -> parse "  ");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address"
         (error     "email > local_part: count_while1")
-        (input_str "  "))) |}]
-  in
+        (input_str "  "))) |}];
   parse "local";
-  let%bind () = [%expect {| ((prefix ()) (local_part local) (domain ())) |}] in
+  [%expect {| ((prefix ()) (local_part local) (domain ())) |}];
   parse "<local>";
-  let%bind () = [%expect {| ((prefix ("")) (local_part local) (domain ())) |}] in
+  [%expect {| ((prefix ("")) (local_part local) (domain ())) |}];
   parse " local@janestreet.com ";
-  let%bind () =
-    [%expect {| ((prefix ()) (local_part local) (domain (janestreet.com))) |}]
-  in
+  [%expect {| ((prefix ()) (local_part local) (domain (janestreet.com))) |}];
   parse " <local@janestreet.com> ";
-  let%bind () =
-    [%expect {| ((prefix ("")) (local_part local) (domain (janestreet.com))) |}]
-  in
+  [%expect {| ((prefix ("")) (local_part local) (domain (janestreet.com))) |}];
   parse " John Doe <local> ";
-  let%bind () = [%expect {| ((prefix ("John Doe ")) (local_part local) (domain ())) |}] in
+  [%expect {| ((prefix ("John Doe ")) (local_part local) (domain ())) |}];
   parse " John Doe <local@janestreet.com> ";
-  let%bind () =
-    [%expect {| ((prefix ("John Doe ")) (local_part local) (domain (janestreet.com))) |}]
-  in
+  [%expect {| ((prefix ("John Doe ")) (local_part local) (domain (janestreet.com))) |}];
   parse " \"Doe, John\" <local@janestreet.com> ";
-  let%bind () =
-    [%expect
-      {| ((prefix ("\"Doe, John\" ")) (local_part local) (domain (janestreet.com))) |}]
-  in
+  [%expect
+    {| ((prefix ("\"Doe, John\" ")) (local_part local) (domain (janestreet.com))) |}];
   show_raise (fun () -> parse "'local@janestreet.com'");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address"
         (error     ": end_of_input")
-        (input_str 'local@janestreet.com'))) |}]
-  in
+        (input_str 'local@janestreet.com'))) |}];
   show_raise (fun () -> parse "\"local@janestreet.com\"");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address"
         (error     ": end_of_input")
-        (input_str "\"local@janestreet.com\""))) |}]
-  in
+        (input_str "\"local@janestreet.com\""))) |}];
   parse "\"local@janestreet.com\" <local@janestreet.com>";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       ((prefix ("\"local@janestreet.com\" "))
        (local_part local)
-       (domain (janestreet.com))) |}]
-  in
+       (domain (janestreet.com))) |}];
   show_raise (fun () -> parse "local@janestreet.com, local@janestreet.com");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address"
         (error ": end_of_input")
-        (input_str "local@janestreet.com, local@janestreet.com"))) |}]
-  in
+        (input_str "local@janestreet.com, local@janestreet.com"))) |}];
   (* Escaping *)
   show_raise (fun () ->
     parse "\"\\\"Description within quotes\\\"\"<local@janestreet.com>");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address"
         (error ": end_of_input")
-        (input_str "\"\\\"Description within quotes\\\"\"<local@janestreet.com>"))) |}]
-  in
+        (input_str "\"\\\"Description within quotes\\\"\"<local@janestreet.com>"))) |}];
   show_raise (fun () -> parse "local\\@@janestreet.com");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address"
         (error     ": end_of_input")
-        (input_str "local\\@@janestreet.com"))) |}]
-  in
+        (input_str "local\\@@janestreet.com"))) |}];
   return ()
 ;;
 
 let%expect_test "parse many" =
   let parse str = List.iter (list_of_string_exn str) ~f:print_addr in
   parse "";
-  let%bind () = [%expect {| |}] in
+  [%expect {| |}];
   parse " ";
-  let%bind () = [%expect {| |}] in
+  [%expect {| |}];
   show_raise (fun () -> parse ",");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address(es)"
         (error     ": end_of_input")
-        (input_str ,))) |}]
-  in
+        (input_str ,))) |}];
   show_raise (fun () -> parse ", local@janestreet.com,");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address(es)"
         (error     ": end_of_input")
-        (input_str ", local@janestreet.com,"))) |}]
-  in
+        (input_str ", local@janestreet.com,"))) |}];
   show_raise (fun () -> parse "local@janestreet.com, ,local@janestreet.com,");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address(es)"
         (error ": end_of_input")
-        (input_str "local@janestreet.com, ,local@janestreet.com,"))) |}]
-  in
+        (input_str "local@janestreet.com, ,local@janestreet.com,"))) |}];
   parse
     " \"Doe, John\" <local@janestreet.com>,\n\t\"Doe, Johnny\" <local@janestreet.com> ";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
     ((prefix ("\"Doe, John\" ")) (local_part local) (domain (janestreet.com)))
-    ((prefix ("\"Doe, Johnny\" ")) (local_part local) (domain (janestreet.com))) |}]
-  in
+    ((prefix ("\"Doe, Johnny\" ")) (local_part local) (domain (janestreet.com))) |}];
   parse "x@y.com, \"a@b.com\" <\"mailto:a\"@b.com>";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
     ((prefix ()) (local_part x) (domain (y.com)))
-    ((prefix ("\"a@b.com\" ")) (local_part "\"mailto:a\"") (domain (b.com))) |}]
-  in
+    ((prefix ("\"a@b.com\" ")) (local_part "\"mailto:a\"") (domain (b.com))) |}];
   show_raise (fun () -> parse "mailnull@janestreet.com (Cron Daemon)");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
     (raised (
       "Failed to parse email address(es)"
       (error     ": end_of_input")
-      (input_str "mailnull@janestreet.com (Cron Daemon)"))) |}]
-  in
+      (input_str "mailnull@janestreet.com (Cron Daemon)"))) |}];
   show_raise (fun () -> parse "a@b.com<a@b.com>");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address(es)"
         (error     ": end_of_input")
-        (input_str a@b.com<a@b.com>))) |}]
-  in
+        (input_str a@b.com<a@b.com>))) |}];
   show_raise (fun () -> parse "a@b.com <a@b.com>");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address(es)"
         (error     ": end_of_input")
-        (input_str "a@b.com <a@b.com>"))) |}]
-  in
+        (input_str "a@b.com <a@b.com>"))) |}];
   show_raise (fun () -> parse "a@@b.com");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
       (raised (
         "Failed to parse email address(es)"
         (error     ": end_of_input")
-        (input_str a@@b.com))) |}]
-  in
+        (input_str a@@b.com))) |}];
   return ()
 ;;

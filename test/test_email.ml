@@ -12,79 +12,63 @@ let parse s =
 
 let%expect_test "simple" =
   parse "From: foo@bar.com\nTo: foo@bar.com\n\nhello world";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ((From " foo@bar.com") (To " foo@bar.com")))
          (raw_content ("hello world")))
-        Successfully roundtripped: true |}]
-  in
+        Successfully roundtripped: true |}];
   return ()
 ;;
 
 let%expect_test "no newlines" =
   parse "";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ()) (raw_content ()))
-        Successfully roundtripped: true |}]
-  in
+        Successfully roundtripped: true |}];
   (* Header lines should be terminated with "\n". We add the missing "\n" when we
      [to_string]. *)
   parse "Header: hello world";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ((Header " hello world"))) (raw_content ()))
-        Successfully roundtripped: false |}]
-  in
+        Successfully roundtripped: false |}];
   return ()
 ;;
 
 let%expect_test "1 newline" =
   (* This is malformed. I could imagine having [None] for [raw_content] as well. *)
   parse "\n";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ()) (raw_content ("")))
-        Successfully roundtripped: true |}]
-  in
+        Successfully roundtripped: true |}];
   (* This is malformed. I could imagine having [Some ""] for [raw_content] as well. *)
   parse "Header: hello world\n";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ((Header " hello world"))) (raw_content ()))
-        Successfully roundtripped: true |}]
-  in
+        Successfully roundtripped: true |}];
   (* This case is weird, see below for an explanation *)
   parse "Header: hello world\nBody";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ((Header " hello world"))) (raw_content (Body)))
-        Successfully roundtripped: false |}]
-  in
+        Successfully roundtripped: false |}];
   return ()
 ;;
 
 let%expect_test "2 newlines" =
   parse "\n\n";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ()) (raw_content ("\n")))
-        Successfully roundtripped: true |}]
-  in
+        Successfully roundtripped: true |}];
   parse "Header: hello world\n\nBody";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ((Header " hello world"))) (raw_content (Body)))
-        Successfully roundtripped: true |}]
-  in
+        Successfully roundtripped: true |}];
   return ()
 ;;
 
@@ -112,33 +96,27 @@ let%expect_test "weird headers" =
   (* Make sure we can handle the obsolete syntax of headers with whitespace before the
      colon. This doesn't roundtrip because we remove the whitespace before the ":"*)
   parse "From: foo@bar.com\nObsolete-header : hello world\n";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ((From " foo@bar.com") (Obsolete-header " hello world")))
          (raw_content ()))
-        Successfully roundtripped: false |}]
-  in
+        Successfully roundtripped: false |}];
   (* Whitespace should not be a part of a header field.  Google considers this a
      valid header.  Exim treats this as the start of the body. *)
   parse "From: foo@bar.com\nMalformed header: hello world\n";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ((From " foo@bar.com")))
          (raw_content ("Malformed header: hello world\n")))
-        Successfully roundtripped: false |}]
-  in
+        Successfully roundtripped: false |}];
   (* RFC 5322 says that field names must contain at least 1 character, however
      Google and Exim both don't have this requirement. In addition, we get some
      messages in the wild that have broken headers like this. *)
   parse "From: foo@bar.com\n: hello world\n";
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ((From " foo@bar.com") ("" " hello world"))) (raw_content ()))
-        Successfully roundtripped: true |}]
-  in
+        Successfully roundtripped: true |}];
   return ()
 ;;
 
@@ -162,13 +140,11 @@ let%expect_test "weird headers" =
 let%expect_test "Folding whitespace" =
   parse
     ([ "Subject: This is a multiline"; " subject"; ""; "body" ] |> String.concat ~sep:"\n");
-  let%bind () =
-    [%expect
-      {|
+  [%expect
+    {|
         ((headers ((Subject  " This is a multiline\
                             \n subject")))
          (raw_content (body)))
-        Successfully roundtripped: true |}]
-  in
+        Successfully roundtripped: true |}];
   return ()
 ;;

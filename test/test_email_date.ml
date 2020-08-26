@@ -7,19 +7,31 @@ let parse_and_print time =
   print_string (Time.to_string_iso8601_basic (of_string_exn time) ~zone:Time.Zone.utc)
 ;;
 
+let parse_and_print_with_time_zone time =
+  let time, time_zone = of_string_exn_with_time_zone time in
+  let time = Time.to_string_iso8601_basic time ~zone:Time.Zone.utc in
+  print_string [%string "%{time}, %{Time.Zone.to_string time_zone}"]
+;;
+
 let%expect_test "of_rfc822_date neg offset" =
   parse_and_print "Fri, 03 Dec 2010 16:02:30 -0600 (CST)";
-  [%expect {| 2010-12-03T22:02:30.000000Z |}]
+  [%expect {| 2010-12-03T22:02:30.000000Z |}];
+  parse_and_print_with_time_zone "Fri, 03 Dec 2010 16:02:30 -0600 (CST)";
+  [%expect {| 2010-12-03T22:02:30.000000Z, UTC-6 |}]
 ;;
 
 let%expect_test "of_rfc822_date GMT" =
   parse_and_print "Fri, 3 Dec 2010 16:02:30 +0000 (GMT)";
-  [%expect {| 2010-12-03T16:02:30.000000Z |}]
+  [%expect {| 2010-12-03T16:02:30.000000Z |}];
+  parse_and_print_with_time_zone "Fri, 3 Dec 2010 16:02:30 +0000 (GMT)";
+  [%expect {| 2010-12-03T16:02:30.000000Z, UTC |}]
 ;;
 
 let%expect_test "of_rfc822_date pos offset" =
   parse_and_print "Fri, 03 Dec 2010 16:02:30 +0600 (BST)";
-  [%expect {| 2010-12-03T10:02:30.000000Z |}]
+  [%expect {| 2010-12-03T10:02:30.000000Z |}];
+  parse_and_print_with_time_zone "Fri, 03 Dec 2010 16:02:30 +0600 (BST)";
+  [%expect {| 2010-12-03T10:02:30.000000Z, UTC+6 |}]
 ;;
 
 let%expect_test "of_rfc822_date seconds are optional" =

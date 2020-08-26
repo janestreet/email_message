@@ -148,7 +148,7 @@ let rfc2822_date_parser =
   lift3
     (fun date time_of_day utc_offset ->
        let time_no_zone = Time.of_date_ofday ~zone:Time.Zone.utc date time_of_day in
-       Time.sub time_no_zone utc_offset)
+       Time.sub time_no_zone utc_offset, utc_offset)
     (parse_date <* folding_whitespace)
     (parse_time_of_day <* folding_whitespace)
     parse_time_zone
@@ -159,7 +159,7 @@ let rfc2822_date_parser =
 
    https://github.com/moment/moment/blob/022dc038af5ebafafa375f4566fb23366f4e4aa8/src/lib/create/from-string.js#L189
    (alongside the RFC), was used as a reference for this implementation. *)
-let of_string_exn date =
+let of_string_exn_with_utc_offset date =
   match
     parse_string
       ~consume:All
@@ -168,6 +168,31 @@ let of_string_exn date =
        <* end_of_input)
       date
   with
-  | Ok time -> time
+  | Ok time_and_utc_offset -> time_and_utc_offset
   | Error message -> failwith ("Failed to parse RFC822 " ^ message)
+;;
+
+let of_string_exn date =
+  let time, _utc_offset = of_string_exn_with_utc_offset date in
+  time
+;;
+
+let of_string_exn_with_time_zone date =
+  let time, utc_offset = of_string_exn_with_utc_offset date in
+  (* In cases where the utc_offset has minutes, we might be dropping information. Let's
+     just raise to avoid any possible confusion. We don't really expect to see time
+     zones with a minute offset in the wild.
+     FYI: India is the main non-hour time zone (IST, UTC+5:30).
+     Its probably fine to punt for now, as long as this is only used with internal email flow. *)
+  let utc_offset_parts = Time.Span.to_parts utc_offset in
+  if utc_offset_parts.min <> 0
+  then
+    raise_s
+      [%message
+        "NOT IMPLEMENTED: Time zones with minute offsets are not yet supported (probably \
+         IST/UTC+5:30)"
+          (utc_offset : Time.Span.t)];
+  ( time
+  , Time.Zone.of_utc_offset
+      ~hours:(Sign.to_int utc_offset_parts.sign * utc_offset_parts.hr) )
 ;;

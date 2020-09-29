@@ -186,9 +186,71 @@ let%expect_test "parse many" =
   show_raise (fun () -> parse "a@@b.com");
   [%expect
     {|
-      (raised (
-        "Failed to parse email address(es)"
-        (error     ": end_of_input")
-        (input_str a@@b.com))) |}];
+    (raised (
+      "Failed to parse email address(es)"
+      (error     ": end_of_input")
+      (input_str a@@b.com))) |}];
+  parse "x@y.com, \"a@b.com\" <\"mailto:a\"@b.com>";
+  [%expect
+    {|
+    ((prefix ()) (local_part x) (domain (y.com)))
+    ((prefix ("\"a@b.com\" ")) (local_part "\"mailto:a\"") (domain (b.com))) |}];
+  parse {|John Doe <jdoe@machine.example>|};
+  [%expect {| ((prefix ("John Doe ")) (local_part jdoe) (domain (machine.example))) |}];
+  parse {|"Joe Q. Public" <john.q.public@example.com>|};
+  [%expect
+    {|
+    ((prefix ("\"Joe Q. Public\" "))
+     (local_part john.q.public)
+     (domain (example.com))) |}];
+  parse {|Joe Q. Public <john.q.public@example.com>|};
+  [%expect
+    {|
+    ((prefix ("Joe Q. Public "))
+     (local_part john.q.public)
+     (domain (example.com))) |}];
+  parse {|"John (middle) Doe" <jdoe@machine.example>|};
+  [%expect
+    {|
+    ((prefix ("\"John (middle) Doe\" "))
+     (local_part jdoe)
+     (domain (machine.example))) |}];
+  parse {|John (middle) Doe <jdoe@machine.example>|};
+  [%expect
+    {| ((prefix ("John (middle) Doe ")) (local_part jdoe) (domain (machine.example))) |}];
+  parse {|"John <middle> Doe" <jdoe@machine.example>|};
+  [%expect
+    {|
+    ((prefix ("\"John <middle> Doe\" "))
+     (local_part jdoe)
+     (domain (machine.example))) |}];
+  parse {|"John; Doe" <jdoe@machine.example>|};
+  [%expect
+    {| ((prefix ("\"John; Doe\" ")) (local_part jdoe) (domain (machine.example))) |}];
+  parse {|"John, Doe" <jdoe@machine.example>|};
+  [%expect
+    {| ((prefix ("\"John, Doe\" ")) (local_part jdoe) (domain (machine.example))) |}];
+  parse {|<jdoe@machine.example>, foo@bar|};
+  [%expect
+    {|
+    ((prefix ("")) (local_part jdoe) (domain (machine.example)))
+    ((prefix ()) (local_part foo) (domain (bar))) |}];
+  parse {|Mary Smith <mary@x.test>, jdoe@example.org, Who? <one@y.test>|};
+  [%expect
+    {|
+    ((prefix ("Mary Smith ")) (local_part mary) (domain (x.test)))
+    ((prefix ()) (local_part jdoe) (domain (example.org)))
+    ((prefix ("Who? ")) (local_part one) (domain (y.test))) |}];
+  show_raise (fun () ->
+    parse {|<boss@nil.test>, "Giant; \"Big\" Box" <sysservices@example.net>|});
+  [%expect
+    {|
+    (raised (
+      "Failed to parse email address(es)"
+      (error ": end_of_input")
+      (input_str
+       "<boss@nil.test>, \"Giant; \\\"Big\\\" Box\" <sysservices@example.net>"))) |}];
+  parse {|"" <emptystring@example.com>|};
+  [%expect {| ((prefix ("\"\" ")) (local_part emptystring) (domain (example.com))) |}];
   return ()
 ;;

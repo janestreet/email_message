@@ -43,10 +43,13 @@ let make_id () =
 
 let bigstring_shared_to_file data file =
   let open Async in
-  Deferred.Or_error.try_with (fun () ->
-    Writer.with_file file ~f:(fun w ->
-      String_monoid.output_unix (Bigstring_shared.to_string_monoid data) w;
-      Writer.flushed w))
+  Deferred.Or_error.try_with
+    ~run:`Schedule
+    ~rest:`Log
+    (fun () ->
+       Writer.with_file file ~f:(fun w ->
+         String_monoid.output_unix (Bigstring_shared.to_string_monoid data) w;
+         Writer.flushed w))
 ;;
 
 let last_header ?normalize t name = Headers.last ?normalize (Email.headers t) name

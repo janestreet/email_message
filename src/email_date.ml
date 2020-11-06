@@ -23,6 +23,7 @@ let rfc822_date now =
 ;;
 
 open Angstrom
+open Let_syntax
 
 (* Folding whitespace and comments. See RFC2822#3.2.3 *)
 let comment =
@@ -32,7 +33,10 @@ let comment =
       | '(' | ')' | '\\' -> false
       | _ -> true)
   in
-  let quoted_pair = char '\\' *> any_char >>| (ignore : char -> unit) in
+  let quoted_pair =
+    let%map (_ : char) = char '\\' *> any_char in
+    ()
+  in
   fix (fun comment ->
     char '(' *> skip_many (comment_text <|> quoted_pair <|> comment) <* char ')')
 ;;
@@ -76,20 +80,19 @@ let parse_month =
 
 let parse_time_zone =
   let utc_offset =
-    lift3
-      (fun sign hours minutes ->
-         let utc_offset = Time.Span.create ~sign ~hr:hours ~min:minutes () in
-         if not
-              (Time.Span.between
-                 utc_offset
-                 ~low:(Time.Span.neg Time.Span.day)
-                 ~high:Time.Span.day)
-         then raise_s [%message "The supplied UTC offset is semantically invalid."];
-         utc_offset)
-      (Angstrom.choice [ const Sign.Pos <$> char '+'; const Sign.Neg <$> char '-' ]
-       <?> "sign")
-      (parse_two_digit_int <?> "hours")
-      (parse_two_digit_int <?> "minutes")
+    (let%mapn sign =
+       Angstrom.choice [ const Sign.Pos <$> char '+'; const Sign.Neg <$> char '-' ]
+       <?> "sign"
+     and hours = parse_two_digit_int <?> "hours"
+     and minutes = parse_two_digit_int <?> "minutes" in
+     let utc_offset = Time.Span.create ~sign ~hr:hours ~min:minutes () in
+     if not
+          (Time.Span.between
+             utc_offset
+             ~low:(Time.Span.neg Time.Span.day)
+             ~high:Time.Span.day)
+     then raise_s [%message "The supplied UTC offset is semantically invalid."];
+     utc_offset)
     <?> "utc offset"
   in
   let military_time_zone =
@@ -126,32 +129,31 @@ let untruncate_year year =
 ;;
 
 let parse_date =
-  lift4
-    (fun () day month year -> Date.create_exn ~y:year ~m:month ~d:day)
-    (option () (parse_day_of_week *> option ' ' (char ',') *> folding_whitespace))
-    (parse_one_or_two_digit_int <?> "day" <* folding_whitespace)
-    parse_month
-    (folding_whitespace *> (parse_two_to_four_digit_int >>| untruncate_year <?> "year"))
+  (let%mapn () =
+     option () (parse_day_of_week *> option ' ' (char ',') *> folding_whitespace)
+   and day = parse_one_or_two_digit_int <?> "day" <* folding_whitespace
+   and month = parse_month
+   and year =
+     folding_whitespace *> (parse_two_to_four_digit_int >>| untruncate_year <?> "year")
+   in
+   Date.create_exn ~y:year ~m:month ~d:day)
   <?> "date"
 ;;
 
 let parse_time_of_day =
-  lift3
-    (fun hour minutes seconds -> Time.Ofday.create ~hr:hour ~min:minutes ~sec:seconds ())
-    (parse_two_digit_int <?> "hour")
-    (char ':' *> parse_two_digit_int <?> "minute")
-    (option 0 (char ':' *> parse_two_digit_int <?> "second"))
+  (let%mapn hour = parse_two_digit_int <?> "hour"
+   and minutes = char ':' *> parse_two_digit_int <?> "minute"
+   and seconds = option 0 (char ':' *> parse_two_digit_int <?> "second") in
+   Time.Ofday.create ~hr:hour ~min:minutes ~sec:seconds ())
   <?> "time of day"
 ;;
 
 let rfc2822_date_parser =
-  lift3
-    (fun date time_of_day utc_offset ->
-       let time_no_zone = Time.of_date_ofday ~zone:Time.Zone.utc date time_of_day in
-       Time.sub time_no_zone utc_offset, utc_offset)
-    (parse_date <* folding_whitespace)
-    (parse_time_of_day <* folding_whitespace)
-    parse_time_zone
+  let%mapn date = parse_date <* folding_whitespace
+  and time_of_day = parse_time_of_day <* folding_whitespace
+  and utc_offset = parse_time_zone in
+  let time_no_zone = Time.of_date_ofday ~zone:Time.Zone.utc date time_of_day in
+  Time.sub time_no_zone utc_offset, utc_offset
 ;;
 
 (* See https://tools.ietf.org/html/rfc5322#section-3.3 for the full spec. Also note

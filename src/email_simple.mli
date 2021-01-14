@@ -210,7 +210,44 @@ val extract_body
 
 val all_attachments : t -> Attachment.t list
 val find_attachment : t -> attachment_name -> Attachment.t option
+
+(** Related parts are those that are included in a multi-part message with a "Content-ID"
+    header. This content can be referenced by adding the "cid:" prefix and stripping the
+    enclosing '<' and '>'.
+
+    For example (from https://tools.ietf.org/html/rfc2392):
+
+    {v
+        From: foo1@bar.net
+        To: foo2@bar.net
+        Subject: A simple example
+        Mime-Version: 1.0
+        Content-Type: multipart/related; boundary="boundary-example-1"; type=Text/HTML
+        --boundary-example 1
+        Content-Type: Text/HTML; charset=US-ASCII
+
+        to the other body part, for example through a statement such as:
+        <IMG SRC="cid:foo4*foo1@bar.net" ALT="IETF logo">
+
+        --boundary-example-1
+
+        Content-ID: <foo4*foo1@bar.net>
+        Content-Type: IMAGE/GIF
+        Content-Transfer-Encoding: BASE64
+
+        R0lGODlhGAGgAPEAAP/////ZRaCgoAAAACH+PUNvcHlyaWdodCAoQykgMTk5
+        NSBJRVRGLiBVbmF1dGhvcml6ZWQgZHVwbGljYXRpb24gcHJvaGliaXRlZC4A
+        etc...
+
+        --boundary-example-1--
+      v}
+
+    Calling [all_related_parts] on this email would return a list of length one where the
+    [attachment_name] is "foo4*foo1@bar.net" for the single entry.
+
+    Related parts are often used for inline images. *)
 val all_related_parts : t -> (attachment_name * Content.t) list
+
 val find_related : t -> attachment_name -> Content.t option
 val inline_parts : t -> Content.t list
 

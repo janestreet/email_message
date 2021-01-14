@@ -364,6 +364,9 @@ module Content = struct
       ~normalize_headers:`Whitespace
       ~content_type:Mimetype.multipart_related
       ~extra_headers
+      (* per RFC2183 only the first part gets [Content-Disposition:inline],
+         The related parts should not be displayed sequentially but are (presumably)
+         referenced in the actual content. *)
       (add_headers t [ "Content-Disposition", "inline" ]
        :: List.map resources ~f:(fun (name, content) ->
          add_headers content [ "Content-Id", sprintf "<%s>" name ]))

@@ -14,7 +14,6 @@ let unescape = Core.unstage unescape_staged;;
 let cr = "\013"
 let lf = "\010"
 
-(* XXX: Should be just cr lf *)
 (* Deliberately chose to include bare CR and LF here, although the RFC suggests
  * them to be included as part of the text characters.
  * The rationale being that, when parsing e-mail from a text file, they will
@@ -39,7 +38,6 @@ let obs_qp = "\\" [ '\000' - '\127' ]
 (* Allows for escaping of newlines *)
 let crlf_qp_non_conforming = "\\" crlf
 
-(** XXX: crlf-qp-non-conforming shouldn't be here. *)
 let quoted_pair = "\\" text_non_conforming | crlf_qp_non_conforming | obs_qp
 
 (** RFC2822 3.2.3 -- Folding whitespace and comments *)

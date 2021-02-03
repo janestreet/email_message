@@ -122,7 +122,6 @@ end
 let cr = "\013"
 let lf = "\010"
 
-(* XXX: Should be just cr lf *)
 (* Deliberately chose to include bare CR and LF here, although the RFC suggests
  * them to be included as part of the text characters.
  * The rationale being that, when parsing e-mail from a text file, they will

@@ -115,7 +115,8 @@ module Stable = struct
   module V1 = struct
     include Stable_no_v1_bin_io.V1
 
-    include Binable.Of_binable_without_uuid [@alert "-legacy"]
+    include
+      Binable.Of_binable_without_uuid [@alert "-legacy"]
         (Bigstring.Stable.V1)
         (struct
           type nonrec t = t

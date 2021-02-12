@@ -136,7 +136,8 @@ module Expert = struct
         ~content_type:"multipart/mixed"
         ~extra_headers:headers
         (set_header_at_bottom content ~name:"Content-Disposition" ~value:"inline"
-         :: List.map attachments ~f:(fun (name, content) ->
+         ::
+         List.map attachments ~f:(fun (name, content) ->
            let content_type =
              last_header content "Content-Type"
              |> Option.value ~default:"application/x-octet-stream"
@@ -368,7 +369,8 @@ module Content = struct
          The related parts should not be displayed sequentially but are (presumably)
          referenced in the actual content. *)
       (add_headers t [ "Content-Disposition", "inline" ]
-       :: List.map resources ~f:(fun (name, content) ->
+       ::
+       List.map resources ~f:(fun (name, content) ->
          add_headers content [ "Content-Id", sprintf "<%s>" name ]))
   ;;
 

@@ -49,6 +49,7 @@ module Common : sig
   val from : string
   val date : string
   val message_id : string
+  val list_id : string
 end
 
 module Value : sig

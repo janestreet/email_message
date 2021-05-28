@@ -26,6 +26,7 @@ end
 
 open! Core
 open Poly
+module Unix = Core_unix
 module Crypto = Crypto.Cryptokit
 module Hash = Crypto.Hash
 

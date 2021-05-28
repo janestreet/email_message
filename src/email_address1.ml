@@ -7,4 +7,4 @@ include (
   end
   with module Domain := Email_address.Domain)
 
-let local_address () = create (Core.Unix.getlogin ())
+let local_address () = create (Core_unix.getlogin ())

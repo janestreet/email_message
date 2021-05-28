@@ -1,4 +1,5 @@
 open! Core
+module Time = Time_unix
 
 let utc_offset_string time ~zone =
   let utc_offset = Time.utc_offset time ~zone in

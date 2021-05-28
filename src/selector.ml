@@ -4,8 +4,8 @@ module Stable = struct
   module Base = struct
     module V1 = struct
       type t =
-        [ `exists_header of string * Re2.t
-        | `all_headers of string * Re2.t
+        [ `exists_header of string * Re2.Stable.V1_no_options.t
+        | `all_headers of string * Re2.Stable.V1_no_options.t
         ]
       [@@deriving bin_shape, sexp]
 

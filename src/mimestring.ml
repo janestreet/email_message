@@ -1,4 +1,4 @@
-open Core_kernel.Core_kernel_stable
+open Core.Core_stable
 
 (** Case-insensitive strings *)
 module Case_insensitive = struct
@@ -6,17 +6,17 @@ module Case_insensitive = struct
     module V1 = struct
       type t = String.V1.t [@@deriving sexp, bin_io]
 
-      let compare = Core_kernel.String.Caseless.compare
-      let comparator = Core_kernel.String.Caseless.comparator
+      let compare = Core.String.Caseless.compare
+      let comparator = Core.String.Caseless.comparator
 
-      type comparator_witness = Core_kernel.String.Caseless.comparator_witness
+      type comparator_witness = Core.String.Caseless.comparator_witness
 
-      let hash = Core_kernel.String.Caseless.hash
-      let hash_fold_t = Core_kernel.String.Caseless.hash_fold_t
+      let hash = Core.String.Caseless.hash
+      let hash_fold_t = Core.String.Caseless.hash_fold_t
     end
   end
 
-  open Core_kernel
+  open Core
   include String.Caseless
 
   let of_string = Fn.id
@@ -25,7 +25,7 @@ module Case_insensitive = struct
   let equal_string = equal
 end
 
-open Core_kernel
+open Core
 
 module type S = sig
   type t [@@deriving sexp]

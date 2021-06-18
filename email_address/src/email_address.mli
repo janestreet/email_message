@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 
 module Domain : sig
   type t = String.Caseless.t [@@deriving sexp_of, compare]

@@ -1,5 +1,5 @@
-open! Core_kernel
-open! Core_kernel.Int.Replace_polymorphic_compare
+open! Core
+open! Core.Int.Replace_polymorphic_compare
 open Angstrom
 
 type t =
@@ -8,7 +8,7 @@ type t =
   ; domain : string option
   }
 
-let string_contains = Core_kernel.String.contains
+let string_contains = Core.String.contains
 let whitespace_chars = " \r\n\t"
 let not_unquoted_prefix_chars = "<>@,\""
 
@@ -23,7 +23,7 @@ let quoted_prefix =
 ;;
 
 let unquoted_prefix =
-  (fun first_char rest -> Core_kernel.String.(of_char first_char ^ rest))
+  (fun first_char rest -> Core.String.(of_char first_char ^ rest))
   <$> satisfy (fun chr ->
     not
       (string_contains not_unquoted_prefix_chars chr

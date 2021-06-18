@@ -1,8 +1,8 @@
-open Core_kernel.Core_kernel_stable
-open! Core_kernel.Int.Replace_polymorphic_compare
+open Core.Core_stable
+open! Core.Int.Replace_polymorphic_compare
 
 module Stable_caseless_string = struct
-  module U = Core_kernel.String.Caseless
+  module U = Core.String.Caseless
 
   module V1 = struct
     module T = struct
@@ -31,11 +31,11 @@ module Stable = struct
       let create ?prefix ?domain local_part = { prefix; local_part; domain }
 
       let with_default_domain email ~default_domain =
-        { email with domain = Core_kernel.Option.first_some email.domain default_domain }
+        { email with domain = Core.Option.first_some email.domain default_domain }
       ;;
 
       let of_string ?default_domain input_str =
-        let open Core_kernel in
+        let open Core in
         let open! Int.Replace_polymorphic_compare in
         match
           Angstrom.parse_string
@@ -51,20 +51,20 @@ module Stable = struct
       ;;
 
       let of_string_exn ?default_domain input_str =
-        of_string ?default_domain input_str |> Core_kernel.Or_error.ok_exn
+        of_string ?default_domain input_str |> Core.Or_error.ok_exn
       ;;
 
       let compose ~prefix ~address_part =
         match prefix with
         | None -> address_part
-        | Some prefix -> Core_kernel.sprintf "%s<%s>" prefix address_part
+        | Some prefix -> Core.sprintf "%s<%s>" prefix address_part
       ;;
 
       let to_string t =
         let address_part =
           match t.domain with
           | None -> t.local_part
-          | Some domain -> Core_kernel.sprintf "%s@%s" t.local_part domain
+          | Some domain -> Core.sprintf "%s@%s" t.local_part domain
         in
         compose ~prefix:t.prefix ~address_part
       ;;
@@ -94,7 +94,7 @@ module Stable = struct
   end
 end
 
-open Core_kernel
+open Core
 open! Int.Replace_polymorphic_compare
 
 module Domain = struct
@@ -122,7 +122,7 @@ let list_of_string ?default_domain input_str =
 ;;
 
 let list_of_string_exn ?default_domain input_str =
-  list_of_string ?default_domain input_str |> Core_kernel.Or_error.ok_exn
+  list_of_string ?default_domain input_str |> Core.Or_error.ok_exn
 ;;
 
 let list_to_header_value ts = String.concat ~sep:",\n\t" (List.map ts ~f:to_string)

@@ -37,7 +37,7 @@ let make_id () =
     sprintf
       !"<%s/%s+%{Uuid}@%s>"
       (Unix.getlogin ())
-      (Sys.executable_name |> Filename.basename)
+      (Sys_unix.executable_name |> Filename.basename)
       (Uuid_unix.create ())
       (Unix.gethostname ())
 ;;

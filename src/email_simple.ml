@@ -19,7 +19,7 @@ module Stable = struct
 
   module Mimetype = struct
     module V1 = struct
-      type t = string [@@deriving compare, sexp]
+      type t = String.V1.t [@@deriving bin_io, compare, sexp]
     end
   end
 end
@@ -34,12 +34,9 @@ let make_id () =
   if am_running_inline_test
   then "{AUTO-GENERATED-ID}"
   else
-    sprintf
-      !"<%s/%s+%{Uuid}@%s>"
-      (Unix.getlogin ())
-      (Sys_unix.executable_name |> Filename.basename)
-      (Uuid_unix.create ())
-      (Unix.gethostname ())
+    (* Trust that UUID does a good enough job at avoiding colision risks.
+       Only UUID to avoid leaking any interesting information. Use [X-JS-*] headers instead, see [tracing_headers] below. *)
+    sprintf !"<%{Uuid}@ocaml.async_smtp>" (Uuid_unix.create ())
 ;;
 
 let bigstring_shared_to_file data file =
@@ -87,6 +84,20 @@ module Expert = struct
     Email_content.to_email ~headers (Multipart multipart)
   ;;
 
+  let tracing_headers () =
+    if am_running_inline_test
+    then
+      [ "X-JS-Sending-Host", "{HOSTNAME}"
+      ; "X-JS-Sending-User", "{USERNAME}"
+      ; "X-JS-Sending-Program", "{EXECUTABLE_NAME}"
+      ]
+    else
+      [ "X-JS-Sending-Host", Unix.gethostname ()
+      ; "X-JS-Sending-User", Unix.getlogin ()
+      ; "X-JS-Sending-Program", Sys_unix.executable_name
+      ]
+  ;;
+
   let create_raw
         ?(from = Email_address1.local_address () |> Email_address.to_string)
         ~to_
@@ -128,6 +139,7 @@ module Expert = struct
         | None -> []
         | Some () -> [ "Auto-Submitted", "auto-generated"; "Precedence", "bulk" ])
       @ [ "Date", date ]
+      @ tracing_headers ()
     in
     match attachments with
     | [] -> add_headers content headers
@@ -398,25 +410,107 @@ module Content = struct
     |> Option.value ~default:"application/x-octet-stream"
   ;;
 
+  let strip_character_set_and_language filename =
+    (* A value with a character_set and language looks like:
+
+       us-ascii'en-us'This%20is%20%2A%2A%2Afun%2A%2A%2A
+
+       i.e. the character_set, language, and value are separated by a single quote *)
+    let maybe_stripped =
+      let open Or_error.Let_syntax in
+      let%bind encoding_pattern = Re2.create "^.*\'.*\'(.*)$" in
+      Re2.first_match encoding_pattern filename >>| Re2.Match.get ~sub:(`Index 1)
+    in
+    match maybe_stripped with
+    | Ok None | Error (_ : Error.t) -> filename
+    | Ok (Some stripped_filename) -> stripped_filename
+  ;;
+
+  let unquote name =
+    let len = String.length name in
+    if len >= 2 && name.[0] = '"' && name.[len - 1] = '"'
+    then String.sub name ~pos:1 ~len:(len - 2)
+    else name
+  ;;
+
+  (* See https://datatracker.ietf.org/doc/html/rfc2231
+
+     This function deals with "parameter value continuations".
+     Take the following header as an example:
+
+     {v
+     Content-Type: message/external-body; access-type=URL;
+       URL*0="ftp://";
+       URL*1="cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"
+     v}
+
+     [attribute_name] in this case is "URL" *)
+  let handle_value_continuation ~all_parameters ~attribute_name =
+    let matching_attributes =
+      (* Filter out attributes that aren't part of the [attribute_name] continuation. We
+         know the filtered list with be non-empty because all the call-sites are inside an
+         if branch that did a prefix check. *)
+      List.filter
+        all_parameters
+        ~f:(fun (fragment_attribute, (_ : attachment_name option)) ->
+          String.Caseless.is_prefix fragment_attribute ~prefix:(attribute_name ^ "*"))
+      |> Nonempty_list.of_list_exn
+    in
+    match matching_attributes with
+    | [ (_, maybe_value) ] ->
+      Option.value maybe_value ~default:"" |> unquote |> strip_character_set_and_language
+    | _ :: _ as matching_attributes ->
+      (* RFC2231 3.(2) specifies the filename numbering mechanism must not depend on
+         ordering, since MIME states that parameters are not order sensitive.
+
+         To address this, we strip out digits from the attribute name and sort on these to
+         order the fragments. *)
+      let matching_attributes =
+        Nonempty_list.to_list matching_attributes
+        |> List.map ~f:(fun (fragment_attribute, value) ->
+          (* The name of an attribute that is part of a continuation is either NAME*DIGIT
+             or NAME*DIGIT*. *)
+          match String.split fragment_attribute ~on:'*' with
+          | _ :: digit :: _ when String.for_all digit ~f:Char.is_digit ->
+            let digit = Int.of_string digit in
+            Ok (digit, value)
+          | _ -> Error "multipart-fragment-construction-failed")
+        |> Result.all
+      in
+      (match matching_attributes with
+       | Error error -> error
+       | Ok all_parameters ->
+         List.sort all_parameters ~compare:(Comparable.lift Int.compare ~f:fst)
+         |> List.map ~f:(fun (seq, name_fragment) ->
+           let name_fragment = unquote (Option.value name_fragment ~default:"") in
+           if seq = 0
+           then
+             (* Only attempt to strip the encoding from the zeroth fragment. *)
+             strip_character_set_and_language name_fragment
+           else name_fragment)
+         |> String.concat ~sep:"")
+  ;;
+
+  let attachment_name_from_args args ~attribute_name =
+    List.find_map args ~f:(fun (k, v) ->
+      if String.Caseless.equal k attribute_name
+      then Option.map ~f:unquote v
+      else if
+        (* RFC2231 support *)
+        String.Caseless.is_prefix k ~prefix:(attribute_name ^ "*")
+      then Some (handle_value_continuation ~all_parameters:args ~attribute_name)
+      else None)
+  ;;
+
   let attachment_name t =
     let open Option.Let_syntax in
-    let unquote name =
-      Option.map name ~f:(fun name ->
-        let len = String.length name in
-        if len > 2 && name.[0] = '"' && name.[len - 1] = '"'
-        then String.sub name ~pos:1 ~len:(len - 2)
-        else name)
-    in
     Option.first_some
       (let%bind disp, args = parse_last_header t "Content-Disposition" in
        if String.Caseless.equal disp "attachment"
-       then
-         List.find_map args ~f:(fun (k, v) ->
-           if String.Caseless.equal k "filename" then unquote v else None)
+       then attachment_name_from_args args ~attribute_name:"filename"
        else None)
       (let%bind _, args = parse_last_header t "Content-Type" in
-       List.find_map args ~f:(fun (k, v) ->
-         if String.Caseless.equal k "name" then unquote v else None))
+       attachment_name_from_args args ~attribute_name:"name")
   ;;
 
   let related_part_cid t =
@@ -621,15 +715,20 @@ let map_attachments t ~f =
     | Some attachment ->
       (match f attachment with
        | `Keep -> `Unchanged
+       | `Keep_and_don't_recurse -> `Stop
        | `Replace attachment' -> `Changed attachment')
   in
   let rec loop ?container_headers t ~path =
     match Email_content.parse ?container_headers t with
     | Error _ -> `Unchanged
-    | Ok (Data _data) -> handle_possible_attachment ?container_headers ~path t
+    | Ok (Data _data) ->
+      (match handle_possible_attachment ?container_headers ~path t with
+       | `Stop -> `Unchanged
+       | (`Unchanged | `Changed _) as t -> t)
     | Ok (Message message) ->
       (match handle_possible_attachment ?container_headers ~path t with
        | `Changed t' -> `Changed t'
+       | `Stop -> `Unchanged
        | `Unchanged ->
          (match loop message ?container_headers:None ~path:(Path.child path 0) with
           | `Unchanged -> `Unchanged
@@ -653,12 +752,14 @@ let map_attachments t ~f =
   | `Changed t -> t
 ;;
 
-let all_attachments t =
+let all_attachments ?(look_through_attached_mails = true) t =
   let all_attachments = Queue.create () in
   let (_ : t) =
     map_attachments t ~f:(fun attachment ->
       Queue.enqueue all_attachments attachment;
-      `Keep)
+      match look_through_attached_mails with
+      | true -> `Keep
+      | false -> `Keep_and_don't_recurse)
   in
   Queue.to_list all_attachments
 ;;

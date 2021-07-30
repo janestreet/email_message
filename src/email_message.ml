@@ -31,4 +31,5 @@ module Private = struct
   module Boundary = Boundary
   module Media_type = Media_type
   module Rfc = Rfc
+  module Encoded_word = Encoded_word
 end

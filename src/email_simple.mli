@@ -208,7 +208,13 @@ val extract_body
   -> string option
 
 
-val all_attachments : t -> Attachment.t list
+(** [all_attachments] looks recursively through the e-mail parts, looking for
+    attachments. If [~look_through_attached_mails:true] (the default), it will separately
+    include both e-mail attachments as well as the attachments to those e-mails. Otherwise
+    it will include e-mail attachments but not (separately) any of the attached e-mails'
+    attachments. *)
+val all_attachments : ?look_through_attached_mails:bool -> t -> Attachment.t list
+
 val find_attachment : t -> attachment_name -> Attachment.t option
 
 (** Related parts are those that are included in a multi-part message with a "Content-ID"
@@ -302,8 +308,6 @@ module Stable : sig
   end
 
   module Mimetype : sig
-    module V1 : sig
-      type t = Mimetype.t [@@deriving sexp]
-    end
+    module V1 : Stable_without_comparator with type t = Mimetype.t
   end
 end

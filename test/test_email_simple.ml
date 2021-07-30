@@ -393,3 +393,131 @@ let%expect_test "long attachment name" =
          \n--BOUNDARY1--"))))) |}];
   return ()
 ;;
+
+let%expect_test "RFC2231 Support - split attachment name" =
+  let rfc2231_email_with_split_attachment_name =
+    [ "Content-Type: multipart/mixed; boundary=BOUNDARY1"
+    ; ""
+    ; "--BOUNDARY1"
+    ; "Content-Type: text/html; charset=utf-8"
+    ; "Content-Transfer-Encoding: quoted-printable"
+    ; ""
+    ; "<div>Simple Body</div>"
+    ; ""
+    ; "--BOUNDARY1"
+    ; "Content-Type: application/x-stuff;"
+    ; "  name*0*=us-ascii''This%20is%20even%20more%20;"
+    ; "  name*1*=%2A%2A%2Afun%2A%2A%2A%20;"
+    ; "  name*2=\"isn't it!\";"
+    ; "Content-Transfer-Encoding: base64"
+    ; "Content-Disposition: attachment;"
+    ; "  filename*0*=us-ascii''This%20is%20even%20more%20;"
+    ; "  filename*1*=%2A%2A%2Afun%2A%2A%2A%20;"
+    ; "  filename*2=\"isn't it!\";"
+    ; ""
+    ; "--BOUNDARY1"
+    ; "Content-Type: application/x-stuff;"
+    ; "  name*=us-ascii'en-us'This%20is%20%2A%2A%2Afun%2A%2A%2A"
+    ; "Content-Transfer-Encoding: base64"
+    ; "Content-Disposition: attachment;"
+    ; "  filename*=us-ascii'en-us'This%20is%20%2A%2A%2Afun%2A%2A%2A"
+    ; ""
+    ; "--BOUNDARY1"
+    ; "Content-Type: application/x-stuff;"
+    ; "  name*0=very;name*1=-long-;name*2=name;"
+    ; "Content-Disposition: attachment;"
+    ; "Content-Transfer-Encoding: base64"
+    ; ""
+    ; "--BOUNDARY1"
+    ; "Content-Type: application/x-stuff;"
+    ; "  name*1=-backwards;name*0=very;name*2=-name"
+    ; "Content-Disposition: attachment;"
+    ; "Content-Transfer-Encoding: base64"
+    ; ""
+    ; "--BOUNDARY1"
+    ; "Content-Type: application/x-stuff;"
+    ; "  name*=us-ascii''file-with-charset;"
+    ; "  charset=utf-8"
+    ; "Content-Disposition: attachment;"
+    ; "Content-Transfer-Encoding: base64"
+    ; ""
+    ; "--BOUNDARY1"
+    ; "Content-Type: application/x-stuff;"
+    ; "  name*0=T;"
+    ; "  name*1=o;"
+    ; "  name*2=o;"
+    ; "  name*3=\" \";"
+    ; "  name*4=m;"
+    ; "  name*5=a;"
+    ; "  name*6=n;"
+    ; "  name*7=y;"
+    ; "  name*8=\" \";"
+    ; "  name*9=p;"
+    ; "  name*10=a;"
+    ; "  name*11=r;"
+    ; "  name*12=t;"
+    ; "  name*13=s;"
+    ; "  name*14=!;"
+    ; "  charset=utf-8"
+    ; "Content-Disposition: attachment;"
+    ; "Content-Transfer-Encoding: base64"
+    ; ""
+    ; "--BOUNDARY1--"
+    ]
+  in
+  parse_attachments'
+    ~replace_attachment:(fun ~name:_ -> true)
+    rfc2231_email_with_split_attachment_name;
+  [%expect
+    {|
+ ((attachments
+   ((((filename "This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20isn't it!")
+      (path (1)))
+     "")
+    (((filename This%20is%20%2A%2A%2Afun%2A%2A%2A) (path (2))) "")
+    (((filename very-long-name) (path (3))) "")
+    (((filename very-backwards-name) (path (4))) "")
+    (((filename file-with-charset) (path (5))) "")
+    (((filename "Too many parts!") (path (6))) "")))
+  (stripped
+   ((headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1")))
+    (raw_content
+     ( "--BOUNDARY1\
+      \nContent-Type: text/html; charset=utf-8\
+      \nContent-Transfer-Encoding: quoted-printable\
+      \n\
+      \n<div>Simple Body</div>\
+      \n\
+      \n--BOUNDARY1\
+      \nContent-Transfer-Encoding: quoted-printable\
+      \nContent-Type: text/plain; charset=\"UTF-8\"\
+      \n\
+      \n<REPLACED>\
+      \n--BOUNDARY1\
+      \nContent-Transfer-Encoding: quoted-printable\
+      \nContent-Type: text/plain; charset=\"UTF-8\"\
+      \n\
+      \n<REPLACED>\
+      \n--BOUNDARY1\
+      \nContent-Transfer-Encoding: quoted-printable\
+      \nContent-Type: text/plain; charset=\"UTF-8\"\
+      \n\
+      \n<REPLACED>\
+      \n--BOUNDARY1\
+      \nContent-Transfer-Encoding: quoted-printable\
+      \nContent-Type: text/plain; charset=\"UTF-8\"\
+      \n\
+      \n<REPLACED>\
+      \n--BOUNDARY1\
+      \nContent-Transfer-Encoding: quoted-printable\
+      \nContent-Type: text/plain; charset=\"UTF-8\"\
+      \n\
+      \n<REPLACED>\
+      \n--BOUNDARY1\
+      \nContent-Transfer-Encoding: quoted-printable\
+      \nContent-Type: text/plain; charset=\"UTF-8\"\
+      \n\
+      \n<REPLACED>\
+      \n--BOUNDARY1--"))))) |}];
+  return ()
+;;

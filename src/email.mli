@@ -32,8 +32,14 @@ val to_bigstring_shared : ?eol_except_raw_content:Lf_or_crlf.t -> t -> Bigstring
     when unparsed. *)
 val to_string_monoid : ?eol_except_raw_content:Lf_or_crlf.t -> t -> String_monoid.t
 
+(** Convert from string, in compliance with the RFC 2822 standard (standard email
+    format, e.g. .eml but not mbox) *)
 val of_string : string -> t
+
+(** Convert to string, in compliance with the RFC 2822 standard (standard email format,
+    e.g. .eml but not mbox) *)
 val to_string : ?eol_except_raw_content:Lf_or_crlf.t -> t -> string
+
 val to_bigstring : ?eol_except_raw_content:Lf_or_crlf.t -> t -> Bigstring.t
 val of_bigstring : Bigstring.t -> t
 val of_bigbuffer : Bigbuffer.t -> t

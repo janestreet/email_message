@@ -112,10 +112,30 @@ module Expert = struct
         ?(attachments = [])
         content
     =
-    let id =
+    let id, extra_headers =
+      (* there seems to be some clients that set the [id] via extra_headers, so handle
+         these correctly. *)
+      let id_from_extra_headers =
+        List.Assoc.find extra_headers "Message-Id" ~equal:String.Caseless.equal
+      in
+      let remove_id_from_extra_headers () =
+        List.Assoc.remove extra_headers "Message-Id" ~equal:String.Caseless.equal
+      in
       match id with
-      | None -> make_id ()
-      | Some id -> id
+      | None ->
+        (match id_from_extra_headers with
+         | None -> make_id (), extra_headers
+         | Some id -> id, remove_id_from_extra_headers ())
+      | Some id ->
+        (match id_from_extra_headers with
+         | None -> id, extra_headers
+         | Some id' ->
+           if String.equal (String.strip id) (String.strip id')
+           then id, remove_id_from_extra_headers ()
+           else
+             (* This case is odd, it will result in two different Message-Id headers on
+                the email *)
+             id, extra_headers)
     in
     let date =
       match date with
@@ -149,8 +169,7 @@ module Expert = struct
         ~content_type:"multipart/mixed"
         ~extra_headers:headers
         (set_header_at_bottom content ~name:"Content-Disposition" ~value:"inline"
-         ::
-         List.map attachments ~f:(fun (name, content) ->
+         :: List.map attachments ~f:(fun (name, content) ->
            let content_type =
              last_header content "Content-Type"
              |> Option.value ~default:"application/x-octet-stream"
@@ -382,8 +401,7 @@ module Content = struct
          The related parts should not be displayed sequentially but are (presumably)
          referenced in the actual content. *)
       (add_headers t [ "Content-Disposition", "inline" ]
-       ::
-       List.map resources ~f:(fun (name, content) ->
+       :: List.map resources ~f:(fun (name, content) ->
          add_headers content [ "Content-Id", sprintf "<%s>" name ]))
   ;;
 
@@ -495,8 +513,7 @@ module Content = struct
     List.find_map args ~f:(fun (k, v) ->
       if String.Caseless.equal k attribute_name
       then Option.map ~f:unquote v
-      else if
-        (* RFC2231 support *)
+      else if (* RFC2231 support *)
         String.Caseless.is_prefix k ~prefix:(attribute_name ^ "*")
       then Some (handle_value_continuation ~all_parameters:args ~attribute_name)
       else None)

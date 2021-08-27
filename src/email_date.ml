@@ -87,12 +87,11 @@ let parse_time_zone =
      and hours = parse_two_digit_int <?> "hours"
      and minutes = parse_two_digit_int <?> "minutes" in
      let utc_offset = Time.Span.create ~sign ~hr:hours ~min:minutes () in
-     if
-       not
-         (Time.Span.between
-            utc_offset
-            ~low:(Time.Span.neg Time.Span.day)
-            ~high:Time.Span.day)
+     if not
+          (Time.Span.between
+             utc_offset
+             ~low:(Time.Span.neg Time.Span.day)
+             ~high:Time.Span.day)
      then raise_s [%message "The supplied UTC offset is semantically invalid."];
      utc_offset)
     <?> "utc offset"

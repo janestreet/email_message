@@ -92,8 +92,7 @@ let lines_seq ?include_empty_last_line t =
     let prev_char_is_cr = pos <> 0 && get t (pos - 1) = '\r' in
     if pos = length t
     then
-      if
-        (* Safe because [length t > 0] *)
+      if (* Safe because [length t > 0] *)
         Option.is_some include_empty_last_line || not (get t (pos - 1) = '\n')
       then (
         let len = pos - sol in

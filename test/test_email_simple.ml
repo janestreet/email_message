@@ -3,6 +3,44 @@ open Async
 open Email_message
 open Email.Simple
 
+let%expect_test "[Expert.create_raw] Message-Id handling" =
+  let message_id_headers ~message_id_in_extra_headers ~id_supplied =
+    let extra_headers =
+      match message_id_in_extra_headers with
+      | None -> []
+      | Some id -> [ "Message-Id", id ]
+    in
+    let headers =
+      Expert.create_raw
+        ~to_:[ "foo@bar.com" ]
+        ~subject:"test"
+        ?id:id_supplied
+        ~extra_headers
+        (Content.text_utf8 "")
+      |> Email.headers
+    in
+    Email_headers.find_all headers "Message-Id" |> List.iter ~f:print_endline
+  in
+  (* Auto-generate an id if nothing is supplied *)
+  message_id_headers ~message_id_in_extra_headers:None ~id_supplied:None;
+  [%expect {| {AUTO-GENERATED-ID} |}];
+  (* Use the supplied id *)
+  message_id_headers ~message_id_in_extra_headers:(Some "ID") ~id_supplied:None;
+  (* Look into extra-headers for a message-id too *)
+  [%expect {| ID |}];
+  message_id_headers ~message_id_in_extra_headers:None ~id_supplied:(Some "ID");
+  [%expect {| ID |}];
+  (* If an id is supplied in both places and they match, only show it once *)
+  message_id_headers ~message_id_in_extra_headers:(Some "ID1") ~id_supplied:(Some "ID1");
+  [%expect {| ID1 |}];
+  (* But if they don't match, include both values *)
+  message_id_headers ~message_id_in_extra_headers:(Some "ID1") ~id_supplied:(Some "ID2");
+  [%expect {|
+    ID1
+    ID2 |}];
+  return ()
+;;
+
 let%expect_test "[Expert.content]" =
   let content ~normalize_headers ~encoding ~extra_headers str =
     let result =

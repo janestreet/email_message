@@ -126,7 +126,7 @@ let%expect_test "rfc822_date" =
   [%expect {| Wed, 31 Dec 1969 19:00:00 -0500 |}]
 ;;
 
-let%test_unit ("rfc822_date round-trip"[@tags "64-bits-only"]) =
+let%test_unit ("rfc822_date round-trip" [@tags "64-bits-only"]) =
   let open! Quickcheck.Let_syntax in
   Quickcheck.test
     (* Unfortunately we cannot use Time.quickcheck_generator since that generates times

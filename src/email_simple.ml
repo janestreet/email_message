@@ -316,7 +316,7 @@ end
 module Content = struct
   type t = Email.t [@@deriving sexp_of]
 
-  let of_email = ident
+  let of_email = Fn.id
 
   let create_custom
         ~content_type

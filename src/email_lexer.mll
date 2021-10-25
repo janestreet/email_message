@@ -2,8 +2,6 @@
 open Email_grammar
 module LS = Email_lexer_state
 
-module String = Bytes
-
 let force_token token _lexbuf = token
 
 }

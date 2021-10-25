@@ -1,8 +1,6 @@
 {
 open Media_type_grammar
 
-module String = Bytes
-
 let unescape_staged = Core.String.Escaping.unescape ~escape_char:'\\';;
 let unescape = Core.unstage unescape_staged;;
 
@@ -116,4 +114,3 @@ content_type = parse
 {
 
 }
-

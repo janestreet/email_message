@@ -175,87 +175,89 @@ let%expect_test "join" =
   return ()
 ;;
 
-module Non_compliant = struct
-  (* The following tests document undefined behavior. *)
+let%test_module "non-compliant" =
+  (module struct
+    (* The following tests document undefined behavior. *)
 
-  let%expect_test "non-compliant [split]" =
-    (* Parsing of weird and malformed data into a sensible form *)
-    split "--BOUNDARY\n--BOUNDARY--";
-    [%expect {|
+    let%expect_test "non-compliant [split]" =
+      (* Parsing of weird and malformed data into a sensible form *)
+      split "--BOUNDARY\n--BOUNDARY--";
+      [%expect {|
         ((prologue ()) (parts ("")) (epilogue ()))
         |}];
-    split "";
-    [%expect
-      {|
+      split "";
+      [%expect
+        {|
         ((prologue (""))
          (parts    ())
          (epilogue ()))
         |}];
-    split "\n";
-    [%expect
-      {|
+      split "\n";
+      [%expect
+        {|
         ((prologue ("\n"))
          (parts    ())
          (epilogue ()))
         |}];
-    (* Missing boundary markers *)
-    split "A\n--BOUNDARY--\nB";
-    [%expect {|
+      (* Missing boundary markers *)
+      split "A\n--BOUNDARY--\nB";
+      [%expect {|
         ((prologue (A)) (parts ()) (epilogue ("\nB")))
         |}];
-    split "--BOUNDARY--\nB";
-    [%expect {|
+      split "--BOUNDARY--\nB";
+      [%expect {|
         ((prologue ("")) (parts ()) (epilogue ("\nB")))
         |}];
-    split "--BOUNDARY--\n";
-    [%expect {|
+      split "--BOUNDARY--\n";
+      [%expect {|
         ((prologue ("")) (parts ()) (epilogue ("\n")))
         |}];
-    split "--BOUNDARY--";
-    [%expect
-      {|
+      split "--BOUNDARY--";
+      [%expect
+        {|
         ((prologue (""))
          (parts    ())
          (epilogue ()))
         |}];
-    split "A\n--BOUNDARY--";
-    [%expect
-      {|
+      split "A\n--BOUNDARY--";
+      [%expect
+        {|
         ((prologue (A))
          (parts    ())
          (epilogue ()))
         |}];
-    return ()
-  ;;
+      return ()
+    ;;
 
-  let%expect_test "non-compliant [join]" =
-    join (Some "A", [], Some "\nB");
-    [%expect {|
+    let%expect_test "non-compliant [join]" =
+      join (Some "A", [], Some "\nB");
+      [%expect {|
         ######
         A
         B
         ######
       |}];
-    join (None, [], Some "\nB");
-    [%expect {|
+      join (None, [], Some "\nB");
+      [%expect {|
         ######
 
         B
         ######
       |}];
-    join (None, [], None);
-    [%expect {|
+      join (None, [], None);
+      [%expect {|
         ######
 
 
         ######
       |}];
-    join (Some "A", [], None);
-    [%expect {|
+      join (Some "A", [], None);
+      [%expect {|
         ######
         A
         ######
       |}];
-    return ()
-  ;;
-end
+      return ()
+    ;;
+  end)
+;;

@@ -14,6 +14,7 @@ depends: [
   "async"
   "core"
   "core_kernel"
+  "core_unix"
   "ppx_jane"
   "re2"
   "angstrom"    {>= "0.14.1"}

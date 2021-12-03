@@ -1,2 +1,2 @@
 (library (name email_address) (public_name email_message.email_address)
- (libraries angstrom core_kernel.core) (preprocess (pps ppx_jane)))
+ (libraries angstrom core) (preprocess (pps ppx_jane)))

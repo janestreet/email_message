@@ -363,7 +363,7 @@ module Content = struct
     create_multipart ?extra_headers ~content_type:Mimetype.multipart_alternative
   ;;
 
-  let html_pre str =
+  let html_pre ?(force_no_line_wrap = true) str =
     (* This was copy&pasted from [markup.ml] in [html] library
        to avoid adding a dependency on the whole [html] library
        just for this. *)
@@ -374,18 +374,28 @@ module Content = struct
       List.fold ~init:s escape ~f:(fun acc (pattern, with_) ->
         String.substr_replace_all acc ~pattern ~with_)
     in
-    (* Gmail decided that text in "pre" elements should wrap by default
-       (white-space=pre-wrap), the white-space rule here prevents wrapping and takes
-       precendence over their rule. *)
-    "<html><pre style=\"white-space: pre !important;\">"
-    ^ html_encode str
-    ^ "</pre></html>"
+    let pre content =
+      let open_tag =
+        if force_no_line_wrap
+        then
+          (* Gmail decided that text in "pre" elements should wrap by default
+             (white-space=pre-wrap), the white-space rule here prevents wrapping and takes
+             precendence over their rule. *)
+          "<pre style=\"white-space: pre !important;\">"
+        else "<pre>"
+      in
+      let close_tag = "</pre>" in
+      [%string "%{open_tag}%{content}%{close_tag}"]
+    in
+    "<html>" ^ pre (html_encode str) ^ "</html>"
   ;;
 
-  let text_monospace_utf8 ?extra_headers content =
+  let text_monospace_utf8 ?extra_headers ?force_no_line_wrap content =
     alternatives
       ?extra_headers
-      [ text_utf8 ?encoding:None content; html_utf8 ?encoding:None (html_pre content) ]
+      [ text_utf8 ?encoding:None content
+      ; html_utf8 ?encoding:None (html_pre ?force_no_line_wrap content)
+      ]
   ;;
 
   let mixed ?extra_headers =
@@ -631,10 +641,12 @@ module Content = struct
     create ?extra_headers ~content_type:Mimetype.html ~encoding content
   ;;
 
-  let text_monospace ?extra_headers content =
+  let text_monospace ?extra_headers ?force_no_line_wrap content =
     alternatives
       ?extra_headers
-      [ text ?encoding:None content; html ?encoding:None (html_pre content) ]
+      [ text ?encoding:None content
+      ; html ?encoding:None (html_pre ?force_no_line_wrap content)
+      ]
   ;;
 end
 

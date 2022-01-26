@@ -34,7 +34,5 @@ val of_string_monoid : String_monoid.t -> t
 val substr_index : ?pos:int -> t -> pattern:t -> int option
 
 module Stable : sig
-  module V1 : sig
-    type nonrec t = t [@@deriving sexp, bin_io]
-  end
+  module V1 : Stable_without_comparator with type t = t
 end

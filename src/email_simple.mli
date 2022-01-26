@@ -103,14 +103,20 @@ module Content : sig
   [@@deprecated "[since 2019-08] Please specify the charset, e.g. [text_utf8]"]
 
   (** Plain text e-mail that also includes an html version so it's displayed
-      monospace in gmail. *)
+      monospace in gmail.
+
+      By default, we add some custom styling to disable the line-wrap formatting rule
+      which gmail uses. To disable this behavior, supply [~force_no_line_wrap:false].
+  *)
   val text_monospace_utf8
     :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
+    -> ?force_no_line_wrap:bool (* default: true *)
     -> string
     -> t
 
   val text_monospace
     :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
+    -> ?force_no_line_wrap:bool (* default: true *)
     -> string
     -> t
   [@@deprecated

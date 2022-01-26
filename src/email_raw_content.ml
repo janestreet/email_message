@@ -2,7 +2,7 @@ module Stable = struct
   open! Core.Core_stable
 
   module V1 = struct
-    type t = Bigstring_shared.Stable.V1.t option [@@deriving bin_io, sexp]
+    type t = Bigstring_shared.Stable.V1.t option [@@deriving bin_io, sexp, compare]
   end
 end
 

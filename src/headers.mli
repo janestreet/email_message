@@ -138,18 +138,12 @@ val map'
 
 module Stable : sig
   module Name : sig
-    module V1 : sig
-      type t = Name.t [@@deriving sexp, bin_io]
-    end
+    module V1 : Stable_without_comparator with type t = Name.t
   end
 
   module Value : sig
-    module V1 : sig
-      type t = Value.t [@@deriving sexp, bin_io]
-    end
+    module V1 : Stable_without_comparator with type t = Value.t
   end
 
-  module V1 : sig
-    type nonrec t = t [@@deriving sexp, bin_io]
-  end
+  module V1 : Stable_without_comparator with type t = t
 end

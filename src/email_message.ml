@@ -25,6 +25,7 @@ module Email_message_stable = struct
 
   module Email_address = Email_address.Stable
   module Email_wrapper = Email_wrapper.Stable
+  module Email_headers = Email_headers.Stable
 end
 
 module Private = struct

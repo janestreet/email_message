@@ -139,7 +139,7 @@ module Expert = struct
     in
     let date =
       match date with
-      | None -> Email_date.rfc822_date (Time.now ())
+      | None -> Email_date.rfc822_date (Time_float.now ())
       | Some date -> date
     in
     let headers =
@@ -203,6 +203,27 @@ module Mimetype = struct
   let arg_type = Command.Arg_type.create of_string
   let from_extension ext = Magic_mime_external.Mime_types.map_extension ext
   let from_filename file = Magic_mime_external.Magic_mime.lookup file
+
+  let to_extension t =
+    match
+      String.lsplit2 t ~on:';'
+      |> Option.value_map ~f:fst ~default:t
+      |> String.lowercase
+      |> String.strip
+    with
+    (* reverse mapping of the types listed above *)
+    | "text/plain" -> Some "txt"
+    | "text/html" -> Some "html"
+    | "application/pdf" -> Some "pdf"
+    | "image/jpeg" -> Some "jpg"
+    | "image/png" -> Some "png"
+    | "image/gif" -> Some "gif"
+    | "text/csv" -> Some "csv" (* experimentally found from real-world examples *)
+    | "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> Some "xlsx"
+    | "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ->
+      Some "docx"
+    | _ -> None
+  ;;
 
   let guess_encoding : t -> Octet_stream.Encoding.known = function
     | "text/plain" | "text/html" -> `Quoted_printable
@@ -723,22 +744,43 @@ let all_related_parts = Content.all_related_parts
 let find_related = Content.find_related
 let inline_parts = Content.inline_parts
 
-let parse_attachment ?container_headers ~path t =
+let parse_attachment ~include_inline_parts ?container_headers ~path t =
+  let headers = Email.headers t in
+  let as_attachment ~even_if_multipart ~filename =
+    match Email_content.parse ?container_headers t with
+    | Error _ -> None
+    | Ok (Email_content.Multipart _) ->
+      if even_if_multipart
+      then Some (Attachment.of_embedded_email ~headers ~filename ~path t)
+      else None
+    | Ok (Message email) ->
+      Some (Attachment.of_embedded_email ~headers ~filename ~path email)
+    | Ok (Data content) -> Some (Attachment.of_content ~headers ~filename ~path content)
+  in
   match Content.content_disposition t with
-  | `Inline -> None
-  | `Attachment filename ->
-    let headers = Email.headers t in
-    (match Email_content.parse ?container_headers t with
-     | Error _ -> None
-     | Ok (Email_content.Multipart _) -> None
-     | Ok (Message email) ->
-       Some (Attachment.of_embedded_email ~headers ~filename ~path email)
-     | Ok (Data content) -> Some (Attachment.of_content ~headers ~filename ~path content))
+  | `Inline ->
+    (match include_inline_parts with
+     | `None -> None
+     | (`Named | `Named_or_has_content_id) as include_inline_parts ->
+       let%bind.Option filename =
+         match Content.attachment_name t with
+         | Some filename -> Some filename
+         | None ->
+           (match include_inline_parts with
+            | `Named -> None
+            | `Named_or_has_content_id ->
+              let%map.Option name = Content.related_part_cid t in
+              (match Mimetype.to_extension (Content.content_type t) with
+               | None -> name
+               | Some ext -> name ^ "." ^ ext))
+       in
+       as_attachment ~even_if_multipart:true ~filename)
+  | `Attachment filename -> as_attachment ~even_if_multipart:false ~filename
 ;;
 
-let map_attachments t ~f =
+let map_attachments ?(include_inline_parts = `None) t ~f =
   let handle_possible_attachment ?container_headers ~path t =
-    parse_attachment ?container_headers ~path t
+    parse_attachment ~include_inline_parts ?container_headers ~path t
     |> function
     | None -> `Unchanged
     | Some attachment ->
@@ -781,10 +823,14 @@ let map_attachments t ~f =
   | `Changed t -> t
 ;;
 
-let all_attachments ?(look_through_attached_mails = true) t =
+let all_attachments
+      ?(include_inline_parts = `None)
+      ?(look_through_attached_mails = true)
+      t
+  =
   let all_attachments = Queue.create () in
   let (_ : t) =
-    map_attachments t ~f:(fun attachment ->
+    map_attachments ~include_inline_parts t ~f:(fun attachment ->
       Queue.enqueue all_attachments attachment;
       match look_through_attached_mails with
       | true -> `Keep

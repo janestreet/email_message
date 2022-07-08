@@ -2,7 +2,7 @@ open! Core
 open Email_message
 open Expect_test_helpers_core
 open Email_date
-module Time = Time_unix
+module Time = Time_float_unix
 
 let parse_and_print time =
   print_string (Time.to_string_iso8601_basic (of_string_exn time) ~zone:Time.Zone.utc)

@@ -129,19 +129,16 @@ module Content : sig
     -> string
     -> t Async.Deferred.t
 
-  (* Combine 2 or more contents as alternative versions.
-     List should be sorted from worst to best. *)
-
+  (** Combine 2 or more contents as alternative versions.
+      List should be sorted from worst to best. *)
   val alternatives : ?extra_headers:(Headers.Name.t * Headers.Value.t) list -> t list -> t
 
-  (* Combine 2 or more contents that should be bundled together *)
-
+  (** Combine 2 or more contents that should be bundled together *)
   val mixed : ?extra_headers:(Headers.Name.t * Headers.Value.t) list -> t list -> t
 
-  (* Add related resources (e.g. inline images).
-     You can reference them using 'cid:${attachment_name}' in the content.
-     To attach files you should use [create ~attachments] *)
-
+  (** Add related resources (e.g. inline images).
+      You can reference them using 'cid:${attachment_name}' in the content.
+      To attach files you should use [create ~attachments] *)
   val with_related
     :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> resources:(attachment_name * t) list
@@ -150,32 +147,28 @@ module Content : sig
 
   val content_type : t -> Mimetype.t
 
-  (* The Content-ID of the content *)
-
+  (** The Content-ID of the content *)
   val related_part_cid : t -> attachment_name option
 
 
   val all_related_parts : t -> (attachment_name * t) list
   val find_related : t -> attachment_name -> t option
 
-  (* [content] and [parts] return [None] if the email doesn't properly parse. They also
-     return [None] if the message has content type "message/rfc822" *)
-
+  (** [content] and [parts] return [None] if the email doesn't properly parse. They also
+      return [None] if the message has content type "message/rfc822" *)
   val content : t -> Octet_stream.t option
+
   val parts : t -> t list option
 
-  (* Get the alternative versions available. If the message is not of content type
-     "multipart/alternative" then return a singleton list. *)
-
+  (** Get the alternative versions available. If the message is not of content type
+      "multipart/alternative" then return a singleton list. *)
   val alternative_parts : t -> t list
 
-  (* Get the 'inline' parts, This expands "Content-Type: multipart/{mixed,related}",
-     stripping out any attachment parts. multipart/alternative is not expanded *)
-
+  (** Get the 'inline' parts, This expands "Content-Type: multipart/{mixed,related}",
+      stripping out any attachment parts. multipart/alternative is not expanded *)
   val inline_parts : t -> t list
 
-  (* Save content to disk *)
-
+  (** Save content to disk *)
   val to_file : t -> string -> unit Async.Deferred.Or_error.t
 end
 
@@ -189,7 +182,7 @@ val create
   -> subject:string
   -> ?id:string
   -> ?in_reply_to:string
-  -> ?date:Time.t
+  -> ?date:Time_float.t
   -> ?auto_generated:unit
   -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
   -> ?attachments:(attachment_name * Content.t) list
@@ -215,11 +208,23 @@ val extract_body
 
 
 (** [all_attachments] looks recursively through the e-mail parts, looking for
-    attachments. If [~look_through_attached_mails:true] (the default), it will separately
+    attachments.
+
+    [~include_inline_parts] (default is `None) controls whether this function will attempt
+    to interpret inline parts as attachments. [`Named_or_has_content_id] most aggressively
+    classifies parts as attachments, including inline parts that are either named or have
+    a Content-Id header. [`Named] will include inline parts that are named.
+
+    If [~look_through_attached_mails:true] (the default), it will separately
     include both e-mail attachments as well as the attachments to those e-mails. Otherwise
     it will include e-mail attachments but not (separately) any of the attached e-mails'
-    attachments. *)
-val all_attachments : ?look_through_attached_mails:bool -> t -> Attachment.t list
+    attachments.
+*)
+val all_attachments
+  :  ?include_inline_parts:[ `None | `Named | `Named_or_has_content_id ]
+  -> ?look_through_attached_mails:bool
+  -> t
+  -> Attachment.t list
 
 val find_attachment : t -> attachment_name -> Attachment.t option
 
@@ -265,7 +270,11 @@ val inline_parts : t -> Content.t list
 
 (** [map_attachments] recurses into message/rfc822 parts. However, if a message/rfc822
     part is replaced, there is no further recursion. *)
-val map_attachments : t -> f:(Attachment.t -> [ `Keep | `Replace of t ]) -> t
+val map_attachments
+  :  ?include_inline_parts:[ `None | `Named | `Named_or_has_content_id ]
+  -> t
+  -> f:(Attachment.t -> [ `Keep | `Replace of t ])
+  -> t
 
 module Expert : sig
   val create_raw

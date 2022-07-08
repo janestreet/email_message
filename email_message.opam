@@ -17,9 +17,9 @@ depends: [
   "core_unix"
   "ppx_jane"
   "re2"
-  "angstrom"    {>= "0.14.1"}
+  "angstrom"    {>= "0.15.0"}
   "base64"      {>= "3.4.0"}
-  "cryptokit"
+  "cryptokit"   {>= "1.16" & < "1.17"}
   "dune"        {>= "2.0.0"}
   "magic-mime"
 ]

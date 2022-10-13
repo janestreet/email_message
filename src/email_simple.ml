@@ -110,6 +110,7 @@ module Expert = struct
         ?auto_generated
         ?(extra_headers = [])
         ?(attachments = [])
+        ?no_tracing_headers
         content
     =
     let id, extra_headers =
@@ -159,7 +160,10 @@ module Expert = struct
         | None -> []
         | Some () -> [ "Auto-Submitted", "auto-generated"; "Precedence", "bulk" ])
       @ [ "Date", date ]
-      @ tracing_headers ()
+      @
+      match no_tracing_headers with
+      | Some `Because_not_using_standard_email_infra -> []
+      | None -> tracing_headers ()
     in
     match attachments with
     | [] -> add_headers content headers
@@ -685,6 +689,7 @@ let create
       ?auto_generated
       ?extra_headers
       ?attachments
+      ?no_tracing_headers
       content
   =
   Expert.create_raw
@@ -699,6 +704,7 @@ let create
     ?auto_generated
     ?extra_headers
     ?attachments
+    ?no_tracing_headers
     content
 ;;
 

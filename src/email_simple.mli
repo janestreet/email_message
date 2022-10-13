@@ -186,6 +186,7 @@ val create
   -> ?auto_generated:unit
   -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
   -> ?attachments:(attachment_name * Content.t) list
+  -> ?no_tracing_headers:[ `Because_not_using_standard_email_infra ]
   -> Content.t
   -> t
 
@@ -289,6 +290,7 @@ module Expert : sig
     -> ?auto_generated:unit
     -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> ?attachments:(attachment_name * Content.t) list
+    -> ?no_tracing_headers:[ `Because_not_using_standard_email_infra ]
     -> Content.t
     -> t
 

@@ -6,7 +6,7 @@ module Stable_caseless_string = struct
 
   module V1 = struct
     module T = struct
-      type t = String.V1.t [@@deriving sexp, bin_io]
+      type t = String.V1.t [@@deriving sexp, bin_io, stable_witness]
 
       let compare = U.compare
       let hash_fold_t = U.hash_fold_t
@@ -26,7 +26,7 @@ module Stable = struct
         ; local_part : String.V1.t
         ; domain : Stable_caseless_string.V1.t option
         }
-      [@@deriving fields, compare, hash]
+      [@@deriving fields, compare, hash, stable_witness]
 
       let create ?prefix ?domain local_part = { prefix; local_part; domain }
 
@@ -76,6 +76,8 @@ module Stable = struct
           let of_string s = of_string_exn s
         end)
 
+      let t_sexp_grammar = Sexplib0.Sexp_grammar.coerce [%sexp_grammar: string]
+
       include Binable.Of_stringable.V1 [@alert "-legacy"] (struct
           type nonrec t = t
 
@@ -90,7 +92,7 @@ module Stable = struct
     end
 
     include With_comparator
-    include Comparable.V1.Make (With_comparator)
+    include Comparable.V1.With_stable_witness.Make (With_comparator)
   end
 end
 

@@ -6,7 +6,7 @@ module Stable_no_v1_bin_io = struct
       { headers : Headers.Stable.V1.t
       ; raw_content : Email_raw_content.Stable.V1.t
       }
-    [@@deriving sexp]
+    [@@deriving sexp, compare]
   end
 end
 

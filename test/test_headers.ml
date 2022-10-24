@@ -10,6 +10,7 @@ let%expect_test "whitespace" =
       ; "header2", " 2"
       ; "header3", "=?ISO-8859-1?Q?a?="
       ; "header4", " =?ISO-8859-1?Q?a?="
+      ; "header5", " =?ISO-8859-1?Q?a?= \n  =?ISO-8859-1?Q?b?=  \n c"
       ]
   in
   let print_headers ~normalize =
@@ -22,18 +23,27 @@ let%expect_test "whitespace" =
     |header1|1|
     |header2| 2|
     |header3|=?ISO-8859-1?Q?a?=|
-    |header4| =?ISO-8859-1?Q?a?=| |}];
+    |header4| =?ISO-8859-1?Q?a?=|
+    |header5| =?ISO-8859-1?Q?a?=
+      =?ISO-8859-1?Q?b?=
+     c| |}];
   print_headers ~normalize:`Whitespace;
   [%expect
     {|
     |header1|1|
     |header2|2|
     |header3|=?ISO-8859-1?Q?a?=|
-    |header4|=?ISO-8859-1?Q?a?=| |}];
+    |header4|=?ISO-8859-1?Q?a?=|
+    |header5|=?ISO-8859-1?Q?a?=
+    =?ISO-8859-1?Q?b?=
+    c| |}];
   print_headers ~normalize:`Whitespace_and_encoded_words;
-  [%expect {|
+  [%expect
+    {|
     |header1|1|
     |header2|2|
     |header3|a|
-    |header4|a| |}]
+    |header4|a|
+    |header5|ab
+    c| |}]
 ;;

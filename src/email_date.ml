@@ -14,8 +14,7 @@ let utc_offset_string time ~zone =
       ]
 ;;
 
-let rfc822_date now =
-  let zone = force Time.Zone.local in
+let rfc822_date ?(zone = force Time.Zone.local) now =
   let offset_string =
     utc_offset_string ~zone now |> String.filter ~f:(fun c -> Base.Char.( <> ) c ':')
   in

@@ -1,7 +1,7 @@
 open! Core
 
 (** Generate an RFC822-style date *)
-val rfc822_date : Time_float.t -> string
+val rfc822_date : ?zone:Time_float.Zone.t -> Time_float.t -> string
 
 (** Parse an RFC822-style string into a [Time.t].
 

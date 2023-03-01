@@ -404,8 +404,7 @@ let%expect_test "long attachment name" =
   [%expect
     {|
     ((attachments
-      ((((filename  "attachment name\
-                   \nthat wraps.txt") (path (1))) foo)))
+      ((((filename "attachment name that wraps.txt") (path (1))) foo)))
      (stripped
       ((headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1")))
        (raw_content

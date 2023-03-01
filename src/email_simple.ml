@@ -31,7 +31,7 @@ module Crypto = Crypto.Cryptokit
 module Hash = Crypto.Hash
 
 let make_id () =
-  if am_running_inline_test
+  if Ppx_inline_test_lib.am_running
   then "{AUTO-GENERATED-ID}"
   else
     (* Trust that UUID does a good enough job at avoiding colision risks.
@@ -85,7 +85,7 @@ module Expert = struct
   ;;
 
   let tracing_headers () =
-    if am_running_inline_test
+    if Ppx_inline_test_lib.am_running
     then
       [ "X-JS-Sending-Host", "{HOSTNAME}"
       ; "X-JS-Sending-User", "{USERNAME}"
@@ -146,8 +146,8 @@ module Expert = struct
     let headers =
       extra_headers
       @ [ "From", from ]
-      @ (if List.is_empty to_ then [] else [ "To", String.concat to_ ~sep:",\n\t" ])
-      @ (if List.is_empty cc then [] else [ "Cc", String.concat cc ~sep:",\n\t" ])
+      @ (if List.is_empty to_ then [] else [ "To", String.concat to_ ~sep:",\n " ])
+      @ (if List.is_empty cc then [] else [ "Cc", String.concat cc ~sep:",\n " ])
       @ (match reply_to with
         | None -> []
         | Some reply_to -> [ "Reply-To", reply_to ])
@@ -533,7 +533,8 @@ module Content = struct
       (match matching_attributes with
        | Error error -> error
        | Ok all_parameters ->
-         List.sort all_parameters ~compare:(Comparable.lift Int.compare ~f:fst)
+         List.sort all_parameters ~compare:(fun a b ->
+           Comparable.lift Int.compare ~f:fst a b)
          |> List.map ~f:(fun (seq, name_fragment) ->
            let name_fragment = unquote (Option.value name_fragment ~default:"") in
            if seq = 0

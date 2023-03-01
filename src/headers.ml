@@ -66,7 +66,11 @@ end = struct
   include String
 
   let normalize_string str =
-    String.split_lines str |> List.map ~f:String.strip |> String.concat ~sep:"\n"
+    (* From the RFC (https://datatracker.ietf.org/doc/html/rfc822#section-3.1.1), newlines
+       followed by whitespace should be replace by just the whitespace character.
+       Stripping the lines isn't quite obeying the standard but matches what we've done
+       historically and some emails probably have excessive whitespace. *)
+    String.split_lines str |> List.map ~f:String.strip |> String.concat ~sep:" "
   ;;
 
   let of_string ?(normalize = Normalize.default) str =
@@ -84,7 +88,7 @@ end = struct
     | `None -> str
     | `Whitespace ->
       " "
-      ^ (String.split_lines str |> List.map ~f:String.strip |> String.concat ~sep:"\n\t")
+      ^ (String.split_lines str |> List.map ~f:String.strip |> String.concat ~sep:"\n ")
   ;;
 
   let to_string' ?(normalize = Normalize.default) str =
@@ -256,7 +260,7 @@ let%test_module _ =
     let%test_unit _ =
       [%test_result: string]
         (add t ~name:"B" ~value:"b3\nb3" |> to_string)
-        ~expect:"A:a1\nB: b3\n\tb3\nB:b1\nB:b2\n"
+        ~expect:"A:a1\nB: b3\n b3\nB:b1\nB:b2\n"
     ;;
 
     let%test_unit _ =

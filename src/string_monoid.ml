@@ -12,30 +12,33 @@ module Underlying = struct
     | Char _ -> 1
   ;;
 
-  let blit_bytes ~src =
+  let blit_bytes ?(src_pos = 0) ~src ?src_len:(len = length src) ~dst ?(dst_pos = 0) () =
     match src with
-    | String src ->
-      fun ?(src_pos = 0) ?src_len:(len = String.length src) ~dst ?(dst_pos = 0) () ->
-        Bytes.From_string.blit ~src ~src_pos ~len ~dst ~dst_pos
-    | Bigstring src -> Bigstring.To_bytes.blito ~src
+    | String src -> Bytes.From_string.blit ~src ~src_pos ~len ~dst ~dst_pos
+    | Bigstring src -> Bigstring.To_bytes.blit ~src_pos ~src ~dst ~dst_pos ~len
     | Char c ->
-      fun ?(src_pos = 0) ?(src_len = 1) ~dst ?(dst_pos = 0) () ->
-        (match src_pos, src_len with
-         | 0, 1 -> Bytes.set dst dst_pos c
-         | (0 | 1), 0 -> ()
-         | _, _ -> invalid_arg "index out of bounds")
+      (match src_pos, len with
+       | 0, 1 -> Bytes.set dst dst_pos c
+       | (0 | 1), 0 -> ()
+       | _, _ -> invalid_arg "index out of bounds")
   ;;
 
-  let blit_bigstring ~src =
+  let blit_bigstring
+        ?(src_pos = 0)
+        ~src
+        ?src_len:(len = length src)
+        ~dst
+        ?(dst_pos = 0)
+        ()
+    =
     match src with
-    | String src -> Bigstring.From_string.blito ~src
-    | Bigstring src -> Bigstring.blito ~src
+    | String src -> Bigstring.From_string.blit ~src ~src_pos ~len ~dst ~dst_pos
+    | Bigstring src -> Bigstring.blit ~src ~src_pos ~len ~dst ~dst_pos
     | Char c ->
-      fun ?(src_pos = 0) ?(src_len = 1) ~dst ?(dst_pos = 0) () ->
-        (match src_pos, src_len with
-         | 0, 1 -> dst.{dst_pos} <- c
-         | (0 | 1), 0 -> ()
-         | _, _ -> invalid_arg "index out of bounds")
+      (match src_pos, len with
+       | 0, 1 -> dst.{dst_pos} <- c
+       | (0 | 1), 0 -> ()
+       | _, _ -> invalid_arg "index out of bounds")
   ;;
 
   let output_channel ~channel = function
@@ -174,7 +177,7 @@ let concat_string = concat_underlying ~of_underlying:of_string
 *)
 
 type blitter =
-  src:Underlying.t -> ?src_pos:int -> ?src_len:int -> ?dst_pos:int -> unit -> unit
+  ?src_pos:int -> src:Underlying.t -> ?src_len:int -> ?dst_pos:int -> unit -> unit
 
 let blit ~(dst_blit : blitter) t =
   let rec blit dst_pos t =

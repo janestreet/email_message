@@ -113,8 +113,7 @@ type t = (Name.t * string) list [@@deriving sexp_of, compare, hash]
 
 let to_string_monoid ?(eol = `LF) t =
   List.map t ~f:(fun (name, value) ->
-    String_monoid.concat_string
-      [ (name :> string); ":"; value; Lf_or_crlf.to_string eol ])
+    String_monoid.concat_string [ (name :> string); ":"; value; Lf_or_crlf.to_string eol ])
   |> String_monoid.concat
 ;;
 
@@ -236,7 +235,6 @@ let names = List.map ~f:fst
 let%test_module _ =
   (module struct
     let t = of_list ~normalize:`None [ "A", "a1"; "B", "b1"; "B", "b2" ]
-
     let%test_unit _ = [%test_result: string] (to_string t) ~expect:"A:a1\nB:b1\nB:b2\n"
 
     let%test_unit _ =

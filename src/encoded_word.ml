@@ -63,8 +63,7 @@ let parser_ : string Angstrom.t =
   | `Latin1
   | `Latin2
   | `GB2312
-  | `Windows1252
-    -> return data
+  | `Windows1252  -> return data
 ;;
 
 let parser_many : string Angstrom.t =

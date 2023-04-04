@@ -235,7 +235,7 @@ module Mimetype = struct
   ;;
 end
 
-type attachment_name = string
+type attachment_name = string [@@deriving sexp_of]
 
 module Path : sig
   type t

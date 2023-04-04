@@ -22,7 +22,7 @@ module Mimetype : sig
   val guess_encoding : t -> Octet_stream.Encoding.known
 end
 
-type attachment_name = string
+type attachment_name = string [@@deriving sexp_of]
 
 (* For parsing attachments. Use [create ~attachments] to add attachments.
    Convenience functions for email parts that have "Content-Disposition: attachment" *)

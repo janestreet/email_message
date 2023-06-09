@@ -66,11 +66,14 @@ end
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving hash, sexp_grammar, stable_witness]
+    type nonrec t = t [@@deriving bin_io, hash, sexp_grammar, stable_witness]
 
     include
       Stable_comparable.With_stable_witness.V1
       with type t := t
       with type comparator_witness = comparator_witness
+
+    val of_string_exn : ?default_domain:string -> string -> t
+    val to_string : t -> string
   end
 end

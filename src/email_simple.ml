@@ -85,17 +85,30 @@ module Expert = struct
   ;;
 
   let tracing_headers () =
-    if Ppx_inline_test_lib.am_running
-    then
-      [ "X-JS-Sending-Host", "{HOSTNAME}"
-      ; "X-JS-Sending-User", "{USERNAME}"
-      ; "X-JS-Sending-Program", "{EXECUTABLE_NAME}"
+    let get_value ~actual ~testing =
+      if Ppx_inline_test_lib.am_running then testing else actual
+    in
+    let sending_header str =
+      let prefix = "X-Sending" in
+      [%string "%{prefix}-%{str}"]
+    in
+    let headers =
+      [ ( sending_header "Host"
+        , get_value ~actual:(Unix.gethostname ()) ~testing:"{HOSTNAME}" )
+      ; sending_header "User", get_value ~actual:(Unix.getlogin ()) ~testing:"{USERNAME}"
+      ; ( sending_header "Program"
+        , get_value ~actual:Sys_unix.executable_name ~testing:"{EXECUTABLE_NAME}" )
       ]
-    else
-      [ "X-JS-Sending-Host", Unix.gethostname ()
-      ; "X-JS-Sending-User", Unix.getlogin ()
-      ; "X-JS-Sending-Program", Sys_unix.executable_name
-      ]
+    in
+    headers
+  ;;
+
+  let%expect_test "tracing_headers" =
+    print_s [%sexp (tracing_headers () : (string * string) list)];
+    [%expect
+      {|
+      ((X-JS-Sending-Host {HOSTNAME}) (X-JS-Sending-User {USERNAME})
+       (X-JS-Sending-Program {EXECUTABLE_NAME}))|}]
   ;;
 
   let create_raw

@@ -1,6 +1,6 @@
 open! Core
 
-type t [@@deriving compare, hash, sexp_of]
+type t [@@deriving compare, hash, sexp_of, equal]
 
 val to_bigstring_shared : t -> Bigstring_shared.t
 val of_string : string -> t
@@ -16,5 +16,9 @@ module Expert : sig
 end
 
 module Stable : sig
-  module V1 : Stable_without_comparator with type t = t
+  module V1 : sig
+    type nonrec t = t [@@deriving equal]
+
+    include Stable_without_comparator with type t := t
+  end
 end

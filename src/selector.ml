@@ -27,6 +27,7 @@ module Stable = struct
 end
 
 open Core
+open! Import
 module Regex = Re2
 
 module Base = struct

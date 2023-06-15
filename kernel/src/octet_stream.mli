@@ -1,6 +1,6 @@
 open! Core
 
-(* RFC 2045 MIME-encoded Bigstrings. *)
+(** RFC 2045 MIME-encoded Bigstrings. *)
 module Encoding : sig
   (** Text or binary are the type of the plaintext. For Base64, if the mode is
       text, '\n' is turned into '\r\n' when encoding, and vice versa. *)
@@ -19,8 +19,8 @@ module Encoding : sig
     ]
   [@@deriving sexp_of, compare, hash]
 
-  (* RFC 2045 says 7bit should be assumed if the Content-Transfer-Encoding heading is
-     missing. *)
+  (*_ RFC 2045 says 7bit should be assumed if the Content-Transfer-Encoding heading is
+    missing. *)
 
   val default : known
   val default' : t
@@ -45,12 +45,11 @@ val encoding : t -> Encoding.t
 val encoded_contents : t -> Bigstring_shared.t
 val encoded_contents_string : t -> string
 
-(* These are the expensive operation. *)
+(** These are the expensive operation. *)
 
 val encode : encoding:Encoding.known -> Bigstring_shared.t -> t
 
-(* None if encoding is `Unknown. *)
-
+(** None if encoding is `Unknown. *)
 val decode : t -> Bigstring_shared.t option
 
 module Stable : sig

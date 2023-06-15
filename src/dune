@@ -1,9 +1,4 @@
 (library (name email_message) (public_name email_message)
- (libraries async base64 base64.rfc2045 core_unix.bigstring_unix core
-  cryptokit email_address magic-mime core_kernel.nonempty_list re2
-  core_kernel.reversed_list core_unix.sys_unix core_unix.uuid)
+ (libraries async core_unix.bigstring_unix core cryptokit email_address re2
+  core_unix.sys_unix core_unix.uuid email_message_kernel)
  (preprocess (pps ppx_jane)))
-
-(ocamllex email_lexer media_type_lexer quoted_printable_lexer)
-
-(ocamlyacc email_grammar media_type_grammar)

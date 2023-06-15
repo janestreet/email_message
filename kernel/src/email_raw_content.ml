@@ -2,13 +2,13 @@ module Stable = struct
   open! Core.Core_stable
 
   module V1 = struct
-    type t = Bigstring_shared.Stable.V1.t option [@@deriving bin_io, sexp, compare]
+    type t = Bigstring_shared.Stable.V1.t option [@@deriving bin_io, sexp, compare, equal]
   end
 end
 
 open! Core
 
-type t = Bigstring_shared.t option [@@deriving compare, hash, sexp_of]
+type t = Bigstring_shared.t option [@@deriving compare, hash, sexp_of, equal]
 
 let of_bigstring_shared bstr = Some bstr
 let of_string str = of_bigstring_shared (Bigstring_shared.of_string str)

@@ -1,4 +1,4 @@
-(* Some simple, lightweight types for parser output *)
+(** Some simple, lightweight types for parser output *)
 
 type header = (string * string) list
 

@@ -3,10 +3,12 @@ module Stable = struct
 
   module V1 = struct
     type t = Core.Bigstring.Stable.V1.t_frozen [@@deriving sexp, bin_io, compare, hash]
+
+    let equal = [%compare.equal: t]
   end
 end
 
-type t = Stable.V1.t [@@deriving sexp_of, compare, hash]
+type t = Stable.V1.t [@@deriving sexp_of, compare, hash, equal]
 
 open Core
 open Poly

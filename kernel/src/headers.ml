@@ -3,7 +3,7 @@ module Stable = struct
 
   module Name = struct
     module V1 = struct
-      type t = string [@@deriving bin_io, compare, hash, sexp]
+      type t = string [@@deriving bin_io, compare, hash, sexp, equal]
     end
   end
 
@@ -14,7 +14,7 @@ module Stable = struct
   end
 
   module V1 = struct
-    type t = (Name.V1.t * string) list [@@deriving bin_io, compare, hash, sexp]
+    type t = (Name.V1.t * string) list [@@deriving bin_io, compare, hash, sexp, equal]
   end
 end
 
@@ -37,7 +37,7 @@ module Normalize = struct
 end
 
 module Name : sig
-  type t = string [@@deriving sexp_of, compare, hash]
+  type t = string [@@deriving sexp_of, compare, hash, equal]
 
   val of_string : string -> t
   val to_string : t -> string
@@ -109,7 +109,7 @@ module Common = struct
   let list_id = "list-Id"
 end
 
-type t = (Name.t * string) list [@@deriving sexp_of, compare, hash]
+type t = (Name.t * string) list [@@deriving sexp_of, compare, hash, equal]
 
 let to_string_monoid ?(eol = `LF) t =
   List.map t ~f:(fun (name, value) ->

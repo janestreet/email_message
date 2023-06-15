@@ -1,6 +1,6 @@
 open! Core
 
-(* For usage in functors *)
+(*_ For usage in functors *)
 
 module type S = sig
 

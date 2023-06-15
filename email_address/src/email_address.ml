@@ -1,4 +1,4 @@
-open Core.Core_stable
+open! Core.Core_stable
 open! Core.Int.Replace_polymorphic_compare
 
 module Stable_caseless_string = struct
@@ -6,28 +6,37 @@ module Stable_caseless_string = struct
 
   module V1 = struct
     module T = struct
-      type t = String.V1.t [@@deriving sexp, bin_io, stable_witness]
+      type t = String.V1.t [@@deriving sexp, bin_io, stable_witness, equal]
 
       let compare = U.compare
       let hash_fold_t = U.hash_fold_t
+
+      type comparator_witness = U.comparator_witness
+
+      let comparator = U.comparator
     end
 
     include T
-    include Comparator.V1.Make (T)
+    include Comparable.V1.With_stable_witness.Make (T)
   end
 end
 
 module Stable = struct
+  module Domain = struct
+    module V1 = Stable_caseless_string.V1
+  end
+
   module V1 = struct
     module T = struct
       type t = Email_address_parser_stable_v1.t =
         { (* [prefix = None] means no brackets. *)
           prefix : String.V1.t option [@compare.ignore] [@hash.ignore]
         ; local_part : String.V1.t
-        ; domain : Stable_caseless_string.V1.t option
+        ; domain : Domain.V1.t option
         }
       [@@deriving fields, compare, hash, stable_witness]
 
+      let equal = [%compare.equal: t]
       let create ?prefix ?domain local_part = { prefix; local_part; domain }
 
       let with_default_domain email ~default_domain =

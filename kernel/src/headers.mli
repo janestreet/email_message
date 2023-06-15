@@ -10,8 +10,8 @@ open! Core
     value. *)
 module Normalize : sig
   type encode =
-    [ `None (* Leave whitespace unchanged *)
-    | `Whitespace (* Cleanup leading and trailing whitespace on each line *)
+    [ `None (** Leave whitespace unchanged *)
+    | `Whitespace (** Cleanup leading and trailing whitespace on each line *)
     ]
   [@@deriving sexp_of]
 
@@ -25,7 +25,7 @@ module Normalize : sig
 end
 
 module Name : sig
-  (* Case insensitive *)
+  (** Case insensitive *)
 
   type t = string [@@deriving sexp_of, compare, hash]
 
@@ -35,7 +35,7 @@ module Name : sig
   include Comparable.S_plain with type t := t
   include Hashable.S_plain with type t := t
 
-  (* Short hand for [let is a b = equal a (of_string b)] *)
+  (** Short hand for [let is a b = equal a (of_string b)] *)
 
   val is : t -> string -> bool
 end
@@ -71,10 +71,10 @@ module Value : sig
 end
 
 
-(* The add and set functions are same as in Field_list, except they add a space
-   before the value. *)
+(*_ The add and set functions are same as in Field_list, except they add a space
+  before the value. *)
 
-type t [@@deriving compare, hash, sexp_of]
+type t [@@deriving compare, hash, sexp_of, equal]
 
 (** [eol] defaults to `LF *)
 val to_string_monoid : ?eol:Lf_or_crlf.t -> t -> String_monoid.t
@@ -145,5 +145,9 @@ module Stable : sig
     module V1 : Stable_without_comparator with type t = Value.t
   end
 
-  module V1 : Stable_without_comparator with type t = t
+  module V1 : sig
+    type nonrec t = t [@@deriving equal]
+
+    include Stable_without_comparator with type t := t
+  end
 end

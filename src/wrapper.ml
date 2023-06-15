@@ -15,7 +15,8 @@ module Stable = struct
   end
 end
 
-open Core
+open! Core
+open! Import
 
 type t = Stable.V1.t =
   { header : Email_simple.Content.t

@@ -6,9 +6,11 @@ module Domain : sig
   include Stringable with type t := t
 
   include
-    Comparator.S
+    Comparable.S_plain
     with type t := t
      and type comparator_witness = String.Caseless.comparator_witness
+
+  include Hashable.S_plain with type t := t
 end
 
 type t [@@deriving sexp_of, compare, hash]
@@ -66,7 +68,7 @@ end
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving bin_io, hash, sexp_grammar, stable_witness]
+    type nonrec t = t [@@deriving bin_io, hash, sexp_grammar, stable_witness, equal]
 
     include
       Stable_comparable.With_stable_witness.V1
@@ -75,5 +77,12 @@ module Stable : sig
 
     val of_string_exn : ?default_domain:string -> string -> t
     val to_string : t -> string
+  end
+
+  module Domain : sig
+    module V1 :
+      Stable_comparable.With_stable_witness.V1
+      with type t := Domain.t
+      with type comparator_witness = Domain.comparator_witness
   end
 end

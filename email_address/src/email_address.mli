@@ -23,6 +23,7 @@ val of_string_exn : ?default_domain:string -> string -> t
 val list_of_string : ?default_domain:string -> string -> t list Or_error.t
 val list_of_string_exn : ?default_domain:string -> string -> t list
 val to_string : t -> string
+val to_string_utf8 : t -> string
 val list_to_header_value : t list -> string
 val local_part : t -> string
 val set_local_part : t -> string -> t

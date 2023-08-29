@@ -69,6 +69,15 @@ module Stable = struct
         | Some prefix -> Core.sprintf "%s<%s>" prefix address_part
       ;;
 
+      let compose_utf8 ~prefix ~address_part =
+        match prefix with
+        | None -> address_part
+        | Some prefix ->
+          let encoded_prefix= Base64.encode_string prefix in
+          let prefix_utf8= Core.sprintf "=?%s?B?%s?=" "UTF-8" encoded_prefix in
+          Core.sprintf "%s<%s>" prefix_utf8 address_part
+      ;;
+
       let to_string t =
         let address_part =
           match t.domain with
@@ -76,6 +85,15 @@ module Stable = struct
           | Some domain -> Core.sprintf "%s@%s" t.local_part domain
         in
         compose ~prefix:t.prefix ~address_part
+      ;;
+
+      let to_string_utf8 t =
+        let address_part =
+          match t.domain with
+          | None -> t.local_part
+          | Some domain -> Core.sprintf "%s@%s" t.local_part domain
+        in
+        compose_utf8 ~prefix:t.prefix ~address_part
       ;;
 
       include Sexpable.Of_stringable.V1 (struct

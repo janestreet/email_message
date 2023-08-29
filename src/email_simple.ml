@@ -311,6 +311,41 @@ let create
     content
 ;;
 
+let create_utf8
+      ?from
+      ~to_
+      ?cc
+      ?reply_to
+      ~subject
+      ?id
+      ?in_reply_to
+      ?date
+      ?auto_generated
+      ?extra_headers
+      ?attachments
+      ?no_tracing_headers
+      content
+  =
+  let subject_utf8=
+    let encoded_subject= Base64.encode_string subject in
+    Core.sprintf "=?%s?B?%s?=" "UTF-8" encoded_subject
+  in
+  Expert.create_raw
+    ?from:(Option.map from ~f:Email_address.to_string_utf8)
+    ~to_:(List.map to_ ~f:Email_address.to_string_utf8)
+    ?cc:(Option.map cc ~f:(List.map ~f:Email_address.to_string_utf8))
+    ?reply_to:(Option.map reply_to ~f:Email_address.to_string_utf8)
+    ~subject:subject_utf8
+    ?id
+    ?in_reply_to
+    ?date:(Option.map date ~f:Email_date.rfc822_date)
+    ?auto_generated
+    ?extra_headers
+    ?attachments
+    ?no_tracing_headers
+    content
+;;
+
 let parse_attachment ~include_inline_parts ?container_headers ~path t =
   let headers = Email.headers t in
   let as_attachment ~even_if_multipart ~filename =

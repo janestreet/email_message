@@ -19,7 +19,7 @@ type t =
   ; mime_subtype : Rfc.RFC2045.Token.t
   ; params : Params.t
   }
-[@@deriving compare, fields, sexp_of]
+[@@deriving compare, sexp_of]
 
 let mime_type t = Rfc.RFC2045.Token.to_lowercase_string t.mime_type
 let mime_subtype t = Rfc.RFC2045.Token.to_lowercase_string t.mime_subtype

@@ -30,7 +30,7 @@ module Multipart : sig
         it is ignored by [to_email]. *)
     ; container_headers : Headers.t
     }
-  [@@deriving fields, sexp_of]
+  [@@deriving sexp_of]
 
   val create
     :  ?boundary:Boundary.t

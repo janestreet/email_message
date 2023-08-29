@@ -78,9 +78,10 @@ end = struct
     | `None -> str
     | `Whitespace -> normalize_string str
     | `Whitespace_and_encoded_words ->
-      (match Encoded_word.decode str with
-       | Ok str -> normalize_string str
-       | Error _ -> normalize_string str)
+      let normalized = normalize_string str in
+      (match Encoded_word.decode normalized with
+       | Ok str -> str
+       | Error _ -> normalized)
   ;;
 
   let to_string ?(normalize = Normalize.default) str =

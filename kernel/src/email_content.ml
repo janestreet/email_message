@@ -8,7 +8,7 @@ module Multipart : sig
     ; parts : Email.t list
     ; container_headers : Headers.t
     }
-  [@@deriving fields, sexp_of]
+  [@@deriving sexp_of]
 
   val create_unsafe
     :  boundary:Boundary.t
@@ -45,7 +45,7 @@ end = struct
     ; parts : Email.t list
     ; container_headers : Headers.t
     }
-  [@@deriving fields, sexp_of]
+  [@@deriving sexp_of]
 
   let create_unsafe ~boundary ?prologue ?epilogue parts ~container_headers =
     { boundary; prologue; epilogue; parts; container_headers }

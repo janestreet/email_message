@@ -171,7 +171,7 @@ module Attachment = struct
       { filename : string
       ; path : int list
       }
-    [@@deriving compare, fields, sexp_of]
+    [@@deriving compare, fields ~getters, sexp_of]
   end
 
   type t =
@@ -185,7 +185,7 @@ module Attachment = struct
     ; md5 : string Or_error.t Lazy.t
     ; sha256 : string Or_error.t Lazy.t
     }
-  [@@deriving fields, sexp_of]
+  [@@deriving fields ~getters, sexp_of]
 
   let filename t = Id.filename t.id
   let decoded_filename t = Lazy.force t.decoded_filename
@@ -326,8 +326,8 @@ let create_utf8
       ?no_tracing_headers
       content
   =
-  let subject_utf8=
-    let encoded_subject= Base64.encode_string subject in
+  let subject_utf8 =
+    let encoded_subject = Base64.encode_string subject in
     Core.sprintf "=?%s?B?%s?=" "UTF-8" encoded_subject
   in
   Expert.create_raw

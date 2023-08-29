@@ -18,7 +18,7 @@ module T = struct
     { headers : Headers.t
     ; raw_content : Email_raw_content.t
     }
-  [@@deriving sexp_of, fields, compare, hash]
+  [@@deriving sexp_of, fields ~getters ~iterators:create, compare, hash]
 end
 
 include T

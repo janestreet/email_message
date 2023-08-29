@@ -34,7 +34,7 @@ module Stable = struct
         ; local_part : String.V1.t
         ; domain : Domain.V1.t option
         }
-      [@@deriving fields, compare, hash, stable_witness]
+      [@@deriving fields ~getters, compare, hash, stable_witness]
 
       let equal = [%compare.equal: t]
       let create ?prefix ?domain local_part = { prefix; local_part; domain }
@@ -73,8 +73,8 @@ module Stable = struct
         match prefix with
         | None -> address_part
         | Some prefix ->
-          let encoded_prefix= Base64.encode_string prefix in
-          let prefix_utf8= Core.sprintf "=?%s?B?%s?=" "UTF-8" encoded_prefix in
+          let encoded_prefix = Base64.encode_string prefix in
+          let prefix_utf8 = Core.sprintf "=?%s?B?%s?=" "UTF-8" encoded_prefix in
           Core.sprintf "%s<%s>" prefix_utf8 address_part
       ;;
 

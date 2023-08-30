@@ -27,7 +27,7 @@ module Email = Email_message_kernel
 include (
   Email_message_kernel.Simple :
     Email_message_kernel.Private.Email_simple_intf.Email_simple
-  with module Stable := Email_message_kernel.Simple.Stable)
+      with module Stable := Email_message_kernel.Simple.Stable)
 
 let make_id () =
   if Ppx_inline_test_lib.am_running
@@ -42,13 +42,10 @@ let local_address () = Email_address.create ?domain:None (Core_unix.getlogin ())
 
 let bigstring_shared_to_file data file =
   let open Async in
-  Deferred.Or_error.try_with
-    ~run:`Schedule
-    ~rest:`Log
-    (fun () ->
-       Writer.with_file file ~f:(fun w ->
-         String_monoid.output_unix (Bigstring_shared.to_string_monoid data) w;
-         Writer.flushed w))
+  Deferred.Or_error.try_with ~run:`Schedule ~rest:`Log (fun () ->
+    Writer.with_file file ~f:(fun w ->
+      String_monoid.output_unix (Bigstring_shared.to_string_monoid data) w;
+      Writer.flushed w))
 ;;
 
 module Expert = struct
@@ -82,19 +79,19 @@ module Expert = struct
   ;;
 
   let create_raw
-        ?(from = local_address () |> Email_address.to_string)
-        ~to_
-        ?cc
-        ?reply_to
-        ~subject
-        ?id
-        ?in_reply_to
-        ?date
-        ?auto_generated
-        ?(extra_headers = [])
-        ?attachments
-        ?no_tracing_headers
-        content
+    ?(from = local_address () |> Email_address.to_string)
+    ~to_
+    ?cc
+    ?reply_to
+    ~subject
+    ?id
+    ?in_reply_to
+    ?date
+    ?auto_generated
+    ?(extra_headers = [])
+    ?attachments
+    ?no_tracing_headers
+    content
     =
     let id, extra_headers =
       (* there seems to be some clients that set the [id] via extra_headers, so handle
@@ -178,7 +175,7 @@ module Attachment = struct
     { headers : Headers.t
     ; id : Id.t
     ; embedded_email : Email.t option
-    (* These are expensive operations. Ensure they are only computed once, and
+        (* These are expensive operations. Ensure they are only computed once, and
        lazily. *)
     ; decoded_filename : string Lazy.t
     ; raw_data : Bigstring_shared.t Or_error.t Lazy.t
@@ -281,19 +278,19 @@ module Content = struct
 end
 
 let create
-      ?from
-      ~to_
-      ?cc
-      ?reply_to
-      ~subject
-      ?id
-      ?in_reply_to
-      ?date
-      ?auto_generated
-      ?extra_headers
-      ?attachments
-      ?no_tracing_headers
-      content
+  ?from
+  ~to_
+  ?cc
+  ?reply_to
+  ~subject
+  ?id
+  ?in_reply_to
+  ?date
+  ?auto_generated
+  ?extra_headers
+  ?attachments
+  ?no_tracing_headers
+  content
   =
   Expert.create_raw
     ?from:(Option.map from ~f:Email_address.to_string)
@@ -312,19 +309,19 @@ let create
 ;;
 
 let create_utf8
-      ?from
-      ~to_
-      ?cc
-      ?reply_to
-      ~subject
-      ?id
-      ?in_reply_to
-      ?date
-      ?auto_generated
-      ?extra_headers
-      ?attachments
-      ?no_tracing_headers
-      content
+  ?from
+  ~to_
+  ?cc
+  ?reply_to
+  ~subject
+  ?id
+  ?in_reply_to
+  ?date
+  ?auto_generated
+  ?extra_headers
+  ?attachments
+  ?no_tracing_headers
+  content
   =
   let subject_utf8 =
     let encoded_subject = Base64.encode_string subject in
@@ -428,9 +425,9 @@ let map_attachments ?(include_inline_parts = `None) t ~f =
 ;;
 
 let all_attachments
-      ?(include_inline_parts = `None)
-      ?(look_through_attached_mails = true)
-      t
+  ?(include_inline_parts = `None)
+  ?(look_through_attached_mails = true)
+  t
   =
   let all_attachments = Queue.create () in
   let (_ : t) =

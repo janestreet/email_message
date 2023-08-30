@@ -26,7 +26,7 @@ module Multipart : sig
     ; prologue : Bigstring_shared.t option
     ; epilogue : Bigstring_shared.t option
     ; parts : Email.t list
-    (** [container_headers] is informational only for use when further processing parts.
+        (** [container_headers] is informational only for use when further processing parts.
         it is ignored by [to_email]. *)
     ; container_headers : Headers.t
     }

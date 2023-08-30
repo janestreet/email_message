@@ -1,6 +1,5 @@
 (** Simple library for concatenating immutable strings efficiently *)
 
-
 open! Core
 
 module type Underlying = sig

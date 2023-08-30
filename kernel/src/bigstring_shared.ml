@@ -17,7 +17,6 @@ open Bigstring
 let to_bigstring t = t
 let of_bigstring t = t
 let to_string_monoid t = String_monoid.of_bigstring t
-
 let of_string_monoid t = String_monoid.to_bigstring t
 let to_string t = to_string t
 let of_string s = of_string s
@@ -95,7 +94,7 @@ let lines_seq ?include_empty_last_line t =
     if pos = length t
     then
       if (* Safe because [length t > 0] *)
-        Option.is_some include_empty_last_line || not (get t (pos - 1) = '\n')
+         Option.is_some include_empty_last_line || not (get t (pos - 1) = '\n')
       then (
         let len = pos - sol in
         let%bind () = yield (sub t ~pos:sol ~len) in

@@ -97,20 +97,20 @@ module Stable = struct
       ;;
 
       include Sexpable.Of_stringable.V1 (struct
-          type nonrec t = t
+        type nonrec t = t
 
-          let to_string = to_string
-          let of_string s = of_string_exn s
-        end)
+        let to_string = to_string
+        let of_string s = of_string_exn s
+      end)
 
       let t_sexp_grammar = Sexplib0.Sexp_grammar.coerce [%sexp_grammar: string]
 
       include Binable.Of_stringable.V1 [@alert "-legacy"] (struct
-          type nonrec t = t
+        type nonrec t = t
 
-          let to_string = to_string
-          let of_string s = of_string_exn s
-        end)
+        let to_string = to_string
+        let of_string s = of_string_exn s
+      end)
     end
 
     module With_comparator = struct

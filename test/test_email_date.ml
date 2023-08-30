@@ -64,8 +64,8 @@ let%expect_test "of_rfc822_date obsolete timezones" =
   List.iter
     [ "UT"; "GMT"; "EST"; "EDT"; "CST"; "CDT"; "MST"; "MDT"; "PST"; "PDT" ]
     ~f:(fun tz ->
-      parse_and_print ("03 Dec 2010 16:02:30 " ^ tz);
-      Out_channel.newline stdout);
+    parse_and_print ("03 Dec 2010 16:02:30 " ^ tz);
+    Out_channel.newline stdout);
   [%expect
     {|
     2010-12-03T16:02:30.000000Z

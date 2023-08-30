@@ -24,12 +24,12 @@ module Underlying = struct
   ;;
 
   let blit_bigstring
-        ?(src_pos = 0)
-        ~src
-        ?src_len:(len = length src)
-        ~dst
-        ?(dst_pos = 0)
-        ()
+    ?(src_pos = 0)
+    ~src
+    ?src_len:(len = length src)
+    ~dst
+    ?(dst_pos = 0)
+    ()
     =
     match src with
     | String src -> Bigstring.From_string.blit ~src ~src_pos ~len ~dst ~dst_pos
@@ -110,7 +110,6 @@ type t =
   | Leaf of Underlying.t
 
 let empty = List (0, [])
-
 let of_string s = if String.is_empty s then empty else Leaf (Underlying.String s)
 
 let of_bigstring bs =
@@ -214,8 +213,6 @@ let rec fold t ~init ~f =
 ;;
 
 let iter t ~f = fold t ~init:() ~f:(fun () -> f)
-
-
 
 let rec is_substr_string t ~string =
   if is_empty t && Substring.is_empty string

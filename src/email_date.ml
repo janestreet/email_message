@@ -98,7 +98,7 @@ let parse_time_zone =
   let military_time_zone =
     const Time.Span.zero
     <$> (List.init 26 ~f:(fun i ->
-      Char.of_int_exn (Char.to_int 'A' + i) |> Char.to_string)
+           Char.of_int_exn (Char.to_int 'A' + i) |> Char.to_string)
          |> List.filter ~f:(String.( <> ) "J")
          |> List.map ~f:string_ci
          |> choice)
@@ -118,7 +118,7 @@ let parse_time_zone =
     ]
     |> List.map ~f:(fun (abbrev, offset) -> const offset <$> string_ci abbrev)
     |> choice
-       <?> "obsolote zone"
+    <?> "obsolote zone"
   in
   choice [ obsolete_zone; military_time_zone; utc_offset ] <?> "time zone"
 ;;

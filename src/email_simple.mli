@@ -9,9 +9,9 @@ module Email := Email_message_kernel
 (** @inline *)
 include
   Email_message_kernel.Private.Email_simple_intf.Email_simple
-  with module Content := Email_message_kernel.Simple.Content
-   and module Expert := Email_message_kernel.Simple.Expert
-   and module Stable := Email_message_kernel.Simple.Stable
+    with module Content := Email_message_kernel.Simple.Content
+     and module Expert := Email_message_kernel.Simple.Expert
+     and module Stable := Email_message_kernel.Simple.Stable
 
 type attachment_name = string [@@deriving sexp_of]
 
@@ -97,7 +97,6 @@ val create_utf8
 val make_id : unit -> Headers.Value.t
 
 val local_address : unit -> Email_address.t
-
 
 (** [all_attachments] looks recursively through the e-mail parts, looking for
     attachments.

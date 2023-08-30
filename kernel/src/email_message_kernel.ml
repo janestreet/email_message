@@ -30,29 +30,29 @@ module Private = struct
   module Email_simple_intf = struct
     module type Email_simple =
       Email_simple_intf.Email_simple
-      with type Mimetype.t = Email_simple.Mimetype.t
-       and type Content.t = Email_simple.Content.t
+        with type Mimetype.t = Email_simple.Mimetype.t
+         and type Content.t = Email_simple.Content.t
 
     module type Mimetype =
       Email_simple_intf.Mimetype with type t = Email_simple.Mimetype.t
 
     module type Content =
       Email_simple_intf.Content
-      with module Mimetype := Email_simple.Mimetype
-       and type attachment_name := Email_simple.attachment_name
-       and type t = Email_simple.Content.t
+        with module Mimetype := Email_simple.Mimetype
+         and type attachment_name := Email_simple.attachment_name
+         and type t = Email_simple.Content.t
 
     module type Expert =
       Email_simple_intf.Expert
-      with module Mimetype := Email_simple.Mimetype
-       and module Content := Email_simple.Content
-       and type attachment_name := Email_simple.attachment_name
-       and type t := Email_simple.t
+        with module Mimetype := Email_simple.Mimetype
+         and module Content := Email_simple.Content
+         and type attachment_name := Email_simple.attachment_name
+         and type t := Email_simple.t
 
     module type Stable =
       Email_simple_intf.Stable
-      with type Mimetype.latest := Email_simple.Mimetype.t
-       and type Content.latest := Email_simple.Content.t
+        with type Mimetype.latest := Email_simple.Mimetype.t
+         and type Content.latest := Email_simple.Content.t
   end
 
   module String_monoid_intf = struct
@@ -61,7 +61,7 @@ module Private = struct
 
     module type String_monoid =
       String_monoid_intf.String_monoid
-      with type t = String_monoid.t
-       and type Underlying.t = String_monoid.Underlying.t
+        with type t = String_monoid.t
+         and type Underlying.t = String_monoid.Underlying.t
   end
 end

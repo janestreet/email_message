@@ -66,13 +66,13 @@ end = struct
   ;;
 
   let set
-        t
-        ?(boundary = t.boundary)
-        ?(prologue = t.prologue)
-        ?(epilogue = t.epilogue)
-        ?(parts = t.parts)
-        ?(container_headers = t.container_headers)
-        ()
+    t
+    ?(boundary = t.boundary)
+    ?(prologue = t.prologue)
+    ?(epilogue = t.epilogue)
+    ?(parts = t.parts)
+    ?(container_headers = t.container_headers)
+    ()
     =
     create ~boundary ?prologue ?epilogue ~container_headers parts
   ;;

@@ -50,18 +50,18 @@ module Expert = struct
   ;;
 
   let create_raw
-        ~from
-        ~to_
-        ?(cc = [])
-        ?reply_to
-        ~subject
-        ~id
-        ?in_reply_to
-        ~date
-        ?auto_generated
-        ?(extra_headers = [])
-        ?(attachments = [])
-        content
+    ~from
+    ~to_
+    ?(cc = [])
+    ?reply_to
+    ~subject
+    ~id
+    ?in_reply_to
+    ~date
+    ?auto_generated
+    ?(extra_headers = [])
+    ?(attachments = [])
+    content
     =
     let id, extra_headers =
       (* there seems to be some clients that set the [id] via extra_headers, so handle
@@ -88,16 +88,16 @@ module Expert = struct
       @ (if List.is_empty to_ then [] else [ "To", String.concat to_ ~sep:",\n " ])
       @ (if List.is_empty cc then [] else [ "Cc", String.concat cc ~sep:",\n " ])
       @ (match reply_to with
-        | None -> []
-        | Some reply_to -> [ "Reply-To", reply_to ])
+         | None -> []
+         | Some reply_to -> [ "Reply-To", reply_to ])
       @ [ "Subject", subject ]
       @ [ "Message-Id", id ]
       @ (match in_reply_to with
-        | None -> []
-        | Some in_reply_to -> [ "In-Reply-To", in_reply_to ])
+         | None -> []
+         | Some in_reply_to -> [ "In-Reply-To", in_reply_to ])
       @ (match auto_generated with
-        | None -> []
-        | Some () -> [ "Auto-Submitted", "auto-generated"; "Precedence", "bulk" ])
+         | None -> []
+         | Some () -> [ "Auto-Submitted", "auto-generated"; "Precedence", "bulk" ])
       @ [ "Date", date ]
     in
     match attachments with
@@ -109,17 +109,17 @@ module Expert = struct
         ~extra_headers:headers
         (set_header_at_bottom content ~name:"Content-Disposition" ~value:"inline"
          :: List.map attachments ~f:(fun (name, content) ->
-           let content_type =
-             last_header content "Content-Type"
-             |> Option.value ~default:"application/x-octet-stream"
-           in
-           set_header_at_bottom
-             content
-             ~name:"Content-Type"
-             ~value:(sprintf "%s; name=%s" content_type (Mimestring.quote name))
-           |> set_header_at_bottom
-                ~name:"Content-Disposition"
-                ~value:(sprintf "attachment; filename=%s" (Mimestring.quote name))))
+              let content_type =
+                last_header content "Content-Type"
+                |> Option.value ~default:"application/x-octet-stream"
+              in
+              set_header_at_bottom
+                content
+                ~name:"Content-Type"
+                ~value:(sprintf "%s; name=%s" content_type (Mimestring.quote name))
+              |> set_header_at_bottom
+                   ~name:"Content-Disposition"
+                   ~value:(sprintf "attachment; filename=%s" (Mimestring.quote name))))
   ;;
 end
 
@@ -178,10 +178,10 @@ module Content = struct
   let of_email = Fn.id
 
   let create_custom
-        ~content_type
-        ?(encoding = Mimetype.guess_encoding content_type)
-        ?(extra_headers = [])
-        content
+    ~content_type
+    ?(encoding = Mimetype.guess_encoding content_type)
+    ?(extra_headers = [])
+    content
     =
     Expert.content
       ~normalize_headers:`Whitespace
@@ -260,7 +260,7 @@ module Content = struct
          referenced in the actual content. *)
       (add_headers t [ "Content-Disposition", "inline" ]
        :: List.map resources ~f:(fun (name, content) ->
-         add_headers content [ "Content-Id", sprintf "<%s>" name ]))
+            add_headers content [ "Content-Id", sprintf "<%s>" name ]))
   ;;
 
   let parse_last_header t name =
@@ -295,7 +295,7 @@ module Content = struct
     match
       String.substr_index filename ~pattern:"'" ~pos:1
       |> Option.bind ~f:(fun pos ->
-        String.substr_index filename ~pattern:"'" ~pos:(pos + 1))
+           String.substr_index filename ~pattern:"'" ~pos:(pos + 1))
       |> Option.map ~f:(fun pos -> pos + 1)
     with
     | Some pos -> String.subo filename ~pos
@@ -329,7 +329,7 @@ module Content = struct
       List.filter
         all_parameters
         ~f:(fun (fragment_attribute, (_ : attachment_name option)) ->
-          String.Caseless.is_prefix fragment_attribute ~prefix:(attribute_name ^ "*"))
+        String.Caseless.is_prefix fragment_attribute ~prefix:(attribute_name ^ "*"))
       |> Nonempty_list.of_list_exn
     in
     match matching_attributes with
@@ -344,13 +344,13 @@ module Content = struct
       let matching_attributes =
         Nonempty_list.to_list matching_attributes
         |> List.map ~f:(fun (fragment_attribute, value) ->
-          (* The name of an attribute that is part of a continuation is either NAME*DIGIT
+             (* The name of an attribute that is part of a continuation is either NAME*DIGIT
              or NAME*DIGIT*. *)
-          match String.split fragment_attribute ~on:'*' with
-          | _ :: digit :: _ when String.for_all digit ~f:Char.is_digit ->
-            let digit = Int.of_string digit in
-            Ok (digit, value)
-          | _ -> Error "multipart-fragment-construction-failed")
+             match String.split fragment_attribute ~on:'*' with
+             | _ :: digit :: _ when String.for_all digit ~f:Char.is_digit ->
+               let digit = Int.of_string digit in
+               Ok (digit, value)
+             | _ -> Error "multipart-fragment-construction-failed")
         |> Result.all
       in
       (match matching_attributes with
@@ -359,12 +359,12 @@ module Content = struct
          List.sort all_parameters ~compare:(fun a b ->
            Comparable.lift Int.compare ~f:fst a b)
          |> List.map ~f:(fun (seq, name_fragment) ->
-           let name_fragment = unquote (Option.value name_fragment ~default:"") in
-           if seq = 0
-           then
-             (* Only attempt to strip the encoding from the zeroth fragment. *)
-             strip_character_set_and_language name_fragment
-           else name_fragment)
+              let name_fragment = unquote (Option.value name_fragment ~default:"") in
+              if seq = 0
+              then
+                (* Only attempt to strip the encoding from the zeroth fragment. *)
+                strip_character_set_and_language name_fragment
+              else name_fragment)
          |> String.concat ~sep:"")
   ;;
 
@@ -373,7 +373,7 @@ module Content = struct
       if String.Caseless.equal k attribute_name
       then Option.map ~f:unquote v
       else if (* RFC2231 support *)
-        String.Caseless.is_prefix k ~prefix:(attribute_name ^ "*")
+              String.Caseless.is_prefix k ~prefix:(attribute_name ^ "*")
       then Some (handle_value_continuation ~all_parameters:args ~attribute_name)
       else None)
   ;;
@@ -489,18 +489,18 @@ end
 type t = Email.t [@@deriving sexp_of]
 
 let create
-      ~from
-      ~to_
-      ?cc
-      ?reply_to
-      ~subject
-      ~id
-      ?in_reply_to
-      ~date_string
-      ?auto_generated
-      ?extra_headers
-      ?attachments
-      content
+  ~from
+  ~to_
+  ?cc
+  ?reply_to
+  ~subject
+  ~id
+  ?in_reply_to
+  ~date_string
+  ?auto_generated
+  ?extra_headers
+  ?attachments
+  content
   =
   Expert.create_raw
     ~from:(Email_address.to_string from)

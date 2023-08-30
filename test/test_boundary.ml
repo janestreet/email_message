@@ -5,7 +5,6 @@ open Email_message.Private
 open Expect_test_helpers_core
 open Boundary
 
-
 let boundary = of_string "BOUNDARY"
 
 let split str =
@@ -86,7 +85,6 @@ let%expect_test "split" =
 ;;
 
 let%expect_test "join" =
-
   (* Simple tests with no prologue or epilogue *)
   join (None, [ "" ], None);
   [%expect

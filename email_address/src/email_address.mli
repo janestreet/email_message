@@ -7,8 +7,8 @@ module Domain : sig
 
   include
     Comparable.S_plain
-    with type t := t
-     and type comparator_witness = String.Caseless.comparator_witness
+      with type t := t
+       and type comparator_witness = String.Caseless.comparator_witness
 
   include Hashable.S_plain with type t := t
 end
@@ -16,8 +16,6 @@ end
 type t [@@deriving sexp_of, compare, hash]
 
 val create : ?prefix:string -> ?domain:Domain.t -> string -> t
-
-
 val of_string : ?default_domain:string -> string -> t Or_error.t
 val of_string_exn : ?default_domain:string -> string -> t
 val list_of_string : ?default_domain:string -> string -> t list Or_error.t
@@ -73,8 +71,8 @@ module Stable : sig
 
     include
       Stable_comparable.With_stable_witness.V1
-      with type t := t
-      with type comparator_witness = comparator_witness
+        with type t := t
+        with type comparator_witness = comparator_witness
 
     val of_string_exn : ?default_domain:string -> string -> t
     val to_string : t -> string
@@ -83,7 +81,7 @@ module Stable : sig
   module Domain : sig
     module V1 :
       Stable_comparable.With_stable_witness.V1
-      with type t := Domain.t
-      with type comparator_witness = Domain.comparator_witness
+        with type t := Domain.t
+        with type comparator_witness = Domain.comparator_witness
   end
 end

@@ -58,12 +58,7 @@ let parser_ : string Angstrom.t =
        | Error (`Msg msg) -> fail msg)
   in
   match charset with
-  | `Ascii
-  | `Utf8
-  | `Latin1
-  | `Latin2
-  | `GB2312
-  | `Windows1252  -> return data
+  | `Ascii | `Utf8 | `Latin1 | `Latin2 | `GB2312 | `Windows1252 -> return data
 ;;
 
 let parser_many : string Angstrom.t =
@@ -85,13 +80,13 @@ let parser_many : string Angstrom.t =
                   | '=' -> false
                   | c -> not (Char.is_whitespace c))
               ; string "="
-              (* Collapse Line breaks as per
+                (* Collapse Line breaks as per
                  RFC822 - 3.1.1 Unfolding is accomplished by regarding CRLF immediately
                  followed by an LWSP-char as equivalent to the LWSP-char.
                  RFC822 - 3.1.3 Rules of (un)folding apply to these (unstructured) fields *)
               ; (let%bind (_ : string) = choice [ string "\r\n"; string "\n" ] in
                  ws)
-              (* The RFC is ambiguous on what should happen if there is a lone CRLF, so we
+                (* The RFC is ambiguous on what should happen if there is a lone CRLF, so we
                  ignore those, and treat these as regular white space. The RFC is also
                  ambiguous on how to treat multiple consecutive whitespaces, so we do the
                  conservative thing and leave them exactly as is. *)

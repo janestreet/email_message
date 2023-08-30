@@ -45,7 +45,7 @@ module type Content = sig
     -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> string
     -> t
-  [@@deprecated "[since 2019-08] Renamed to [create_custom]"]
+    [@@deprecated "[since 2019-08] Renamed to [create_custom]"]
 
   val html_utf8
     :  ?encoding:Octet_stream.Encoding.known (** default: `Quoted_printable *)
@@ -58,7 +58,7 @@ module type Content = sig
     -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> string
     -> t
-  [@@deprecated "[since 2019-08] Please specify the charset, e.g. [html_utf8]"]
+    [@@deprecated "[since 2019-08] Please specify the charset, e.g. [html_utf8]"]
 
   val text_utf8
     :  ?encoding:Octet_stream.Encoding.known (** default: `Quoted_printable *)
@@ -71,7 +71,7 @@ module type Content = sig
     -> ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> string
     -> t
-  [@@deprecated "[since 2019-08] Please specify the charset, e.g. [text_utf8]"]
+    [@@deprecated "[since 2019-08] Please specify the charset, e.g. [text_utf8]"]
 
   (** Plain text e-mail that also includes an html version so it's displayed
       monospace in gmail.
@@ -90,8 +90,8 @@ module type Content = sig
     -> ?force_no_line_wrap:bool (** default: true *)
     -> string
     -> t
-  [@@deprecated
-    "[since 2019-08] Please specify the charset, e.g. [text_monospace_utf8]"]
+    [@@deprecated
+      "[since 2019-08] Please specify the charset, e.g. [text_monospace_utf8]"]
 
   (** Combine 2 or more contents as alternative versions.
       List should be sorted from worst to best. *)
@@ -113,7 +113,6 @@ module type Content = sig
 
   (** The Content-ID of the content *)
   val related_part_cid : t -> attachment_name option
-
 
   val all_related_parts : t -> (attachment_name * t) list
   val find_related : t -> attachment_name -> t option
@@ -270,10 +269,10 @@ module type Email_simple = sig
 
   module Expert :
     Expert
-    with module Mimetype := Mimetype
-     and module Content := Content
-     and type t := t
-     and type attachment_name := attachment_name
+      with module Mimetype := Mimetype
+       and module Content := Content
+       and type t := t
+       and type attachment_name := attachment_name
 
   module Stable :
     Stable with type Content.latest := Content.t and type Mimetype.latest := Mimetype.t

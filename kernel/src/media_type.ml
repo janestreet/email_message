@@ -44,7 +44,7 @@ let is ?mime_type ?mime_subtype t =
   Option.value_map mime_type ~default:true ~f:(fun mime_type ->
     T.equal t.mime_type (T.of_string mime_type))
   && Option.value_map mime_subtype ~default:true ~f:(fun mime_subtype ->
-    T.equal t.mime_subtype (T.of_string mime_subtype))
+       T.equal t.mime_subtype (T.of_string mime_subtype))
 ;;
 
 (* Some convenience functions for working with mime types *)

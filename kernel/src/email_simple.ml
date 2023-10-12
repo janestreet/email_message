@@ -532,24 +532,45 @@ let subject =
 
 let id = decode_last_header "Message-Id" ~f:Fn.id
 
+let rec extract_body_ext'
+  ~(accept : (Mimetype.t * (string * string option) list) option -> 'format option)
+  email
+  : ('format * string) Sequence.t
+  =
+  match accept (Content.parse_last_header email "Content-Type") with
+  | Some format ->
+    (match
+       Octet_stream.of_bigstring_shared
+         ~encoding:(Octet_stream.Encoding.of_headers_or_default (Email.headers email))
+         (Email.raw_content email |> Email_raw_content.to_bigstring_shared)
+       |> Octet_stream.decode
+     with
+     | Some body -> Sequence.singleton (format, Bigstring_shared.to_string body)
+     | None -> Sequence.empty)
+  | None ->
+    (match Email_content.parse email with
+     | Ok (Multipart parts) ->
+       (* Recursively find the acceptable parts *)
+       Sequence.of_list parts.parts |> Sequence.concat_map ~f:(extract_body_ext' ~accept)
+     | Error _ | Ok (Message _) | Ok (Data _) ->
+       (* We already checked the content type above so no need to dig further here. *)
+       Sequence.empty)
+;;
+
+let extract_body_ext ~accept ?order t =
+  let parts = extract_body_ext' ~accept t in
+  match order with
+  | None -> Sequence.hd parts
+  | Some order -> Sequence.min_elt parts ~compare:(Comparable.lift order ~f:fst)
+;;
+
 let extract_body ?(content_type = Mimetype.text) email =
-  let rec loop email =
-    match Email_content.parse email with
-    | Error _ -> None
-    | Ok (Message _) -> None
-    | Ok (Multipart parts) ->
-      (* Recursively find the first valid body matching the requested content_type *)
-      List.find_map parts.parts ~f:loop
-    | Ok (Data stream) ->
-      let content_type' = Content.content_type (Content.of_email email) in
-      if String.( = ) content_type' content_type
-      then (
-        match Octet_stream.decode stream with
-        | Some decoded -> Some (Bigstring_shared.to_string decoded)
-        | None -> None)
-      else None
-  in
-  loop email
+  extract_body_ext
+    ~accept:(function
+      | None -> None
+      | Some (type_, _) -> Option.some_if (String.Caseless.equal type_ content_type) ())
+    email
+  |> Option.map ~f:snd
 ;;
 
 let all_related_parts = Content.all_related_parts

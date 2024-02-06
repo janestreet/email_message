@@ -137,7 +137,11 @@ val map'
 
 module Stable : sig
   module Name : sig
-    module V1 : Stable_without_comparator with type t = Name.t
+    module V1 : sig
+      type t = Name.t [@@deriving equal]
+
+      include Stable_without_comparator with type t := t
+    end
   end
 
   module Value : sig

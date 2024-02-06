@@ -1,4 +1,7 @@
-(library (name email_message) (public_name email_message)
+(library
+ (name email_message)
+ (public_name email_message)
  (libraries async base64 core_unix.bigstring_unix core cryptokit
-  email_address re2 core_unix.sys_unix core_unix.uuid email_message_kernel)
- (preprocess (pps ppx_jane)))
+   email_address re2 core_unix.sys_unix core_unix.uuid email_message_kernel)
+ (preprocess
+  (pps ppx_jane)))

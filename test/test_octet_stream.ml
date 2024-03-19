@@ -38,7 +38,8 @@ let%expect_test "base64" =
     YXQuIER1aXMgYXV0ZSBpcnVyZSBkb2xvciBpbiByZXByZWhlbmRlcml0IGluIHZvbHVwdGF0ZSB2
     ZWxpdCBlc3NlIGNpbGx1bSBkb2xvcmUgZXUgZnVnaWF0IG51bGxhIHBhcmlhdHVyLiBFeGNlcHRl
     dXIgc2ludCBvY2NhZWNhdCBjdXBpZGF0YXQgbm9uIHByb2lkZW50LCBzdW50IGluIGN1bHBhIHF1
-    aSBvZmZpY2lhIGRlc2VydW50IG1vbGxpdCBhbmltIGlkIGVzdCBsYWJvcnVtLg== |}];
+    aSBvZmZpY2lhIGRlc2VydW50IG1vbGxpdCBhbmltIGlkIGVzdCBsYWJvcnVtLg==
+    |}];
   return ()
 ;;
 
@@ -49,8 +50,9 @@ let%expect_test "quoted printable" =
      branch of philosophy.";
   [%expect
     {|
-      If you believe that truth=3Dbeauty, then surely mathematics is the most =
-      beautiful branch of philosophy. |}];
+    If you believe that truth=3Dbeauty, then surely mathematics is the most =
+    beautiful branch of philosophy.
+    |}];
   test "\000\001\002a\003    \n";
   [%expect {| =00=01=02a=03   =20 |}];
   test "\000\001\002a\003    \n";
@@ -62,19 +64,22 @@ let%expect_test "quoted printable" =
   test "This text is fairly long and should be wrapped by a conforming implementation.";
   [%expect
     {|
-      This text is fairly long and should be wrapped by a conforming =
-      implementation. |}];
+    This text is fairly long and should be wrapped by a conforming =
+    implementation.
+    |}];
   test
     "123456789A123456789B123456789C123456789D123456789E123456789F123456789G123456789H123456789I";
   [%expect
     {|
-      123456789A123456789B123456789C123456789D123456789E123456789F123456789G12345=
-      6789H123456789I |}];
+    123456789A123456789B123456789C123456789D123456789E123456789F123456789G12345=
+    6789H123456789I
+    |}];
   test
     "123456789A123456789B123456789C123456789D123456789E123456789F123456789G=23456789H123456789I";
   [%expect
     {|
-      123456789A123456789B123456789C123456789D123456789E123456789F123456789G=3D23=
-      456789H123456789I |}];
+    123456789A123456789B123456789C123456789D123456789E123456789F123456789G=3D23=
+    456789H123456789I
+    |}];
   return ()
 ;;

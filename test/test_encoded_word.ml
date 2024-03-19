@@ -4,42 +4,24 @@ open Email_message.Private.Encoded_word
 let%expect_test _ =
   let test str = printf "%S\n" (decode str |> Or_error.ok_exn) in
   test "hello = there?!?";
-  [%expect {|
-    "hello = there?!?"
-    |}];
+  [%expect {| "hello = there?!?" |}];
   test "hello\n there\n\tagain\n   my\nfriend";
-  [%expect {|
-    "hello there\tagain   my\nfriend"
-    |}];
+  [%expect {| "hello there\tagain   my\nfriend" |}];
   (* Some test vectors from: https://tools.ietf.org/html/rfc2047 *)
   test "=?ISO-8859-1?Q?a?=";
-  [%expect {|
-    "a"
-    |}];
+  [%expect {| "a" |}];
   test "=?ISO-8859-1?Q?a?= b";
-  [%expect {|
-    "a b"
-    |}];
+  [%expect {| "a b" |}];
   test "=?ISO-8859-1?Q?a?= =?ISO-8859-1?Q?b?=";
-  [%expect {|
-    "ab"
-    |}];
+  [%expect {| "ab" |}];
   test "=?ISO-8859-1?Q?a?=  =?ISO-8859-1?Q?b?=";
-  [%expect {|
-    "ab"
-    |}];
+  [%expect {| "ab" |}];
   test "=?ISO-8859-1?Q?a?=\n       =?ISO-8859-1?Q?b?=";
-  [%expect {|
-    "ab"
-    |}];
+  [%expect {| "ab" |}];
   test "=?ISO-8859-1?Q?a_b?=";
-  [%expect {|
-    "a b"
-    |}];
+  [%expect {| "a b" |}];
   test "=?ISO-8859-1?Q?a?=  =?ISO-8859-1?Q?_b?=";
-  [%expect {|
-    "a b"
-    |}];
+  [%expect {| "a b" |}];
   test " =?US-ASCII?Q?Keith_Moore?= <moore@cs.utk.edu>";
   [%expect {| " Keith Moore <moore@cs.utk.edu>" |}];
   test " =?ISO-8859-1?Q?Keld_J=F8rn_Simonsen?= <keld@dkuug.dk>";

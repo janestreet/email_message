@@ -15,7 +15,8 @@ let%expect_test "RFC2045.Token" =
     ((abcdefghijkl abcdefghijkl)
      (abc=dka      "\"abc=dka\"")
      (""           "\"\"")
-     ("\""         "\"\\\"\"")) |}];
+     ("\""         "\"\\\"\""))
+    |}];
   let is_valid strs =
     let results = List.map strs ~f:(fun str -> str, `Is_valid (is_valid str)) in
     print_s [%message "" ~_:(results : (string * [ `Is_valid of bool ]) list)]
@@ -53,6 +54,7 @@ let%expect_test "RFC2045.Token" =
      (";"          (Is_valid false))
      ("\000"       (Is_valid false))
      ("\127"       (Is_valid false))
-     ("\128"       (Is_valid false))) |}];
+     ("\128"       (Is_valid false)))
+    |}];
   return ()
 ;;

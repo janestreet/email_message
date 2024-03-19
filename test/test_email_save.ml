@@ -23,13 +23,15 @@ let%expect_test "save" =
     C: D
 
     Line 1
-    Line 2 |}];
+    Line 2
+    |}];
   let%bind () = save ~eol_except_raw_content:`CRLF email_str in
   [%expect {|
     A: B\r
     C: D\r
     \r
     Line 1
-    Line 2 |}];
+    Line 2
+    |}];
   Deferred.unit
 ;;

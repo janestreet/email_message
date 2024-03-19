@@ -46,6 +46,7 @@ let%expect_test _ =
         ( "R0lGODlhGAGgAPEAAP/////ZRaCgoAAAACH+PUNvcHlyaWdodCAoQykgMTk5\
          \nNSBJRVRGLiBVbmF1dGhvcml6ZWQgZHVwbGljYXRpb24gcHJvaGliaXRlZC4A\
          \netc...\
-         \n"))))) |}];
+         \n")))))
+    |}];
   return ()
 ;;

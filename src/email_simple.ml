@@ -75,7 +75,8 @@ module Expert = struct
     [%expect
       {|
       ((X-JS-Sending-Host {HOSTNAME}) (X-JS-Sending-User {USERNAME})
-       (X-JS-Sending-Program {EXECUTABLE_NAME}))|}]
+       (X-JS-Sending-Program {EXECUTABLE_NAME}))
+      |}]
   ;;
 
   let create_raw

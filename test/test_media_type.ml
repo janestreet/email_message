@@ -20,6 +20,7 @@ let%expect_test "[Media_type.last]" =
     {|
     ((mime_type    multipart)
      (mime_subtype mixed)
-     (params ((boundary BOUNDARY)))) |}];
+     (params ((boundary BOUNDARY))))
+    |}];
   return ()
 ;;

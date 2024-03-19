@@ -145,11 +145,11 @@ module Generator = struct
     Sequence.take default 5 |> Sequence.iter ~f:print_endline;
     [%expect
       {|
-       --==::BOUNDARY::000000::==--
-       --==::BOUNDARY::000001::==--
-       --==::BOUNDARY::000002::==--
-       --==::BOUNDARY::000003::==--
-       --==::BOUNDARY::000004::==--
+      --==::BOUNDARY::000000::==--
+      --==::BOUNDARY::000001::==--
+      --==::BOUNDARY::000002::==--
+      --==::BOUNDARY::000003::==--
+      --==::BOUNDARY::000004::==--
       |}]
   ;;
 

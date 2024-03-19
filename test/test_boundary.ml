@@ -42,134 +42,138 @@ let%expect_test "split" =
   (* Prologue and epilogue *)
   split "A\n--BOUNDARY\nP\n--BOUNDARY--";
   [%expect {|
-      ((prologue (A))
-       (parts    (P))
-       (epilogue ())) |}];
+    ((prologue (A))
+     (parts    (P))
+     (epilogue ()))
+    |}];
   split "--BOUNDARY\nP\n--BOUNDARY--\nB";
   [%expect {|
-      ((prologue ())
-       (parts    (P))
-       (epilogue ("\nB"))) |}];
+    ((prologue ())
+     (parts    (P))
+     (epilogue ("\nB")))
+    |}];
   split "A\n--BOUNDARY\nP\n--BOUNDARY--\nB";
   [%expect {|
-      ((prologue (A))
-       (parts    (P))
-       (epilogue ("\nB"))) |}];
+    ((prologue (A))
+     (parts    (P))
+     (epilogue ("\nB")))
+    |}];
   split "A\r\n--BOUNDARY\r\nP\r\n--BOUNDARY--\r\nB";
   [%expect {|
-      ((prologue (A))
-       (parts    (P))
-       (epilogue ("\r\nB"))) |}];
+    ((prologue (A))
+     (parts    (P))
+     (epilogue ("\r\nB")))
+    |}];
   (* Preserve extra whitespace *)
   split "\nA\n\n--BOUNDARY\n\nP\n\n--BOUNDARY--\nB\n";
   [%expect
     {|
-      ((prologue ("\nA\n"))
-       (parts    ("\nP\n"))
-       (epilogue ("\nB\n"))) |}];
+    ((prologue ("\nA\n"))
+     (parts    ("\nP\n"))
+     (epilogue ("\nB\n")))
+    |}];
   (* Whitespace padding on boundary line *)
   split "--BOUNDARY \nB\n--BOUNDARY--";
   [%expect
     {|
-      ((prologue ("--BOUNDARY \nB"))
-       (parts    ())
-       (epilogue ())) |}];
+    ((prologue ("--BOUNDARY \nB"))
+     (parts    ())
+     (epilogue ()))
+    |}];
   (* Content with something that looks like a boundary *)
   split "--BOUNDARY\nnot a --BOUNDARY\nnot a =\n--BOUNDARY either\n--BOUNDARY--";
   [%expect
     {|
-      ((prologue ())
-       (parts ("not a --BOUNDARY\nnot a =\n--BOUNDARY either"))
-       (epilogue ())) |}];
+    ((prologue ())
+     (parts ("not a --BOUNDARY\nnot a =\n--BOUNDARY either"))
+     (epilogue ()))
+    |}];
   return ()
 ;;
 
 let%expect_test "join" =
   (* Simple tests with no prologue or epilogue *)
   join (None, [ "" ], None);
-  [%expect
-    {|
-        ######
-        --BOUNDARY
+  [%expect {|
+    ######
+    --BOUNDARY
 
-        --BOUNDARY--
-        ######
-        |}];
+    --BOUNDARY--
+    ######
+    |}];
   let%bind () =
     join (None, [ "P" ], None);
     [%expect
       {|
-        ######
-        --BOUNDARY
-        P
-        --BOUNDARY--
-        ######
-        |}];
+      ######
+      --BOUNDARY
+      P
+      --BOUNDARY--
+      ######
+      |}];
     return ()
   in
   let%bind () =
     join (None, [ "P"; "Q" ], None);
     [%expect
       {|
-        ######
-        --BOUNDARY
-        P
-        --BOUNDARY
-        Q
-        --BOUNDARY--
-        ######
-        |}];
+      ######
+      --BOUNDARY
+      P
+      --BOUNDARY
+      Q
+      --BOUNDARY--
+      ######
+      |}];
     return ()
   in
   (* Prologue and epilogue *)
   join (Some "A", [ "P" ], None);
-  [%expect
-    {|
-        ######
-        A
-        --BOUNDARY
-        P
-        --BOUNDARY--
-        ######
-        |}];
+  [%expect {|
+    ######
+    A
+    --BOUNDARY
+    P
+    --BOUNDARY--
+    ######
+    |}];
   join (None, [ "P" ], Some "\nB");
-  [%expect
-    {|
-        ######
-        --BOUNDARY
-        P
-        --BOUNDARY--
-        B
-        ######
-        |}];
+  [%expect {|
+    ######
+    --BOUNDARY
+    P
+    --BOUNDARY--
+    B
+    ######
+    |}];
   join (Some "A", [ "P" ], Some "\nB");
   [%expect
     {|
-        ######
-        A
-        --BOUNDARY
-        P
-        --BOUNDARY--
-        B
-        ######
-        |}];
+    ######
+    A
+    --BOUNDARY
+    P
+    --BOUNDARY--
+    B
+    ######
+    |}];
   (* Preserve extra whitespace *)
   join (Some "\nA\n", [ "\nP\n" ], Some "\nB\n");
   [%expect
     {|
-        ######
+    ######
 
-        A
+    A
 
-        --BOUNDARY
+    --BOUNDARY
 
-        P
+    P
 
-        --BOUNDARY--
-        B
+    --BOUNDARY--
+    B
 
-        ######
-        |}];
+    ######
+    |}];
   return ()
 ;;
 
@@ -180,9 +184,7 @@ let%test_module "non-compliant" =
     let%expect_test "non-compliant [split]" =
       (* Parsing of weird and malformed data into a sensible form *)
       split "--BOUNDARY\n--BOUNDARY--";
-      [%expect {|
-        ((prologue ()) (parts ("")) (epilogue ()))
-        |}];
+      [%expect {| ((prologue ()) (parts ("")) (epilogue ())) |}];
       split "";
       [%expect
         {|
@@ -199,17 +201,11 @@ let%test_module "non-compliant" =
         |}];
       (* Missing boundary markers *)
       split "A\n--BOUNDARY--\nB";
-      [%expect {|
-        ((prologue (A)) (parts ()) (epilogue ("\nB")))
-        |}];
+      [%expect {| ((prologue (A)) (parts ()) (epilogue ("\nB"))) |}];
       split "--BOUNDARY--\nB";
-      [%expect {|
-        ((prologue ("")) (parts ()) (epilogue ("\nB")))
-        |}];
+      [%expect {| ((prologue ("")) (parts ()) (epilogue ("\nB"))) |}];
       split "--BOUNDARY--\n";
-      [%expect {|
-        ((prologue ("")) (parts ()) (epilogue ("\n")))
-        |}];
+      [%expect {| ((prologue ("")) (parts ()) (epilogue ("\n"))) |}];
       split "--BOUNDARY--";
       [%expect
         {|
@@ -234,27 +230,27 @@ let%test_module "non-compliant" =
         A
         B
         ######
-      |}];
+        |}];
       join (None, [], Some "\nB");
       [%expect {|
         ######
 
         B
         ######
-      |}];
+        |}];
       join (None, [], None);
       [%expect {|
         ######
 
 
         ######
-      |}];
+        |}];
       join (Some "A", [], None);
       [%expect {|
         ######
         A
         ######
-      |}];
+        |}];
       return ()
     ;;
   end)

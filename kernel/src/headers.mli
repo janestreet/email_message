@@ -84,6 +84,7 @@ val append : t -> t -> t
 val of_list : normalize:Normalize.encode -> (Name.t * Value.t) list -> t
 val to_list : ?normalize:Normalize.decode -> t -> (Name.t * Value.t) list
 val last : ?normalize:Normalize.decode -> t -> Name.t -> Value.t option
+val any : ?normalize:Normalize.decode -> t -> Name.t -> Value.t option
 val find_all : ?normalize:Normalize.decode -> t -> Name.t -> Value.t list
 val names : t -> Name.t list
 val add : ?normalize:Normalize.encode -> t -> name:Name.t -> value:Value.t -> t

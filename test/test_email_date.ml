@@ -77,7 +77,8 @@ let%expect_test "of_rfc822_date obsolete timezones" =
     2010-12-03T23:02:30.000000Z
     2010-12-03T22:02:30.000000Z
     2010-12-04T00:02:30.000000Z
-    2010-12-03T23:02:30.000000Z |}]
+    2010-12-03T23:02:30.000000Z
+    |}]
 ;;
 
 (* As per https://tools.ietf.org/html/rfc5322#section-4.3 all these military timezones are
@@ -103,7 +104,8 @@ let%expect_test "of_rfc822_date fail semantically incorrect date" =
     {|
     (raised (
       Invalid_argument
-      "Date.create_exn ~y:2010 ~m:Dec ~d:39 error: 31 day month violation")) |}]
+      "Date.create_exn ~y:2010 ~m:Dec ~d:39 error: 31 day month violation"))
+    |}]
 ;;
 
 let%expect_test "of_rfc822_date fail bad format" =

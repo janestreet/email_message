@@ -129,6 +129,11 @@ let last ?normalize t name =
   |> Option.map ~f:(Value.of_string ?normalize)
 ;;
 
+let any ?normalize t name =
+  let name = Name.of_string name in
+  List.Assoc.find t name ~equal:Name.equal |> Option.map ~f:(Value.of_string ?normalize)
+;;
+
 let find_all ?normalize t name =
   let name = Name.of_string name in
   List.filter_map t ~f:(fun (name', value) ->

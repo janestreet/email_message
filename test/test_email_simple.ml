@@ -37,7 +37,8 @@ let%expect_test "[Expert.create_raw] Message-Id handling" =
   message_id_headers ~message_id_in_extra_headers:(Some "ID1") ~id_supplied:(Some "ID2");
   [%expect {|
     ID1
-    ID2 |}];
+    ID2
+    |}];
   return ()
 ;;
 
@@ -59,7 +60,8 @@ let%expect_test "[Expert.content]" =
     header1:value1
     header2:value2
 
-    x |}];
+    x
+    |}];
   content
     ~normalize_headers:`Whitespace
     ~encoding:`Quoted_printable
@@ -68,7 +70,8 @@ let%expect_test "[Expert.content]" =
   [%expect {|
     Content-Transfer-Encoding: quoted-printable
 
-    x |}];
+    x
+    |}];
   return ()
 ;;
 
@@ -127,30 +130,31 @@ let%expect_test "[all_attachments] and [map_attachments]" =
     ];
   [%expect
     {|
-        ((attachments ((((filename attachment.txt) (path (1))) foo)))
-         (stripped
-          ((headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1")))
-           (raw_content
-            ( "--BOUNDARY1\
-             \nContent-Type: multipart/alternative; boundary=BOUNDARY2\
-             \n\
-             \n--BOUNDARY2\
-             \nContent-Type: text/plain; charset=UTF-8\
-             \n\
-             \nSimple body\
-             \n\
-             \n--BOUNDARY2\
-             \nContent-Type: text/html; charset=UTF-8\
-             \n\
-             \n<div>Simple body</div>\
-             \n\
-             \n--BOUNDARY2--\
-             \n--BOUNDARY1\
-             \nContent-Transfer-Encoding: quoted-printable\
-             \nContent-Type: text/plain; charset=\"UTF-8\"\
-             \n\
-             \n<REPLACED>\
-             \n--BOUNDARY1--"))))) |}];
+    ((attachments ((((filename attachment.txt) (path (1))) foo)))
+     (stripped
+      ((headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1")))
+       (raw_content
+        ( "--BOUNDARY1\
+         \nContent-Type: multipart/alternative; boundary=BOUNDARY2\
+         \n\
+         \n--BOUNDARY2\
+         \nContent-Type: text/plain; charset=UTF-8\
+         \n\
+         \nSimple body\
+         \n\
+         \n--BOUNDARY2\
+         \nContent-Type: text/html; charset=UTF-8\
+         \n\
+         \n<div>Simple body</div>\
+         \n\
+         \n--BOUNDARY2--\
+         \n--BOUNDARY1\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \nContent-Type: text/plain; charset=\"UTF-8\"\
+         \n\
+         \n<REPLACED>\
+         \n--BOUNDARY1--")))))
+    |}];
   (* - parse into "multipart/digest" parts
      - the "message/rfc822" content type is optional *)
   parse_attachments'
@@ -192,43 +196,44 @@ let%expect_test "[all_attachments] and [map_attachments]" =
     ];
   [%expect
     {|
-        ((attachments ((((filename attachment.txt) (path (0 0 1))) foo)))
-         (stripped
-          ((headers
-            ((Content-Type
-              " multipart/digest; boundary=\"--==::BOUNDARY::000000::==--\"")))
-           (raw_content
-            ( "----==::BOUNDARY::000000::==--\
-             \n\
-             \nContent-Type: multipart/mixed; boundary=BOUNDARY1\
-             \n\
-             \n--BOUNDARY1\
-             \nContent-Type: multipart/alternative; boundary=BOUNDARY2\
-             \n\
-             \n--BOUNDARY2\
-             \nContent-Type: text/plain; charset=UTF-8\
-             \n\
-             \nSimple body\
-             \n\
-             \n--BOUNDARY2\
-             \nContent-Type: text/html; charset=UTF-8\
-             \n\
-             \n<div>Simple body</div>\
-             \n\
-             \n--BOUNDARY2--\
-             \n--BOUNDARY1\
-             \nContent-Transfer-Encoding: quoted-printable\
-             \nContent-Type: text/plain; charset=\"UTF-8\"\
-             \n\
-             \n<REPLACED>\
-             \n--BOUNDARY1--\
-             \n----==::BOUNDARY::000000::==--\
-             \nContent-Type:message/rfc822\
-             \n\
-             \nSubject: No content-Type in the message headers\
-             \n\
-             \n\
-             \n----==::BOUNDARY::000000::==----"))))) |}];
+    ((attachments ((((filename attachment.txt) (path (0 0 1))) foo)))
+     (stripped
+      ((headers
+        ((Content-Type
+          " multipart/digest; boundary=\"--==::BOUNDARY::000000::==--\"")))
+       (raw_content
+        ( "----==::BOUNDARY::000000::==--\
+         \n\
+         \nContent-Type: multipart/mixed; boundary=BOUNDARY1\
+         \n\
+         \n--BOUNDARY1\
+         \nContent-Type: multipart/alternative; boundary=BOUNDARY2\
+         \n\
+         \n--BOUNDARY2\
+         \nContent-Type: text/plain; charset=UTF-8\
+         \n\
+         \nSimple body\
+         \n\
+         \n--BOUNDARY2\
+         \nContent-Type: text/html; charset=UTF-8\
+         \n\
+         \n<div>Simple body</div>\
+         \n\
+         \n--BOUNDARY2--\
+         \n--BOUNDARY1\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \nContent-Type: text/plain; charset=\"UTF-8\"\
+         \n\
+         \n<REPLACED>\
+         \n--BOUNDARY1--\
+         \n----==::BOUNDARY::000000::==--\
+         \nContent-Type:message/rfc822\
+         \n\
+         \nSubject: No content-Type in the message headers\
+         \n\
+         \n\
+         \n----==::BOUNDARY::000000::==----")))))
+    |}];
   (* Look into message/rfc822 for attachments *)
   let nested_message_rfc822_email =
     [ "Content-Type: multipart/mixed; boundary=\"BOUNDARY1\""
@@ -313,7 +318,8 @@ let%expect_test "[all_attachments] and [map_attachments]" =
          \nContent-Type: text/plain; charset=\"UTF-8\"\
          \n\
          \n<REPLACED>\
-         \n--BOUNDARY1--"))))) |}];
+         \n--BOUNDARY1--")))))
+    |}];
   (* If we don't strip the message/rfc822 attachment, then we can strip only the nested
      attachments. *)
   parse_attachments'
@@ -368,7 +374,8 @@ let%expect_test "[all_attachments] and [map_attachments]" =
          \n<REPLACED>\
          \n--BOUNDARY3--\
          \n\
-         \n--BOUNDARY1--"))))) |}];
+         \n--BOUNDARY1--")))))
+    |}];
   return ()
 ;;
 
@@ -427,7 +434,8 @@ let%expect_test "long attachment name" =
          \nContent-Type: text/plain; charset=\"UTF-8\"\
          \n\
          \n<REPLACED>\
-         \n--BOUNDARY1--"))))) |}];
+         \n--BOUNDARY1--")))))
+    |}];
   return ()
 ;;
 
@@ -507,54 +515,55 @@ let%expect_test "RFC2231 Support - split attachment name" =
     rfc2231_email_with_split_attachment_name;
   [%expect
     {|
- ((attachments
-   ((((filename "This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20isn't it!")
-      (path (1)))
-     "")
-    (((filename This%20is%20%2A%2A%2Afun%2A%2A%2A) (path (2))) "")
-    (((filename very-long-name) (path (3))) "")
-    (((filename very-backwards-name) (path (4))) "")
-    (((filename file-with-charset) (path (5))) "")
-    (((filename "Too many parts!") (path (6))) "")))
-  (stripped
-   ((headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1")))
-    (raw_content
-     ( "--BOUNDARY1\
-      \nContent-Type: text/html; charset=utf-8\
-      \nContent-Transfer-Encoding: quoted-printable\
-      \n\
-      \n<div>Simple Body</div>\
-      \n\
-      \n--BOUNDARY1\
-      \nContent-Transfer-Encoding: quoted-printable\
-      \nContent-Type: text/plain; charset=\"UTF-8\"\
-      \n\
-      \n<REPLACED>\
-      \n--BOUNDARY1\
-      \nContent-Transfer-Encoding: quoted-printable\
-      \nContent-Type: text/plain; charset=\"UTF-8\"\
-      \n\
-      \n<REPLACED>\
-      \n--BOUNDARY1\
-      \nContent-Transfer-Encoding: quoted-printable\
-      \nContent-Type: text/plain; charset=\"UTF-8\"\
-      \n\
-      \n<REPLACED>\
-      \n--BOUNDARY1\
-      \nContent-Transfer-Encoding: quoted-printable\
-      \nContent-Type: text/plain; charset=\"UTF-8\"\
-      \n\
-      \n<REPLACED>\
-      \n--BOUNDARY1\
-      \nContent-Transfer-Encoding: quoted-printable\
-      \nContent-Type: text/plain; charset=\"UTF-8\"\
-      \n\
-      \n<REPLACED>\
-      \n--BOUNDARY1\
-      \nContent-Transfer-Encoding: quoted-printable\
-      \nContent-Type: text/plain; charset=\"UTF-8\"\
-      \n\
-      \n<REPLACED>\
-      \n--BOUNDARY1--"))))) |}];
+    ((attachments
+      ((((filename "This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20isn't it!")
+         (path (1)))
+        "")
+       (((filename This%20is%20%2A%2A%2Afun%2A%2A%2A) (path (2))) "")
+       (((filename very-long-name) (path (3))) "")
+       (((filename very-backwards-name) (path (4))) "")
+       (((filename file-with-charset) (path (5))) "")
+       (((filename "Too many parts!") (path (6))) "")))
+     (stripped
+      ((headers ((Content-Type " multipart/mixed; boundary=BOUNDARY1")))
+       (raw_content
+        ( "--BOUNDARY1\
+         \nContent-Type: text/html; charset=utf-8\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \n\
+         \n<div>Simple Body</div>\
+         \n\
+         \n--BOUNDARY1\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \nContent-Type: text/plain; charset=\"UTF-8\"\
+         \n\
+         \n<REPLACED>\
+         \n--BOUNDARY1\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \nContent-Type: text/plain; charset=\"UTF-8\"\
+         \n\
+         \n<REPLACED>\
+         \n--BOUNDARY1\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \nContent-Type: text/plain; charset=\"UTF-8\"\
+         \n\
+         \n<REPLACED>\
+         \n--BOUNDARY1\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \nContent-Type: text/plain; charset=\"UTF-8\"\
+         \n\
+         \n<REPLACED>\
+         \n--BOUNDARY1\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \nContent-Type: text/plain; charset=\"UTF-8\"\
+         \n\
+         \n<REPLACED>\
+         \n--BOUNDARY1\
+         \nContent-Transfer-Encoding: quoted-printable\
+         \nContent-Type: text/plain; charset=\"UTF-8\"\
+         \n\
+         \n<REPLACED>\
+         \n--BOUNDARY1--")))))
+    |}];
   return ()
 ;;

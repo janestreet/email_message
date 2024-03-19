@@ -149,18 +149,22 @@ let%expect_test _ =
     test t
   in
   test {|text/plain|};
-  [%expect {|
+  [%expect
+    {|
     ((mime_type text) (mime_subtype plain) (params ()))
-    text/plain |}];
+    text/plain
+    |}];
   test {|test/plain; charset="us-ascii"|};
   [%expect
     {|
     ((mime_type test) (mime_subtype plain) (params ((charset us-ascii))))
-    test/plain; charset=us-ascii |}];
+    test/plain; charset=us-ascii
+    |}];
   test {|multipart/related;
                 boundary="--::FOO"|};
   [%expect
     {|
     ((mime_type multipart) (mime_subtype related) (params ((boundary --::FOO))))
-    multipart/related; boundary="--::FOO" |}]
+    multipart/related; boundary="--::FOO"
+    |}]
 ;;

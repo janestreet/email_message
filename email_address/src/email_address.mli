@@ -13,7 +13,7 @@ module Domain : sig
   include Hashable.S_plain with type t := t
 end
 
-type t [@@deriving sexp_of, compare, hash]
+type t [@@deriving sexp_of, sexp_grammar, compare, hash]
 
 val create : ?prefix:string -> ?domain:Domain.t -> string -> t
 val of_string : ?default_domain:string -> string -> t Or_error.t

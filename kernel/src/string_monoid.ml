@@ -208,8 +208,9 @@ let output_bigbuffer t bigbuffer =
 
 let rec fold t ~init ~f =
   match t with
-  | List (_, list) -> List.fold list ~init ~f:(fun init t -> fold t ~init ~f)
-  | Leaf underlying -> f init underlying
+  | List (_, list) ->
+    List.fold list ~init ~f:(fun init t -> fold t ~init ~f [@nontail]) [@nontail]
+  | Leaf underlying -> f init underlying [@nontail]
 ;;
 
 let iter t ~f = fold t ~init:() ~f:(fun () -> f)

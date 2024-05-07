@@ -1,3 +1,16 @@
+## Release v0.17.0
+
+- `Email_address` module now has a `to_string_utf8` function to generate a UTF-8 encoded
+  representation of an email address
+
+- Split [Email_message] into [Email_message] and [Email_message_kernel]. The
+  [Email_message_kernel] library is compatible with JS of OCaml.
+  
+- Tweak the normalization of encoded header values. We previously decoded before
+  normalizing, now we normalize before decoding.
+  
+- Improve parsing of email addresses to catch more invalid addresses as errors
+
 ## Release v0.16.0
 
 - `Email_simple.all_attachments` and `Email_simple.map_attachments`: Added optional

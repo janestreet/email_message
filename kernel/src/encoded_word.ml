@@ -1,6 +1,31 @@
 open Core
 open Angstrom
 
+module Charset = struct
+  (* The following might not be an exhaustive list. We can add to this as we encounter
+       more cases. *)
+  type t =
+    [ `Ascii
+    | `Big5
+    | `GB2312
+    | `Latin1
+    | `Latin2
+    | `Utf8
+    | `Windows1252
+    ]
+  [@@deriving sexp_of, enumerate, compare, equal]
+
+  let to_string = function
+    | `Ascii -> "US-ASCII"
+    | `Big5 -> "BIG5"
+    | `GB2312 -> "GB2312"
+    | `Latin1 -> "ISO-8859-1"
+    | `Latin2 -> "ISO-8859-2"
+    | `Utf8 -> "UTF-8"
+    | `Windows1252 -> "WINDOWS-1252"
+  ;;
+end
+
 module Let_syntax = struct
   let bind t ~f = t >>= f
   let map t ~f = t >>| f
@@ -9,26 +34,20 @@ end
 
 let ws = take_while1 Char.is_whitespace
 
-let charset =
-  choice
-    (* The following might not be an exhaustive list. We can add to this as we encounter
-       more cases. *)
-    [ string_ci "US-ASCII" >>| const `Ascii
-    ; string_ci "UTF-8" >>| const `Utf8
-    ; string_ci "ISO-8859-1" >>| const `Latin1
-    ; string_ci "ISO-8859-2" >>| const `Latin2
-    ; string_ci "GB2312" >>| const `GB2312
-    ; string_ci "WINDOWS-1252" >>| const `Windows1252
-    ]
+let charset charsets =
+  List.map charsets ~f:(fun charset ->
+    string_ci (Charset.to_string charset) >>| const charset)
+  |> choice
 ;;
 
 let encoding : [ `Base64 | `Quoted_printable ] Angstrom.t =
   choice [ string_ci "B" >>| const `Base64; string_ci "Q" >>| const `Quoted_printable ]
 ;;
 
-let parser_ : string Angstrom.t =
+let parser_ : Charset.t list -> (Charset.t * string) Angstrom.t =
+  fun charsets ->
   let%bind () = string "=?" >>| ignore
-  and charset = charset
+  and charset = charset charsets
   and () = string "?" >>| ignore
   and encoding = encoding
   and () = string "?" >>| ignore
@@ -58,22 +77,28 @@ let parser_ : string Angstrom.t =
        | Error (`Msg msg) -> fail msg)
   in
   match charset with
-  | `Ascii | `Utf8 | `Latin1 | `Latin2 | `GB2312 | `Windows1252 -> return data
+  | `Ascii | `Utf8 | `Latin1 | `Latin2 | `GB2312 | `Windows1252 | `Big5 ->
+    return (charset, data)
 ;;
 
-let parser_many : string Angstrom.t =
+let parser_many
+  :  (Charset.t as 'a) list
+  -> [ `Encoded of 'a * string | `Plain of string ] list Angstrom.t
+  =
+  fun charsets ->
   many
     (choice
-       [ (let%map hd = parser_
+       [ (let%map hd = parser_ charsets
           and tl =
             (* RFC2047 6.2 When displaying a particular header field that contains
                multiple 'encoded-word's, any 'linear-white-space' that separates a
                pair of adjacent 'encoded-word's is ignored. *)
             many
-              (let%bind (_ : string) = option "" ws in
-               parser_)
+              (let%map (_ : string) = option "" ws
+               and res = parser_ charsets in
+               `Encoded res)
           in
-          hd :: tl)
+          `Encoded hd :: tl)
        ; (let%map c =
             choice
               [ take_while1 (function
@@ -93,13 +118,20 @@ let parser_many : string Angstrom.t =
               ; ws
               ]
           in
-          [ c ])
+          [ `Plain c ])
        ])
   >>| List.concat
-  >>| String.concat ~sep:""
 ;;
 
-let decode str =
-  Angstrom.parse_string ~consume:Prefix parser_many str
+let decode_with_charset ?(charsets = Charset.all) str =
+  Angstrom.parse_string ~consume:Prefix (parser_many charsets) str
   |> Result.map_error ~f:Error.of_string
+;;
+
+let decode ?(charsets = Charset.all) str =
+  let%map.Or_error chunks = decode_with_charset ~charsets str in
+  List.map chunks ~f:(function
+    | `Plain str -> str
+    | `Encoded (_charset, str) -> str)
+  |> String.concat ~sep:""
 ;;

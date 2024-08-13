@@ -21,6 +21,17 @@ let%expect_test "of_rfc822_date neg offset" =
   [%expect {| 2010-12-03T22:02:30.000000Z, UTC-6 |}]
 ;;
 
+let%expect_test "of_rfc822_date offset with non zero minutes" =
+  parse_and_print "Fri, 3 Dec 2010 16:02:30 +0530 (IST)";
+  [%expect {| 2010-12-03T10:32:30.000000Z |}];
+  parse_and_print_with_time_zone "Fri, 3 Dec 2010 16:02:30 +0530 (IST)";
+  [%expect {| 2010-12-03T10:32:30.000000Z, UTC+5:30 |}];
+  parse_and_print "Fri, 03 Dec 2010 16:02:30 -0330 (NT)";
+  [%expect {| 2010-12-03T19:32:30.000000Z |}];
+  parse_and_print_with_time_zone "Fri, 03 Dec 2010 22:02:30 -0330 (NT)";
+  [%expect {| 2010-12-04T01:32:30.000000Z, UTC-3:30 |}]
+;;
+
 let%expect_test "of_rfc822_date GMT" =
   parse_and_print "Fri, 3 Dec 2010 16:02:30 +0000 (GMT)";
   [%expect {| 2010-12-03T16:02:30.000000Z |}];
@@ -64,8 +75,8 @@ let%expect_test "of_rfc822_date obsolete timezones" =
   List.iter
     [ "UT"; "GMT"; "EST"; "EDT"; "CST"; "CDT"; "MST"; "MDT"; "PST"; "PDT" ]
     ~f:(fun tz ->
-    parse_and_print ("03 Dec 2010 16:02:30 " ^ tz);
-    Out_channel.newline stdout);
+      parse_and_print ("03 Dec 2010 16:02:30 " ^ tz);
+      Out_channel.newline stdout);
   [%expect
     {|
     2010-12-03T16:02:30.000000Z
@@ -93,8 +104,7 @@ let%expect_test "of_rfc822_date military timezones" =
       of_string_exn ("Fri, 03 Dec 2010 16:02:30 " ^ tz))
   in
   print_string (Time.to_string_iso8601_basic (List.hd_exn parsed) ~zone:Time.Zone.utc);
-  List.iter parsed ~f:(fun time ->
-    require_equal [%here] (module Time) (List.hd_exn parsed) time);
+  List.iter parsed ~f:(fun time -> require_equal (module Time) (List.hd_exn parsed) time);
   [%expect {| 2010-12-03T16:02:30.000000Z |}]
 ;;
 

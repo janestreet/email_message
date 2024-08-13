@@ -35,7 +35,8 @@ let%expect_test "[Expert.create_raw] Message-Id handling" =
   [%expect {| ID1 |}];
   (* But if they don't match, include both values *)
   message_id_headers ~message_id_in_extra_headers:(Some "ID1") ~id_supplied:(Some "ID2");
-  [%expect {|
+  [%expect
+    {|
     ID1
     ID2
     |}];
@@ -67,7 +68,8 @@ let%expect_test "[Expert.content]" =
     ~encoding:`Quoted_printable
     ~extra_headers:[]
     "x\n";
-  [%expect {|
+  [%expect
+    {|
     Content-Transfer-Encoding: quoted-printable
 
     x

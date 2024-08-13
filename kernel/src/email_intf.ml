@@ -25,7 +25,7 @@ module type Email = sig
 
   (** Convert from string, in compliance with the RFC 2822 standard (standard email
       format, e.g. .eml but not mbox) *)
-  val of_string : string -> t
+  val of_string : ?normalize_headers:Headers.Normalize.encode -> string -> t
 
   (** Convert to string, in compliance with the RFC 2822 standard (standard email format,
       e.g. .eml but not mbox) *)

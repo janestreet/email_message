@@ -18,7 +18,8 @@ let save ?eol_except_raw_content str =
 let%expect_test "save" =
   let email_str = "A: B\nC: D\n\nLine 1\nLine 2" in
   let%bind () = save email_str in
-  [%expect {|
+  [%expect
+    {|
     A: B
     C: D
 
@@ -26,7 +27,8 @@ let%expect_test "save" =
     Line 2
     |}];
   let%bind () = save ~eol_except_raw_content:`CRLF email_str in
-  [%expect {|
+  [%expect
+    {|
     A: B\r
     C: D\r
     \r

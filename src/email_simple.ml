@@ -27,7 +27,7 @@ module Email = Email_message_kernel
 include (
   Email_message_kernel.Simple :
     Email_message_kernel.Private.Email_simple_intf.Email_simple
-      with module Stable := Email_message_kernel.Simple.Stable)
+    with module Stable := Email_message_kernel.Simple.Stable)
 
 let make_id () =
   if Ppx_inline_test_lib.am_running
@@ -205,7 +205,7 @@ module Attachment = struct
   let of_content' ?embedded_email ~headers ~filename ~path content =
     let decoded_filename =
       lazy
-        (Encoded_word.decode filename
+        (Headers.Encoded_word.decode filename
          |> function
          | Ok s -> s
          | Error _ -> filename)

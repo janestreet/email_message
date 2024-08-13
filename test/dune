@@ -1,6 +1,6 @@
 (library
  (name email_message_test)
  (libraries async core email_message expect_test_helpers_async
-   expect_test_helpers_core)
+   expect_test_helpers_core core_unix.time_float_unix)
  (preprocess
   (pps ppx_jane)))

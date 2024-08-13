@@ -1,7 +1,7 @@
 (library
  (name email_message_kernel)
  (public_name email_message.kernel)
- (libraries base64 base64.rfc2045 core email_address magic-mime
+ (libraries angstrom base64 base64.rfc2045 core email_address magic-mime
    core_kernel.nonempty_list core_kernel.reversed_list)
  (preprocess
   (pps ppx_jane)))

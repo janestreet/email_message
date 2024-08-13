@@ -15,7 +15,8 @@ let parse s =
 
 let%expect_test "simple content" =
   parse "From: foo@bar.com\n\nhello world";
-  [%expect {|
+  [%expect
+    {|
     (Data (
       (encoding Bit7)
       (content  "hello world")))

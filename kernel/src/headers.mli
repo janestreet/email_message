@@ -17,7 +17,16 @@ module Normalize : sig
 
   type decode =
     [ encode
-    | `Whitespace_and_encoded_words
+    | `Whitespace_and_encoding of
+      [ `Any_charset | `Only of Encoded_word.Charset.t list ]
+      * [ `Pretend_all_charsets_are_same ]
+      (** Will attempt to handle decoded words.
+    [`Any_charset] will cause all known charsets to be handled.
+    [`Only charsets] will restrict the parsing to only the given charsets.
+    [`Pretend_all_charsets_are_same] will not actually do any charset conversion and just
+    copies the raw bytes. For ascii-compatible encodings this often works well-enough,
+    though you do end up with garbage for any characters not in the ascii-plane.
+    *)
     ]
   [@@deriving sexp_of]
 
@@ -81,6 +90,7 @@ val to_string_monoid : ?eol:Lf_or_crlf.t -> t -> String_monoid.t
 val to_string : ?eol:Lf_or_crlf.t -> t -> string
 val empty : t
 val append : t -> t -> t
+val length : t -> int
 val of_list : normalize:Normalize.encode -> (Name.t * Value.t) list -> t
 val to_list : ?normalize:Normalize.decode -> t -> (Name.t * Value.t) list
 val last : ?normalize:Normalize.decode -> t -> Name.t -> Value.t option

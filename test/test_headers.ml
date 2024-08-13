@@ -37,7 +37,8 @@ let%expect_test "whitespace" =
     |header4|=?ISO-8859-1?Q?a?=|
     |header5|=?ISO-8859-1?Q?a?= =?ISO-8859-1?Q?b?= c|
     |}];
-  print_headers ~normalize:`Whitespace_and_encoded_words;
+  print_headers
+    ~normalize:(`Whitespace_and_encoding (`Any_charset, `Pretend_all_charsets_are_same));
   [%expect
     {|
     |header1|1|

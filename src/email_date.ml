@@ -181,20 +181,14 @@ let of_string_exn date =
 
 let of_string_exn_with_time_zone date =
   let time, utc_offset = of_string_exn_with_utc_offset date in
-  (* In cases where the utc_offset has minutes, we might be dropping information. Let's
-     just raise to avoid any possible confusion. We don't really expect to see time
-     zones with a minute offset in the wild.
-     FYI: India is the main non-hour time zone (IST, UTC+5:30).
-     Its probably fine to punt for now, as long as this is only used with internal email flow. *)
   let utc_offset_parts = Time.Span.to_parts utc_offset in
-  if utc_offset_parts.min <> 0
-  then
-    raise_s
-      [%message
-        "NOT IMPLEMENTED: Time zones with minute offsets are not yet supported (probably \
-         IST/UTC+5:30)"
-          (utc_offset : Time.Span.t)];
-  ( time
-  , Time.Zone.of_utc_offset
-      ~hours:(Sign.to_int utc_offset_parts.sign * utc_offset_parts.hr) )
+  let hours_to_seconds hours = hours * 60 * 60 in
+  let minutes_to_seconds minutes = minutes * 60 in
+  let utc_offset_in_seconds =
+    Time.Span.of_int_sec
+      (Sign.to_int utc_offset_parts.sign
+       * (hours_to_seconds utc_offset_parts.hr + minutes_to_seconds utc_offset_parts.min)
+      )
+  in
+  time, Time.Zone.of_utc_offset_in_seconds_round_down utc_offset_in_seconds
 ;;

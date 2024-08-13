@@ -45,8 +45,8 @@ let split t bstr =
     let start = end_ - Bigstring_shared.length pattern in
     match_after ~pos:start bstr ~pattern
     |> Option.map ~f:(fun end_' ->
-         assert (end_ = end_');
-         start)
+      assert (end_ = end_');
+      start)
   in
   let match_crlf direction ~pos bstr =
     if pos = 0 || pos = Bigstring_shared.length bstr

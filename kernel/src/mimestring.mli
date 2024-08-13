@@ -16,8 +16,8 @@ end
 module Case_insensitive : sig
   include
     S
-      with type t = string
-       and type comparator_witness = String.Caseless.comparator_witness
+    with type t = string
+     and type comparator_witness = String.Caseless.comparator_witness
 
   val to_string : t -> string
 
@@ -27,8 +27,8 @@ module Case_insensitive : sig
 
       include
         Stable
-          with type t := t
-           and type comparator_witness = String.Caseless.comparator_witness
+        with type t := t
+         and type comparator_witness = String.Caseless.comparator_witness
     end
   end
 end

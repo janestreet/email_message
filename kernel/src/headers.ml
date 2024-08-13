@@ -29,7 +29,9 @@ module Normalize = struct
 
   type decode =
     [ encode
-    | `Whitespace_and_encoded_words
+    | `Whitespace_and_encoding of
+      [ `Any_charset | `Only of Encoded_word.Charset.t list ]
+      * [ `Pretend_all_charsets_are_same ]
     ]
   [@@deriving sexp_of]
 
@@ -70,16 +72,24 @@ end = struct
        followed by whitespace should be replace by just the whitespace character.
        Stripping the lines isn't quite obeying the standard but matches what we've done
        historically and some emails probably have excessive whitespace. *)
-    String.split_lines str |> List.map ~f:String.strip |> String.concat ~sep:" "
+    String.split_lines str
+    |> List.map ~f:String.strip
+    |> List.filter ~f:(Fn.non String.is_empty)
+    |> String.concat ~sep:" "
   ;;
 
   let of_string ?(normalize = Normalize.default) str =
     match normalize with
     | `None -> str
     | `Whitespace -> normalize_string str
-    | `Whitespace_and_encoded_words ->
+    | `Whitespace_and_encoding (charsets, `Pretend_all_charsets_are_same) ->
       let normalized = normalize_string str in
-      (match Encoded_word.decode normalized with
+      let charsets =
+        match charsets with
+        | `Any_charset -> Encoded_word.Charset.all
+        | `Only charsets -> charsets
+      in
+      (match Encoded_word.decode ~charsets normalized with
        | Ok str -> str
        | Error _ -> normalized)
   ;;
@@ -95,7 +105,20 @@ end = struct
   let to_string' ?(normalize = Normalize.default) str =
     match normalize with
     | #Normalize.encode as normalize -> to_string ~normalize str
-    | `Whitespace_and_encoded_words -> to_string ~normalize:`Whitespace str
+    | `Whitespace_and_encoding (_charsets, _armour) ->
+      to_string ~normalize:`Whitespace str
+  ;;
+
+  let%expect_test "normalize_string" =
+    let values = [ "value"; " value"; " \n value"; "\nvalue" ] in
+    List.iter values ~f:(fun value -> normalize_string value |> print_endline);
+    [%expect
+      {|
+      value
+      value
+      value
+      value
+      |}]
   ;;
 end
 
@@ -119,6 +142,7 @@ let to_string_monoid ?(eol = `LF) t =
 ;;
 
 let to_string ?eol t = String_monoid.to_string (to_string_monoid ?eol t)
+let length = List.length
 let empty = []
 let append = List.append
 

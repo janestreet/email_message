@@ -27,7 +27,7 @@ include Hashable.Make_plain (T)
 
 (* The default type of a message depends on the type of its parent,
    so we need to pass it around. *)
-let of_bigstring_shared bstr =
+let of_bigstring_shared ?(normalize_headers = `None) bstr =
   let lexbuf = Bigstring_shared.to_lexbuf bstr in
   let%map (`Message (headers, content_offset)) =
     try
@@ -43,7 +43,7 @@ let of_bigstring_shared bstr =
            pos.Lexing.pos_lnum
            (pos.Lexing.pos_cnum - pos.Lexing.pos_bol))
   in
-  let headers = Headers.of_list ~normalize:`None headers in
+  let headers = Headers.of_list ~normalize:normalize_headers headers in
   let raw_content =
     match content_offset with
     | `Truncated -> None
@@ -55,8 +55,9 @@ let of_bigstring_shared bstr =
   }
 ;;
 
-let of_string str =
-  of_bigstring_shared (Bigstring_shared.of_string str) |> Or_error.ok_exn
+let of_string ?normalize_headers str =
+  of_bigstring_shared ?normalize_headers (Bigstring_shared.of_string str)
+  |> Or_error.ok_exn
 ;;
 
 let of_bigstring bstr =

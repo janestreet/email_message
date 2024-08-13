@@ -41,25 +41,29 @@ let%expect_test "split" =
   [%expect {| ((prologue ()) (parts (P Q)) (epilogue ())) |}];
   (* Prologue and epilogue *)
   split "A\n--BOUNDARY\nP\n--BOUNDARY--";
-  [%expect {|
+  [%expect
+    {|
     ((prologue (A))
      (parts    (P))
      (epilogue ()))
     |}];
   split "--BOUNDARY\nP\n--BOUNDARY--\nB";
-  [%expect {|
+  [%expect
+    {|
     ((prologue ())
      (parts    (P))
      (epilogue ("\nB")))
     |}];
   split "A\n--BOUNDARY\nP\n--BOUNDARY--\nB";
-  [%expect {|
+  [%expect
+    {|
     ((prologue (A))
      (parts    (P))
      (epilogue ("\nB")))
     |}];
   split "A\r\n--BOUNDARY\r\nP\r\n--BOUNDARY--\r\nB";
-  [%expect {|
+  [%expect
+    {|
     ((prologue (A))
      (parts    (P))
      (epilogue ("\r\nB")))
@@ -94,7 +98,8 @@ let%expect_test "split" =
 let%expect_test "join" =
   (* Simple tests with no prologue or epilogue *)
   join (None, [ "" ], None);
-  [%expect {|
+  [%expect
+    {|
     ######
     --BOUNDARY
 
@@ -129,7 +134,8 @@ let%expect_test "join" =
   in
   (* Prologue and epilogue *)
   join (Some "A", [ "P" ], None);
-  [%expect {|
+  [%expect
+    {|
     ######
     A
     --BOUNDARY
@@ -138,7 +144,8 @@ let%expect_test "join" =
     ######
     |}];
   join (None, [ "P" ], Some "\nB");
-  [%expect {|
+  [%expect
+    {|
     ######
     --BOUNDARY
     P
@@ -225,28 +232,32 @@ let%test_module "non-compliant" =
 
     let%expect_test "non-compliant [join]" =
       join (Some "A", [], Some "\nB");
-      [%expect {|
+      [%expect
+        {|
         ######
         A
         B
         ######
         |}];
       join (None, [], Some "\nB");
-      [%expect {|
+      [%expect
+        {|
         ######
 
         B
         ######
         |}];
       join (None, [], None);
-      [%expect {|
+      [%expect
+        {|
         ######
 
 
         ######
         |}];
       join (Some "A", [], None);
-      [%expect {|
+      [%expect
+        {|
         ######
         A
         ######

@@ -49,7 +49,7 @@ let parser_ : Charset.t list -> (Charset.t * string) Angstrom.t =
   let%bind () = string "=?" >>| ignore
   and charset = charset charsets
   and () = string "?" >>| ignore
-  and encoding = encoding
+  and encoding
   and () = string "?" >>| ignore
   and data =
     take_while (function

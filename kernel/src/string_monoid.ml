@@ -206,10 +206,10 @@ let output_bigbuffer t bigbuffer =
   output ~dst_output:(Underlying.output_bigbuffer ~bigbuffer) t
 ;;
 
-let rec fold t ~init ~f =
+let rec fold t ~init ~(local_ f) =
   match t with
   | List (_, list) ->
-    List.fold list ~init ~f:(fun init t -> fold t ~init ~f [@nontail]) [@nontail]
+    List.fold list ~init ~f:(local_ fun init t -> fold t ~init ~f [@nontail]) [@nontail]
   | Leaf underlying -> f init underlying [@nontail]
 ;;
 

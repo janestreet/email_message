@@ -46,7 +46,7 @@ module type String_monoid = sig
 
   module Underlying : Underlying
 
-  val fold : t -> init:'accum -> f:('accum -> Underlying.t -> 'accum) -> 'accum
+  val fold : t -> init:'accum -> f:local_ ('accum -> Underlying.t -> 'accum) -> 'accum
   val iter : t -> f:(Underlying.t -> unit) -> unit
   val is_suffix : t -> suffix:string -> bool
   val is_prefix : t -> prefix:string -> bool

@@ -63,7 +63,7 @@ let maybe_at_domain =
 ;;
 
 let email_without_prefix_no_quote =
-  let%map local_part = local_part
+  let%map local_part
   and domain = maybe_at_domain in
   local_part, domain
 ;;

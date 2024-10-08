@@ -262,93 +262,91 @@ let smash_and_add ?normalize t ~name ~value =
 
 let names = List.map ~f:fst
 
-let%test_module _ =
-  (module struct
-    let t = of_list ~normalize:`None [ "A", "a1"; "B", "b1"; "B", "b2" ]
-    let%test_unit _ = [%test_result: string] (to_string t) ~expect:"A:a1\nB:b1\nB:b2\n"
+module%test _ = struct
+  let t = of_list ~normalize:`None [ "A", "a1"; "B", "b1"; "B", "b2" ]
+  let%test_unit _ = [%test_result: string] (to_string t) ~expect:"A:a1\nB:b1\nB:b2\n"
 
-    let%test_unit _ =
-      [%test_result: string]
-        (add ~normalize:`None t ~name:"B" ~value:"b3" |> to_string)
-        ~expect:"A:a1\nB:b3\nB:b1\nB:b2\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (add ~normalize:`None t ~name:"B" ~value:"b3" |> to_string)
+      ~expect:"A:a1\nB:b3\nB:b1\nB:b2\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (add ~normalize:`None t ~name:"B" ~value:"b3\nb3" |> to_string)
-        ~expect:"A:a1\nB:b3\nb3\nB:b1\nB:b2\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (add ~normalize:`None t ~name:"B" ~value:"b3\nb3" |> to_string)
+      ~expect:"A:a1\nB:b3\nb3\nB:b1\nB:b2\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (add t ~name:"B" ~value:"b3" |> to_string)
-        ~expect:"A:a1\nB: b3\nB:b1\nB:b2\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (add t ~name:"B" ~value:"b3" |> to_string)
+      ~expect:"A:a1\nB: b3\nB:b1\nB:b2\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (add t ~name:"B" ~value:"b3\nb3" |> to_string)
-        ~expect:"A:a1\nB: b3\n b3\nB:b1\nB:b2\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (add t ~name:"B" ~value:"b3\nb3" |> to_string)
+      ~expect:"A:a1\nB: b3\n b3\nB:b1\nB:b2\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (add ~normalize:`None t ~name:"C" ~value:"c1" |> to_string)
-        ~expect:"C:c1\nA:a1\nB:b1\nB:b2\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (add ~normalize:`None t ~name:"C" ~value:"c1" |> to_string)
+      ~expect:"C:c1\nA:a1\nB:b1\nB:b2\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (set ~normalize:`None t ~name:"B" ~value:"b3" |> to_string)
-        ~expect:"A:a1\nB:b3\nB:b2\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (set ~normalize:`None t ~name:"B" ~value:"b3" |> to_string)
+      ~expect:"A:a1\nB:b3\nB:b2\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (set ~normalize:`None t ~name:"b" ~value:"b3" |> to_string)
-        ~expect:"A:a1\nb:b3\nB:b2\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (set ~normalize:`None t ~name:"b" ~value:"b3" |> to_string)
+      ~expect:"A:a1\nb:b3\nB:b2\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (set ~normalize:`None t ~name:"C" ~value:"c1" |> to_string)
-        ~expect:"C:c1\nA:a1\nB:b1\nB:b2\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (set ~normalize:`None t ~name:"C" ~value:"c1" |> to_string)
+      ~expect:"C:c1\nA:a1\nB:b1\nB:b2\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (set ~normalize:`None t ~name:"c" ~value:"c1" |> to_string)
-        ~expect:"c:c1\nA:a1\nB:b1\nB:b2\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (set ~normalize:`None t ~name:"c" ~value:"c1" |> to_string)
+      ~expect:"c:c1\nA:a1\nB:b1\nB:b2\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (add_at_bottom ~normalize:`None t ~name:"A" ~value:"a2" |> to_string)
-        ~expect:"A:a1\nA:a2\nB:b1\nB:b2\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (add_at_bottom ~normalize:`None t ~name:"A" ~value:"a2" |> to_string)
+      ~expect:"A:a1\nA:a2\nB:b1\nB:b2\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (add_at_bottom ~normalize:`None t ~name:"B" ~value:"b3" |> to_string)
-        ~expect:"A:a1\nB:b1\nB:b2\nB:b3\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (add_at_bottom ~normalize:`None t ~name:"B" ~value:"b3" |> to_string)
+      ~expect:"A:a1\nB:b1\nB:b2\nB:b3\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (add_at_bottom ~normalize:`None t ~name:"C" ~value:"c1" |> to_string)
-        ~expect:"A:a1\nB:b1\nB:b2\nC:c1\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (add_at_bottom ~normalize:`None t ~name:"C" ~value:"c1" |> to_string)
+      ~expect:"A:a1\nB:b1\nB:b2\nC:c1\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (set_at_bottom ~normalize:`None t ~name:"B" ~value:"b3" |> to_string)
-        ~expect:"A:a1\nB:b1\nB:b3\n"
-    ;;
+  let%test_unit _ =
+    [%test_result: string]
+      (set_at_bottom ~normalize:`None t ~name:"B" ~value:"b3" |> to_string)
+      ~expect:"A:a1\nB:b1\nB:b3\n"
+  ;;
 
-    let%test_unit _ =
-      [%test_result: string]
-        (set_at_bottom ~normalize:`None t ~name:"C" ~value:"c1" |> to_string)
-        ~expect:"A:a1\nB:b1\nB:b2\nC:c1\n"
-    ;;
-  end)
-;;
+  let%test_unit _ =
+    [%test_result: string]
+      (set_at_bottom ~normalize:`None t ~name:"C" ~value:"c1" |> to_string)
+      ~expect:"A:a1\nB:b1\nB:b2\nC:c1\n"
+  ;;
+end

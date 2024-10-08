@@ -325,109 +325,107 @@ let is_substring t ~substring =
     ~substring:(Substring.create (Bytes.unsafe_of_string_promise_no_mutation substring))
 ;;
 
-let%test_module _ =
-  (module struct
-    let haystack =
-      concat
-        ~sep:(of_char ' ')
-        [ of_string "hello"; of_bigstring (Bigstring.of_string "big"); of_string "world" ]
-    ;;
+module%test _ = struct
+  let haystack =
+    concat
+      ~sep:(of_char ' ')
+      [ of_string "hello"; of_bigstring (Bigstring.of_string "big"); of_string "world" ]
+  ;;
 
-    let%expect_test "is_string" =
-      printf "%b" (is_string haystack ~string:"hello big world");
-      [%expect {| true |}];
-      printf "%b" (is_string haystack ~string:"hello");
-      [%expect {| false |}];
-      printf "%b" (is_string haystack ~string:"o big");
-      [%expect {| false |}]
-    ;;
+  let%expect_test "is_string" =
+    printf "%b" (is_string haystack ~string:"hello big world");
+    [%expect {| true |}];
+    printf "%b" (is_string haystack ~string:"hello");
+    [%expect {| false |}];
+    printf "%b" (is_string haystack ~string:"o big");
+    [%expect {| false |}]
+  ;;
 
-    let%expect_test "is_prefix" =
-      printf "%b" (is_prefix haystack ~prefix:"");
-      [%expect {| true |}];
-      printf "%b" (is_prefix haystack ~prefix:"h");
-      [%expect {| true |}];
-      printf "%b" (is_prefix haystack ~prefix:"hello");
-      [%expect {| true |}];
-      printf "%b" (is_prefix haystack ~prefix:"hello ");
-      [%expect {| true |}];
-      printf "%b" (is_prefix haystack ~prefix:"hello b");
-      [%expect {| true |}];
-      printf "%b" (is_prefix haystack ~prefix:"hello big");
-      [%expect {| true |}];
-      printf "%b" (is_prefix haystack ~prefix:"hello big world");
-      [%expect {| true |}];
-      printf "%b" (is_prefix haystack ~prefix:"hello big round");
-      [%expect {| false |}];
-      printf "%b" (is_prefix haystack ~prefix:"hello big world!");
-      [%expect {| false |}];
-      printf "%b" (is_prefix haystack ~prefix:"b");
-      [%expect {| false |}];
-      printf "%b" (is_prefix haystack ~prefix:"world");
-      [%expect {| false |}];
-      printf "%b" (is_prefix haystack ~prefix:"d");
-      [%expect {| false |}]
-    ;;
+  let%expect_test "is_prefix" =
+    printf "%b" (is_prefix haystack ~prefix:"");
+    [%expect {| true |}];
+    printf "%b" (is_prefix haystack ~prefix:"h");
+    [%expect {| true |}];
+    printf "%b" (is_prefix haystack ~prefix:"hello");
+    [%expect {| true |}];
+    printf "%b" (is_prefix haystack ~prefix:"hello ");
+    [%expect {| true |}];
+    printf "%b" (is_prefix haystack ~prefix:"hello b");
+    [%expect {| true |}];
+    printf "%b" (is_prefix haystack ~prefix:"hello big");
+    [%expect {| true |}];
+    printf "%b" (is_prefix haystack ~prefix:"hello big world");
+    [%expect {| true |}];
+    printf "%b" (is_prefix haystack ~prefix:"hello big round");
+    [%expect {| false |}];
+    printf "%b" (is_prefix haystack ~prefix:"hello big world!");
+    [%expect {| false |}];
+    printf "%b" (is_prefix haystack ~prefix:"b");
+    [%expect {| false |}];
+    printf "%b" (is_prefix haystack ~prefix:"world");
+    [%expect {| false |}];
+    printf "%b" (is_prefix haystack ~prefix:"d");
+    [%expect {| false |}]
+  ;;
 
-    let%expect_test "is_suffix" =
-      printf "%b" (is_suffix haystack ~suffix:"");
-      [%expect {| true |}];
-      printf "%b" (is_suffix haystack ~suffix:"d");
-      [%expect {| true |}];
-      printf "%b" (is_suffix haystack ~suffix:"world");
-      [%expect {| true |}];
-      printf "%b" (is_suffix haystack ~suffix:" world");
-      [%expect {| true |}];
-      printf "%b" (is_suffix haystack ~suffix:"g world");
-      [%expect {| true |}];
-      printf "%b" (is_suffix haystack ~suffix:"big world");
-      [%expect {| true |}];
-      printf "%b" (is_suffix haystack ~suffix:"hello big world");
-      [%expect {| true |}];
-      printf "%b" (is_suffix haystack ~suffix:"round world");
-      [%expect {| false |}];
-      printf "%b" (is_suffix haystack ~suffix:"hello big world!");
-      [%expect {| false |}];
-      printf "%b" (is_suffix haystack ~suffix:"hello");
-      [%expect {| false |}]
-    ;;
+  let%expect_test "is_suffix" =
+    printf "%b" (is_suffix haystack ~suffix:"");
+    [%expect {| true |}];
+    printf "%b" (is_suffix haystack ~suffix:"d");
+    [%expect {| true |}];
+    printf "%b" (is_suffix haystack ~suffix:"world");
+    [%expect {| true |}];
+    printf "%b" (is_suffix haystack ~suffix:" world");
+    [%expect {| true |}];
+    printf "%b" (is_suffix haystack ~suffix:"g world");
+    [%expect {| true |}];
+    printf "%b" (is_suffix haystack ~suffix:"big world");
+    [%expect {| true |}];
+    printf "%b" (is_suffix haystack ~suffix:"hello big world");
+    [%expect {| true |}];
+    printf "%b" (is_suffix haystack ~suffix:"round world");
+    [%expect {| false |}];
+    printf "%b" (is_suffix haystack ~suffix:"hello big world!");
+    [%expect {| false |}];
+    printf "%b" (is_suffix haystack ~suffix:"hello");
+    [%expect {| false |}]
+  ;;
 
-    let%expect_test "is_substring" =
-      printf "%b" (is_substring haystack ~substring:"");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"w");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"d");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"big");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"ell");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"ell");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"o b");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"o big w");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"hello big world");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"hello big world!");
-      [%expect {| false |}];
-      printf "%b" (is_substring haystack ~substring:"big world");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"hello big");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"hello big ");
-      [%expect {| true |}];
-      printf "%b" (is_substring haystack ~substring:"hello big round");
-      [%expect {| false |}];
-      printf "%b" (is_substring haystack ~substring:"round");
-      [%expect {| false |}];
-      printf "%b" (is_substring haystack ~substring:"big round");
-      [%expect {| false |}]
-    ;;
-  end)
-;;
+  let%expect_test "is_substring" =
+    printf "%b" (is_substring haystack ~substring:"");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"w");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"d");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"big");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"ell");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"ell");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"o b");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"o big w");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"hello big world");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"hello big world!");
+    [%expect {| false |}];
+    printf "%b" (is_substring haystack ~substring:"big world");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"hello big");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"hello big ");
+    [%expect {| true |}];
+    printf "%b" (is_substring haystack ~substring:"hello big round");
+    [%expect {| false |}];
+    printf "%b" (is_substring haystack ~substring:"round");
+    [%expect {| false |}];
+    printf "%b" (is_substring haystack ~substring:"big round");
+    [%expect {| false |}]
+  ;;
+end
 
 module Private = struct
   let output = output

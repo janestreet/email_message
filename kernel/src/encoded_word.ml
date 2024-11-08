@@ -34,7 +34,7 @@ end
 
 let ws = take_while1 Char.is_whitespace
 
-let charset charsets =
+let charset_parser charsets =
   List.map charsets ~f:(fun charset ->
     string_ci (Charset.to_string charset) >>| const charset)
   |> choice
@@ -44,10 +44,10 @@ let encoding : [ `Base64 | `Quoted_printable ] Angstrom.t =
   choice [ string_ci "B" >>| const `Base64; string_ci "Q" >>| const `Quoted_printable ]
 ;;
 
-let parser_ : Charset.t list -> (Charset.t * string) Angstrom.t =
-  fun charsets ->
+let parser_ : charset_parser:'a Angstrom.t -> ('a * string) Angstrom.t =
+  fun ~charset_parser ->
   let%bind () = string "=?" >>| ignore
-  and charset = charset charsets
+  and charset = charset_parser
   and () = string "?" >>| ignore
   and encoding
   and () = string "?" >>| ignore
@@ -76,26 +76,24 @@ let parser_ : Charset.t list -> (Charset.t * string) Angstrom.t =
        | Ok data -> return data
        | Error (`Msg msg) -> fail msg)
   in
-  match charset with
-  | `Ascii | `Utf8 | `Latin1 | `Latin2 | `GB2312 | `Windows1252 | `Big5 ->
-    return (charset, data)
+  return (charset, data)
 ;;
 
 let parser_many
-  :  (Charset.t as 'a) list
+  :  charset_parser:'a Angstrom.t
   -> [ `Encoded of 'a * string | `Plain of string ] list Angstrom.t
   =
-  fun charsets ->
+  fun ~charset_parser ->
   many
     (choice
-       [ (let%map hd = parser_ charsets
+       [ (let%map hd = parser_ ~charset_parser
           and tl =
             (* RFC2047 6.2 When displaying a particular header field that contains
                multiple 'encoded-word's, any 'linear-white-space' that separates a
                pair of adjacent 'encoded-word's is ignored. *)
             many
               (let%map (_ : string) = option "" ws
-               and res = parser_ charsets in
+               and res = parser_ ~charset_parser in
                `Encoded res)
           in
           `Encoded hd :: tl)
@@ -124,7 +122,10 @@ let parser_many
 ;;
 
 let decode_with_charset ?(charsets = Charset.all) str =
-  Angstrom.parse_string ~consume:Prefix (parser_many charsets) str
+  Angstrom.parse_string
+    ~consume:Prefix
+    (parser_many ~charset_parser:(charset_parser charsets))
+    str
   |> Result.map_error ~f:Error.of_string
 ;;
 
@@ -132,6 +133,40 @@ let decode ?(charsets = Charset.all) str =
   let%map.Or_error chunks = decode_with_charset ~charsets str in
   List.map chunks ~f:(function
     | `Plain str -> str
-    | `Encoded (_charset, str) -> str)
+    | `Encoded ((_charset : Charset.t), str) -> str)
   |> String.concat ~sep:""
+;;
+
+let decode_with_raw_charset str =
+  Angstrom.parse_string
+    ~consume:Prefix
+    (parser_many
+       ~charset_parser:
+         (let%map charset =
+            take_while (function
+              | ' '
+              | '('
+              | ')'
+              | '<'
+              | '>'
+              | '@'
+              | ','
+              | ';'
+              | ':'
+              | '\\'
+              | '"'
+              | '|'
+              | '['
+              | ']'
+              | '?'
+              | '.'
+              | '=' ->
+                (* List from https://datatracker.ietf.org/doc/html/rfc2047 +
+                   https://www.rfc-editor.org/errata/eid506 *)
+                false
+              | c -> Char.is_print c)
+          in
+          `Charset charset))
+    str
+  |> Result.map_error ~f:Error.of_string
 ;;

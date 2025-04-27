@@ -73,12 +73,11 @@ module type Content = sig
     -> t
   [@@deprecated "[since 2019-08] Please specify the charset, e.g. [text_utf8]"]
 
-  (** Plain text e-mail that also includes an html version so it's displayed
-      monospace in gmail.
+  (** Plain text e-mail that also includes an html version so it's displayed monospace in
+      gmail.
 
       By default, we add some custom styling to disable the line-wrap formatting rule
-      which gmail uses. To disable this behavior, supply [~force_no_line_wrap:false].
-  *)
+      which gmail uses. To disable this behavior, supply [~force_no_line_wrap:false]. *)
   val text_monospace_utf8
     :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> ?force_no_line_wrap:bool (** default: true *)
@@ -92,16 +91,16 @@ module type Content = sig
     -> t
   [@@deprecated "[since 2019-08] Please specify the charset, e.g. [text_monospace_utf8]"]
 
-  (** Combine 2 or more contents as alternative versions.
-      List should be sorted from worst to best. *)
+  (** Combine 2 or more contents as alternative versions. List should be sorted from worst
+      to best. *)
   val alternatives : ?extra_headers:(Headers.Name.t * Headers.Value.t) list -> t list -> t
 
   (** Combine 2 or more contents that should be bundled together *)
   val mixed : ?extra_headers:(Headers.Name.t * Headers.Value.t) list -> t list -> t
 
-  (** Add related resources (e.g. inline images).
-      You can reference them using 'cid:${attachment_name}' in the content.
-      To attach files you should use [create ~attachments] *)
+  (** Add related resources (e.g. inline images). You can reference them using
+      'cid:$[{attachment_name}]' in the content. To attach files you should use
+      [create ~attachments] *)
   val with_related
     :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> resources:(attachment_name * t) list
@@ -126,7 +125,7 @@ module type Content = sig
       "multipart/alternative" then return a singleton list. *)
   val alternative_parts : t -> t list
 
-  (** Get the 'inline' parts, This expands "Content-Type: multipart/{mixed,related}",
+  (** Get the 'inline' parts, This expands "Content-Type: multipart/[{mixed,related}]",
       stripping out any attachment parts. multipart/alternative is not expanded *)
   val inline_parts : t -> t list
 
@@ -219,23 +218,21 @@ module type Email_simple = sig
   val id : t -> string option
 
   (** [extract_body ?content_type t] returns the body associated with the email part that
-      matches the [content_type] mimetype, or none if [t] does not contain a body or part of
-      type [content_type].
-  *)
+      matches the [content_type] mimetype, or none if [t] does not contain a body or part
+      of type [content_type]. *)
   val extract_body
     :  ?content_type:Mimetype.t (** default: [Mimetype.text] *)
     -> t
     -> string option
 
-  (** [extract_body_ext]
-      and [extract_body_ext'] Attempt to find the message body in the preferred format.
+  (** [extract_body_ext] and [extract_body_ext'] Attempt to find the message body in the
+      preferred format.
 
       [accept] is used to select only content parts in a format that is supported. If a
       multipart component is accepted by [accept], we do NOT recursively extract the body.
       We do so otherwise.
 
-      [order] will be used to select the least part (by default the first part)
-  *)
+      [order] will be used to select the least part (by default the first part) *)
   val extract_body_ext'
     :  accept:((Mimetype.t * (string * string option) list) option -> 'format option)
     -> t
@@ -247,9 +244,9 @@ module type Email_simple = sig
     -> t
     -> ('format * string) option
 
-  (** Related parts are those that are included in a multi-part message with a "Content-ID"
-      header. This content can be referenced by adding the "cid:" prefix and stripping the
-      enclosing '<' and '>'.
+  (** Related parts are those that are included in a multi-part message with a
+      "Content-ID" header. This content can be referenced by adding the "cid:" prefix and
+      stripping the enclosing '<' and '>'.
 
       For example (from https://tools.ietf.org/html/rfc2392):
 
@@ -278,8 +275,8 @@ module type Email_simple = sig
         --boundary-example-1--
       v}
 
-      Calling [all_related_parts] on this email would return a list of length one where the
-      [attachment_name] is "foo4*foo1@bar.net" for the single entry.
+      Calling [all_related_parts] on this email would return a list of length one where
+      the [attachment_name] is "foo4*foo1@bar.net" for the single entry.
 
       Related parts are often used for inline images. *)
   val all_related_parts : t -> (attachment_name * Content.t) list

@@ -2,8 +2,8 @@ open! Core
 
 (** RFC 2045 MIME-encoded Bigstrings. *)
 module Encoding : sig
-  (** Text or binary are the type of the plaintext. For Base64, if the mode is
-      text, '\n' is turned into '\r\n' when encoding, and vice versa. *)
+  (** Text or binary are the type of the plaintext. For Base64, if the mode is text, '\n'
+      is turned into '\r\n' when encoding, and vice versa. *)
   type known =
     [ `Base64
     | `Bit7

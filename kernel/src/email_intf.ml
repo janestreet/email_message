@@ -19,8 +19,7 @@ module type Email = sig
     -> t
     -> Bigstring_shared.t
 
-  (** String-builder-like module. Small-to-no memory overhead
-      when unparsed. *)
+  (** String-builder-like module. Small-to-no memory overhead when unparsed. *)
   val to_string_monoid : ?eol_except_raw_content:Lf_or_crlf.t -> t -> String_monoid.t
 
   (** Convert from string, in compliance with the RFC 2822 standard (standard email

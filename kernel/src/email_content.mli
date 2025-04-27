@@ -1,6 +1,7 @@
 open! Core
 
-(** The cost depends on the encoding of the content and the main media type.
+(** {v
+ The cost depends on the encoding of the content and the main media type.
 
     N = Size of the message
     H = Size of the headers of the sub-message(s)
@@ -18,7 +19,7 @@ open! Core
     Encoding and type can be obtained from the headers, using the modules
     Headers.Content_type and Headers.Content_transfer_encoding, and the corresponding
     default values.
-*)
+    v} *)
 
 module Multipart : sig
   type t = private
@@ -58,15 +59,14 @@ type t =
 [@@deriving sexp_of]
 
 (** [parse ?container_headers email] parses the content of [email]. The default content
-    type of a multipart body changes based on the container headers.
-    This only comes into play if the container had "Content-Type: multipart/digest". *)
+    type of a multipart body changes based on the container headers. This only comes into
+    play if the container had "Content-Type: multipart/digest". *)
 val parse : ?container_headers:Headers.t -> Email.t -> t Or_error.t
 
 val to_email : headers:Headers.t -> t -> Email.t
 val set_content : Email.t -> t -> Email.t
 
-(** Allow changing the message content to mask the actual data but retain the
-    structure *)
+(** Allow changing the message content to mask the actual data but retain the structure *)
 val map_data
   :  ?on_unparsable_content:[ `Skip | `Raise ] (** default [`Skip] *)
   -> Email.t

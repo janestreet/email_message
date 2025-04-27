@@ -3,9 +3,8 @@ open! Core
 type t [@@deriving sexp_of]
 type boundary = t
 
-(** Creates a boundary from the value of the "boundary" parameter in a
-    Content-type header (RFC2046, p.19)
-*)
+(** Creates a boundary from the value of the "boundary" parameter in a Content-type header
+    (RFC2046, p.19) *)
 
 include Stringable.S with type t := t
 
@@ -36,8 +35,8 @@ val join_without_checking_for_conflicts
   -> t
   -> String_monoid.t
 
-(** Splits a multipart body into a list of messages, and, if there are,
-    an optional prologue and epilogue. *)
+(** Splits a multipart body into a list of messages, and, if there are, an optional
+    prologue and epilogue. *)
 val split
   :  t
   -> Bigstring_shared.t

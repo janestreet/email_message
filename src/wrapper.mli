@@ -1,6 +1,7 @@
 open! Core
 
-(** This module exposes a function to add a custom wrapper around an existing email. Gmail
+(** {v
+ This module exposes a function to add a custom wrapper around an existing email. Gmail
     will result in the following formatting:
 
     CUSTOM WRAPPER TEXT
@@ -13,7 +14,8 @@ open! Core
     Subject: (5)
     (6)
 
-    where (1)-(6) are taken from the original email. *)
+    where (1)-(6) are taken from the original email.
+    v} *)
 
 type t [@@deriving sexp_of]
 
@@ -27,8 +29,8 @@ val create
   -> Email_simple.Content.t
   -> t
 
-(** Like [create], but extract [?from], [?to_], [?cc] and [?subject] from
-    the headers "From:", "To:", "Cc:" and "Subject:" respectively. *)
+(** Like [create], but extract [?from], [?to_], [?cc] and [?subject] from the headers
+    "From:", "To:", "Cc:" and "Subject:" respectively. *)
 val create_from_email : Email.t -> t
 
 (** Transform an email by wrapping it according to the [Wrapper.t] *)

@@ -15,8 +15,8 @@ include
 
 type attachment_name = string [@@deriving sexp_of]
 
-(** For parsing attachments. Use [create ~attachments] to add attachments.
-    Convenience functions for email parts that have "Content-Disposition: attachment" *)
+(** For parsing attachments. Use [create ~attachments] to add attachments. Convenience
+    functions for email parts that have "Content-Disposition: attachment" *)
 module Attachment : sig
   module Id : sig
     type t [@@deriving compare, sexp_of]
@@ -98,19 +98,17 @@ val make_id : unit -> Headers.Value.t
 
 val local_address : unit -> Email_address.t
 
-(** [all_attachments] looks recursively through the e-mail parts, looking for
-    attachments.
+(** [all_attachments] looks recursively through the e-mail parts, looking for attachments.
 
     [~include_inline_parts] (default is `None) controls whether this function will attempt
     to interpret inline parts as attachments. [`Named_or_has_content_id] most aggressively
     classifies parts as attachments, including inline parts that are either named or have
     a Content-Id header. [`Named] will include inline parts that are named.
 
-    If [~look_through_attached_mails:true] (the default), it will separately
-    include both e-mail attachments as well as the attachments to those e-mails. Otherwise
-    it will include e-mail attachments but not (separately) any of the attached e-mails'
-    attachments.
-*)
+    If [~look_through_attached_mails:true] (the default), it will separately include both
+    e-mail attachments as well as the attachments to those e-mails. Otherwise it will
+    include e-mail attachments but not (separately) any of the attached e-mails'
+    attachments. *)
 val all_attachments
   :  ?include_inline_parts:[ `None | `Named | `Named_or_has_content_id ]
   -> ?look_through_attached_mails:bool

@@ -126,12 +126,9 @@ let length = function
 
 let is_empty t = length t = 0
 
-(**
-   The plus operation is not associative over individual representations,
-   but is associative over the quotient space with the equivalence
-   relationship
-   x ~ y == (to_string x) = (to_string y)
-*)
+(** The plus operation is not associative over individual representations, but is
+    associative over the quotient space with the equivalence relationship x ~ y ==
+    (to_string x) = (to_string y) *)
 let plus a b =
   match a, b with
   | b, List (0, _) -> b

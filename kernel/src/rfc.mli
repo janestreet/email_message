@@ -1,5 +1,4 @@
-(** Some functions for processing tokens from
-    the BNF grammars that appear in the RFCs *)
+(** Some functions for processing tokens from the BNF grammars that appear in the RFCs *)
 
 module RFC2045 : sig
   module Token : sig

@@ -40,8 +40,8 @@ val address_part_string
   -> t
   -> string
 
-(** [set_address_part] expects an email address without prefix or angle brackets
-    e.g. USER@DOMAIN. *)
+(** [set_address_part] expects an email address without prefix or angle brackets e.g.
+    USER@DOMAIN. *)
 val set_address_part : t -> string -> t Or_error.t
 
 val prefix : t -> string option
@@ -63,6 +63,18 @@ module Caseless : sig
 
   include Comparable.S_plain with type t := t
   include Hashable.S_plain with type t := t
+end
+
+module For_test : sig
+  type nonrec t = t [@@deriving sexp_of]
+end
+
+module Expert : sig
+  module Parser : sig
+    val email : t Angstrom.t
+    val skip_whitespace : unit Angstrom.t
+    val prefix : string Angstrom.t
+  end
 end
 
 module Stable : sig

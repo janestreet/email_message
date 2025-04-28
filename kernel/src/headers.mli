@@ -2,12 +2,12 @@ open! Core
 
 (** [Normalize] specifies how to handle header values. It is used in two contexts:
 
-    1) Transport (Normalize.encode): Specify how to turn a string into a header value. [`Whitespace] will add
-    the necessary for transport.
+    1) Transport (Normalize.encode): Specify how to turn a string into a header value.
+       [`Whitespace] will add the necessary for transport.
 
-    2) Processing (Normalize.decode): Specify how to turn a header value into a string. [`Whitespace] will remove
-    all leading and trailing whitespace on each line in order to cleanly process the
-    value. *)
+    2) Processing (Normalize.decode): Specify how to turn a header value into a string.
+       [`Whitespace] will remove all leading and trailing whitespace on each line in order
+       to cleanly process the value. *)
 module Normalize : sig
   type encode =
     [ `None (** Leave whitespace unchanged *)
@@ -20,13 +20,12 @@ module Normalize : sig
     | `Whitespace_and_encoding of
       [ `Any_charset | `Only of Encoded_word.Charset.t list ]
       * [ `Pretend_all_charsets_are_same ]
-      (** Will attempt to handle decoded words.
-    [`Any_charset] will cause all known charsets to be handled.
-    [`Only charsets] will restrict the parsing to only the given charsets.
-    [`Pretend_all_charsets_are_same] will not actually do any charset conversion and just
-    copies the raw bytes. For ascii-compatible encodings this often works well-enough,
-    though you do end up with garbage for any characters not in the ascii-plane.
-    *)
+      (** Will attempt to handle decoded words. [`Any_charset] will cause all known
+          charsets to be handled. [`Only charsets] will restrict the parsing to only the
+          given charsets. [`Pretend_all_charsets_are_same] will not actually do any
+          charset conversion and just copies the raw bytes. For ascii-compatible encodings
+          this often works well-enough, though you do end up with garbage for any
+          characters not in the ascii-plane. *)
     ]
   [@@deriving sexp_of]
 
@@ -64,15 +63,15 @@ end
 module Value : sig
   type t = string [@@deriving sexp_of, compare, hash]
 
-  (** Normalize the whitespace for processing/
-      if [normalize == `None] this does nothing.
-      if [normalize == `Whitespace] (default), strip leading/trailing whitespace on every line. *)
+  (** Normalize the whitespace for processing/ if [normalize == `None] this does nothing.
+      if [normalize == `Whitespace] (default), strip leading/trailing whitespace on every
+      line. *)
   val of_string : ?normalize:Normalize.decode -> string -> t
 
-  (** Normalize the whitespace for transport (insert the appropriate leading space).
-      if [normalize == `None] this does nothing.
-      if [normalize == `Whitespace] (default), insert a leading space and indent subsequent
-      lines with a tab (remove any other leading/trailing space on every line). *)
+  (** Normalize the whitespace for transport (insert the appropriate leading space). if
+      [normalize == `None] this does nothing. if [normalize == `Whitespace] (default),
+      insert a leading space and indent subsequent lines with a tab (remove any other
+      leading/trailing space on every line). *)
   val to_string : ?normalize:Normalize.encode -> t -> string
 
   include Comparable.S_plain with type t := t
@@ -125,15 +124,14 @@ val filter
 
 (** rewrite header values, preserving original whitespace where possible.
 
-    [normalize] is used to [Value.of_string ?normalize] the [~value] before passing to [f],
-    and again to [Value.to_string ?normalize] the result.
-    If the [~value] and [f ~name ~value] are the same no change will be made (white space is preserved).
+    [normalize] is used to [Value.of_string ?normalize] the [~value] before passing to
+    [f], and again to [Value.to_string ?normalize] the result. If the [~value] and
+    [f ~name ~value] are the same no change will be made (white space is preserved).
 
     Particularly the following is an identity transform:
     [ map ~normalize:`Whitespace ~f:(fun ~name:_ ~value -> Value.of_string ~normalize:`Whitespace value) ].
     By contrast the following will 'normalize' the whitespace on all headers.
-    [ map ~normalize:`None ~f:(fun ~name:_ ~value -> Value.of_string ~normalize:`Whitespace value) ].
-*)
+    [ map ~normalize:`None ~f:(fun ~name:_ ~value -> Value.of_string ~normalize:`Whitespace value) ]. *)
 val map
   :  ?normalize:Normalize.decode
   -> t

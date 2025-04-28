@@ -8,6 +8,7 @@ type t =
   ; local_part : string
   ; domain : string option
   }
+[@@deriving sexp_of]
 
 let is_whitespace_char = function
   | ' ' | '\r' | '\n' | '\t' -> true

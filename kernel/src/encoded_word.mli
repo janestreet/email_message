@@ -26,10 +26,7 @@ val decode_with_charset
   -> [ `Plain of string | `Encoded of Charset.t * string ] list Or_error.t
 
 (** Like [decode_with_charset], but supports arbitrary charsets, not just the ones in
-    [Charset.t].
-
-
-*)
+    [Charset.t]. *)
 val decode_with_raw_charset
   :  string
   -> [ `Plain of string | `Encoded of [ `Charset of string ] * string ] list Or_error.t

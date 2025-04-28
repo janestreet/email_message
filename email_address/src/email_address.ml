@@ -177,6 +177,14 @@ let arg_type = Command.Arg_type.create of_string_exn
 include Comparable.Make_plain_using_comparator (T)
 include Hashable.Make_plain (T)
 
+module Expert = struct
+  module Parser = Email_address_parser_stable_v1
+end
+
+module For_test = struct
+  type t = Email_address_parser_stable_v1.t [@@deriving sexp_of]
+end
+
 module Caseless = struct
   module T = struct
     type nonrec t = t =

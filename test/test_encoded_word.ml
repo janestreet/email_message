@@ -52,7 +52,15 @@ let%expect_test "decode-with-charset" =
       [%sexp
         (decoded
          : [ `Encoded of
-             [ `Ascii | `Big5 | `GB2312 | `Latin1 | `Latin2 | `Utf8 | `Windows1252 ]
+             [ `Ascii
+             | `Big5
+             | `GB2312
+             | `Latin1
+             | `Latin2
+             | `Utf8
+             | `Windows1252
+             | `KS_C_5601_1987
+             ]
              * string
            | `Plain of string
            ]

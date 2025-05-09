@@ -41,8 +41,24 @@ module Attachment : sig
   val sha256 : t -> string Or_error.t
   val filename : t -> attachment_name
 
-  (** [filename] decoded as per [Encoded_word.decode] *)
+  (** [filename] decoded as per [Headers.Encoded_word.decode] *)
   val decoded_filename : t -> attachment_name
+
+  (** This function is similar to [decode_filename], but it includes charset details.
+      Right now, the email attachment downloader uses it to convert attachment names to
+      UTF-8 using lib/iconv. In the future, we might want to add UTF-8 conversion directly
+      into [Email_message] and swap this out with [decode_filename_with_utf_8_conversion].
+      However, we can't do that at the moment because of a vulnerability in iconv *)
+  val decoded_filename_with_charset
+    :  t
+    -> ( Headers.Encoded_word.Charset.t option * attachment_name
+         , [ `None_or_multiple_charsets_in_attachment_name of
+             [ `Encoded of Headers.Encoded_word.Charset.t * attachment_name
+             | `Plain of attachment_name
+             ]
+               list
+           ] )
+         result
 
   val to_file : t -> string -> unit Deferred.Or_error.t
 end
@@ -108,9 +124,14 @@ val local_address : unit -> Email_address.t
     If [~look_through_attached_mails:true] (the default), it will separately include both
     e-mail attachments as well as the attachments to those e-mails. Otherwise it will
     include e-mail attachments but not (separately) any of the attached e-mails'
-    attachments. *)
+    attachments.
+
+    [decode_filename_using] defines which character sets should be used to decode
+    attachment filenames. This option is mainly there to keep legacy behaviour, where
+    KS-C-5601 encoded filenames aren't decoded by default. *)
 val all_attachments
-  :  ?include_inline_parts:[ `None | `Named | `Named_or_has_content_id ]
+  :  ?decode_filename_using:Headers.Encoded_word.Charset.t list
+  -> ?include_inline_parts:[ `None | `Named | `Named_or_has_content_id ]
   -> ?look_through_attached_mails:bool
   -> t
   -> Attachment.t list
@@ -118,9 +139,14 @@ val all_attachments
 val find_attachment : t -> attachment_name -> Attachment.t option
 
 (** [map_attachments] recurses into message/rfc822 parts. However, if a message/rfc822
-    part is replaced, there is no further recursion. *)
+    part is replaced, there is no further recursion.
+
+    [decode_filename_using] defines which character sets should be used to decode
+    attachment filenames. This option is mainly there to keep legacy behaviour, where
+    KS-C-5601 encoded filenames aren't decoded by default. *)
 val map_attachments
   :  ?include_inline_parts:[ `None | `Named | `Named_or_has_content_id ]
+  -> ?decode_filename_using:Headers.Encoded_word.Charset.t list
   -> t
   -> f:(Attachment.t -> [ `Keep | `Replace of t ])
   -> t

@@ -9,6 +9,7 @@ module Charset : sig
     | `Latin2
     | `Utf8
     | `Windows1252
+    | `KS_C_5601_1987
     ]
   [@@deriving sexp_of]
 

@@ -12,6 +12,7 @@ module Charset = struct
     | `Latin2
     | `Utf8
     | `Windows1252
+    | `KS_C_5601_1987
     ]
   [@@deriving sexp_of, enumerate, compare, equal]
 
@@ -23,6 +24,7 @@ module Charset = struct
     | `Latin2 -> "ISO-8859-2"
     | `Utf8 -> "UTF-8"
     | `Windows1252 -> "WINDOWS-1252"
+    | `KS_C_5601_1987 -> "KS_C_5601-1987"
   ;;
 end
 

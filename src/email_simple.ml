@@ -178,7 +178,10 @@ module Attachment = struct
     ; embedded_email : Email.t option
         (* These are expensive operations. Ensure they are only computed once, and
        lazily. *)
-    ; decoded_filename : string Lazy.t
+    ; decoded_filename :
+        [ `Plain of string | `Encoded of Email.Headers.Encoded_word.Charset.t * string ]
+          list
+          Lazy.t
     ; raw_data : Bigstring_shared.t Or_error.t Lazy.t
     ; md5 : string Or_error.t Lazy.t
     ; sha256 : string Or_error.t Lazy.t
@@ -186,7 +189,24 @@ module Attachment = struct
   [@@deriving fields ~getters, sexp_of]
 
   let filename t = Id.filename t.id
-  let decoded_filename t = Lazy.force t.decoded_filename
+
+  let decoded_filename t =
+    Lazy.force t.decoded_filename
+    |> List.map ~f:(function
+      | `Plain str -> str
+      | `Encoded (_, str) -> str)
+    |> String.concat
+  ;;
+
+  let decoded_filename_with_charset t =
+    Lazy.force t.decoded_filename
+    |> function
+    | [ `Plain str ] -> Ok (None, str)
+    | [ `Encoded (charset, str) ] -> Ok (Some charset, str)
+    | ([] | _ :: _) as decoded ->
+      Error (`None_or_multiple_charsets_in_attachment_name decoded)
+  ;;
+
   let raw_data t = Lazy.force t.raw_data
   let md5 t = Lazy.force t.md5
   let sha256 t = Lazy.force t.sha256
@@ -202,13 +222,13 @@ module Attachment = struct
     Bytes.unsafe_to_string ~no_mutation_while_string_reachable:result
   ;;
 
-  let of_content' ?embedded_email ~headers ~filename ~path content =
+  let of_content' ?decode_filename_using ?embedded_email ~headers ~filename ~path content =
     let decoded_filename =
       lazy
-        (Headers.Encoded_word.decode filename
+        (Headers.Encoded_word.decode_with_charset ?charsets:decode_filename_using filename
          |> function
          | Ok s -> s
-         | Error _ -> filename)
+         | Error _ -> [ `Plain filename ])
     in
     let raw_data =
       lazy
@@ -229,8 +249,8 @@ module Attachment = struct
     { headers; id; embedded_email; decoded_filename; raw_data; md5; sha256 }
   ;;
 
-  let of_content ~headers ~filename ~path content =
-    of_content' ~headers ~filename ~path (lazy content)
+  let of_content ?decode_filename_using ~headers ~filename ~path content =
+    of_content' ?decode_filename_using ~headers ~filename ~path (lazy content)
   ;;
 
   let of_embedded_email ~headers ~filename ~path embedded_email =
@@ -344,7 +364,13 @@ let create_utf8
     content
 ;;
 
-let parse_attachment ~include_inline_parts ?container_headers ~path t =
+let parse_attachment
+  ~include_inline_parts
+  ?decode_filename_using
+  ?container_headers
+  ~path
+  t
+  =
   let headers = Email.headers t in
   let as_attachment ~even_if_multipart ~filename =
     match Email_content.parse ?container_headers t with
@@ -355,7 +381,8 @@ let parse_attachment ~include_inline_parts ?container_headers ~path t =
       else None
     | Ok (Message email) ->
       Some (Attachment.of_embedded_email ~headers ~filename ~path email)
-    | Ok (Data content) -> Some (Attachment.of_content ~headers ~filename ~path content)
+    | Ok (Data content) ->
+      Some (Attachment.of_content ?decode_filename_using ~headers ~filename ~path content)
   in
   match Content.content_disposition (Content.of_email t) with
   | `Inline ->
@@ -380,9 +407,14 @@ let parse_attachment ~include_inline_parts ?container_headers ~path t =
   | `Attachment filename -> as_attachment ~even_if_multipart:false ~filename
 ;;
 
-let map_attachments ?(include_inline_parts = `None) t ~f =
+let map_attachments ?(include_inline_parts = `None) ?decode_filename_using t ~f =
   let handle_possible_attachment ?container_headers ~path t =
-    parse_attachment ~include_inline_parts ?container_headers ~path t
+    parse_attachment
+      ~include_inline_parts
+      ?decode_filename_using
+      ?container_headers
+      ~path
+      t
     |> function
     | None -> `Unchanged
     | Some attachment ->
@@ -426,13 +458,14 @@ let map_attachments ?(include_inline_parts = `None) t ~f =
 ;;
 
 let all_attachments
+  ?decode_filename_using
   ?(include_inline_parts = `None)
   ?(look_through_attached_mails = true)
   t
   =
   let all_attachments = Queue.create () in
   let (_ : t) =
-    map_attachments ~include_inline_parts t ~f:(fun attachment ->
+    map_attachments ?decode_filename_using ~include_inline_parts t ~f:(fun attachment ->
       Queue.enqueue all_attachments attachment;
       match look_through_attached_mails with
       | true -> `Keep

@@ -49,16 +49,18 @@ module Attachment : sig
       UTF-8 using lib/iconv. In the future, we might want to add UTF-8 conversion directly
       into [Email_message] and swap this out with [decode_filename_with_utf_8_conversion].
       However, we can't do that at the moment because of a vulnerability in iconv *)
+  type decode_error =
+    [ `Multiple_distinct_charsets_in_attachment_name of
+      [ `Encoded of Headers.Encoded_word.Charset.t * attachment_name
+      | `Plain of attachment_name
+      ]
+        Nonempty_list.t
+    | `Empty_attachment_name
+    ]
+
   val decoded_filename_with_charset
     :  t
-    -> ( Headers.Encoded_word.Charset.t option * attachment_name
-         , [ `None_or_multiple_charsets_in_attachment_name of
-             [ `Encoded of Headers.Encoded_word.Charset.t * attachment_name
-             | `Plain of attachment_name
-             ]
-               list
-           ] )
-         result
+    -> (Headers.Encoded_word.Charset.t option * attachment_name, decode_error) result
 
   val to_file : t -> string -> unit Deferred.Or_error.t
 end

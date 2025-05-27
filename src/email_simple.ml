@@ -198,13 +198,39 @@ module Attachment = struct
     |> String.concat
   ;;
 
+  type decode_error =
+    [ `Multiple_distinct_charsets_in_attachment_name of
+      [ `Encoded of Headers.Encoded_word.Charset.t * attachment_name
+      | `Plain of attachment_name
+      ]
+        Nonempty_list.t
+    | `Empty_attachment_name
+    ]
+
   let decoded_filename_with_charset t =
-    Lazy.force t.decoded_filename
-    |> function
-    | [ `Plain str ] -> Ok (None, str)
-    | [ `Encoded (charset, str) ] -> Ok (Some charset, str)
-    | ([] | _ :: _) as decoded ->
-      Error (`None_or_multiple_charsets_in_attachment_name decoded)
+    let decoded_filename = Lazy.force t.decoded_filename in
+    match Nonempty_list.of_list decoded_filename with
+    | None -> Error `Empty_attachment_name
+    | Some components ->
+      let distinct_charsets_in_decoded_filename =
+        Nonempty_list.map components ~f:(function
+          | `Plain _ -> None
+          | `Encoded (charset, _str) -> Some charset)
+        |> Nonempty_list.stable_dedup
+             ~compare:[%compare: Headers.Encoded_word.Charset.t option]
+      in
+      let decoded_filename_of_parts =
+        lazy
+          (Nonempty_list.to_list components
+           |> List.map ~f:(function
+             | `Plain s -> s
+             | `Encoded (_charset, str) -> str)
+           |> String.concat ~sep:"")
+      in
+      (match distinct_charsets_in_decoded_filename with
+       | [ None ] -> Ok (None, force decoded_filename_of_parts)
+       | [ Some charset ] -> Ok (Some charset, force decoded_filename_of_parts)
+       | _ -> Error (`Multiple_distinct_charsets_in_attachment_name components))
   ;;
 
   let raw_data t = Lazy.force t.raw_data

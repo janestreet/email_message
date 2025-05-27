@@ -11,7 +11,7 @@ module Charset : sig
     | `Windows1252
     | `KS_C_5601_1987
     ]
-  [@@deriving sexp_of]
+  [@@deriving compare, sexp_of]
 
   val all : t list
 end

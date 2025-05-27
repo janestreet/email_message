@@ -1,8 +1,9 @@
 (library
  (name email_message)
  (public_name email_message)
- (libraries async base64 core_unix.bigstring_unix core cryptokit
-   email_address re2 core_unix.sys_unix core_unix.uuid angstrom core_unix
-   email_message_kernel core_unix.time_float_unix core_kernel.uuid)
+ (libraries angstrom async base64 core_unix.bigstring_unix core core_unix
+   cryptokit email_address email_message_kernel core_kernel.nonempty_list re2
+   core_unix.sys_unix core_unix.time_float_unix core_kernel.uuid
+   core_unix.uuid)
  (preprocess
   (pps ppx_jane)))

@@ -6,9 +6,10 @@ module Stable_caseless_string = struct
 
   module V1 = struct
     module T = struct
-      type t = String.V1.t [@@deriving sexp, bin_io, stable_witness, equal]
+      type t = String.V1.t
+      [@@deriving sexp, bin_io ~localize, stable_witness, equal ~localize]
 
-      let compare = U.compare
+      let%template[@mode m = (global, local)] compare = (U.compare [@mode m])
       let hash_fold_t = U.hash_fold_t
 
       type comparator_witness = U.comparator_witness
@@ -34,9 +35,9 @@ module Stable = struct
         ; local_part : String.V1.t
         ; domain : Domain.V1.t option
         }
-      [@@deriving fields ~getters, compare, hash, stable_witness]
+      [@@deriving fields ~getters, compare ~localize, hash, stable_witness]
 
-      let equal = [%compare.equal: t]
+      let%template[@mode m = (global, local)] equal = [%compare_local.equal: t]
       let create ?prefix ?domain local_part = { prefix; local_part; domain }
 
       let with_default_domain email ~default_domain =
@@ -192,7 +193,7 @@ module Caseless = struct
       ; local_part : Stable_caseless_string.V1.t
       ; domain : Stable_caseless_string.V1.t option
       }
-    [@@deriving compare, hash, sexp]
+    [@@deriving compare ~localize, hash, sexp]
   end
 
   include T

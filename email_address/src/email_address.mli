@@ -1,7 +1,7 @@
 open Core
 
 module Domain : sig
-  type t = String.Caseless.t [@@deriving sexp_of, compare]
+  type t = String.Caseless.t [@@deriving sexp_of, compare ~localize]
 
   include Stringable with type t := t
 
@@ -13,7 +13,7 @@ module Domain : sig
   include Hashable.S_plain with type t := t
 end
 
-type t [@@deriving sexp_of, sexp_grammar, compare, hash]
+type t [@@deriving sexp_of, sexp_grammar, compare ~localize, hash]
 
 val create : ?prefix:string -> ?domain:Domain.t -> string -> t
 val of_string : ?default_domain:string -> string -> t Or_error.t
@@ -59,7 +59,7 @@ include Comparable.S_plain with type t := t
 include Hashable.S_plain with type t := t
 
 module Caseless : sig
-  type nonrec t = t [@@deriving sexp_of, compare, hash]
+  type nonrec t = t [@@deriving sexp_of, compare ~localize, hash]
 
   include Comparable.S_plain with type t := t
   include Hashable.S_plain with type t := t
@@ -79,7 +79,9 @@ end
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving bin_io, hash, sexp_grammar, stable_witness, equal]
+    type nonrec t = t
+    [@@deriving
+      bin_io, compare ~localize, hash, sexp_grammar, stable_witness, equal ~localize]
 
     include
       Stable_comparable.With_stable_witness.V1

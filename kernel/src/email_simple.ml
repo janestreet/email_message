@@ -138,6 +138,7 @@ module Mimetype = struct
   let multipart_alternative = "multipart/alternative"
   let multipart_related = "multipart/related"
   let of_string t = t
+  let to_string t = t
   let equal = [%compare.equal: t]
   let arg_type = Command.Arg_type.create of_string
   let from_extension ext = Magic_mime_external.Mime_types.map_extension ext
@@ -176,6 +177,7 @@ module Content = struct
   type t = Email.t [@@deriving sexp_of]
 
   let of_email = Fn.id
+  let headers = Email.headers
 
   let create_custom
     ~content_type

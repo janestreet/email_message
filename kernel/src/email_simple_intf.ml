@@ -15,6 +15,7 @@ module type Mimetype = sig
   val multipart_related : t
   val multipart_alternative : t
   val of_string : string -> t
+  val to_string : t -> string
   val equal : t -> t -> bool
   val arg_type : t Command.Arg_type.t
   val from_filename : string -> t
@@ -31,6 +32,7 @@ module type Content = sig
   type t = private Email.t [@@deriving sexp_of]
 
   val of_email : Email.t -> t
+  val headers : t -> Headers.t
 
   val create_custom
     :  content_type:Mimetype.t
@@ -212,8 +214,11 @@ module type Email_simple = sig
     -> t
 
   val from : t -> Email_address.t option
-  val to_ : t -> Email_address.t list option
+  val from' : t -> Email_address.t Or_error.t option
   val cc : t -> Email_address.t list option
+  val cc' : t -> Email_address.t list Or_error.t option
+  val to_ : t -> Email_address.t list option
+  val to_' : t -> Email_address.t list Or_error.t option
   val subject : t -> string option
   val id : t -> string option
 

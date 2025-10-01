@@ -214,8 +214,11 @@ module type Email_simple = sig
     -> t
 
   val from : t -> Email_address.t option
-  val to_ : t -> Email_address.t list option
+  val from' : t -> Email_address.t Or_error.t option
   val cc : t -> Email_address.t list option
+  val cc' : t -> Email_address.t list Or_error.t option
+  val to_ : t -> Email_address.t list option
+  val to_' : t -> Email_address.t list Or_error.t option
   val subject : t -> string option
   val id : t -> string option
 

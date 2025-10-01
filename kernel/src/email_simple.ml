@@ -519,6 +519,15 @@ let create
     content
 ;;
 
+let decode_last_header' ?normalize name ~f t =
+  Option.map (last_header ?normalize t name) ~f:(fun v ->
+    Or_error.try_with_join (fun () -> f v))
+;;
+
+let from' = decode_last_header' "From" ~f:Email_address.of_string
+let to_' = decode_last_header' "To" ~f:Email_address.list_of_string
+let cc' = decode_last_header' "Cc" ~f:Email_address.list_of_string
+
 let decode_last_header ?normalize name ~f t =
   Option.bind (last_header ?normalize t name) ~f:(fun v ->
     Option.try_with (fun () -> f v))

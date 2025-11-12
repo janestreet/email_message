@@ -79,7 +79,10 @@ module type Content = sig
       gmail.
 
       By default, we add some custom styling to disable the line-wrap formatting rule
-      which gmail uses. To disable this behavior, supply [~force_no_line_wrap:false]. *)
+      which gmail uses. To disable this behavior, supply [~force_no_line_wrap:false].
+
+      Note: Content created using [text_monospace_utf8] can not be used as an attachment,
+      it is intended for use as the email body only. Please use [text_utf8] instead. *)
   val text_monospace_utf8
     :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> ?force_no_line_wrap:bool (** default: true *)
@@ -94,15 +97,24 @@ module type Content = sig
   [@@deprecated "[since 2019-08] Please specify the charset, e.g. [text_monospace_utf8]"]
 
   (** Combine 2 or more contents as alternative versions. List should be sorted from worst
-      to best. *)
+      to best.
+
+      Note: Content created using [alternatives] can not be used as an attachment. Please
+      add multiple attachments instead. *)
   val alternatives : ?extra_headers:(Headers.Name.t * Headers.Value.t) list -> t list -> t
 
-  (** Combine 2 or more contents that should be bundled together *)
+  (** Combine 2 or more contents that should be bundled together
+
+      Note: Content created using [mixed] can not be used as an attachment. Please add
+      multiple attachments instead. *)
   val mixed : ?extra_headers:(Headers.Name.t * Headers.Value.t) list -> t list -> t
 
   (** Add related resources (e.g. inline images). You can reference them using
       'cid:$[{attachment_name}]' in the content. To attach files you should use
-      [create ~attachments] *)
+      [create ~attachments]
+
+      Note: Content created using [with_related] can not be used as an attachment. Please
+      add multiple attachments instead. *)
   val with_related
     :  ?extra_headers:(Headers.Name.t * Headers.Value.t) list
     -> resources:(attachment_name * t) list

@@ -23,9 +23,9 @@ let join (prologue, parts, epilogue) =
   let epilogue = Option.map epilogue ~f:Bigstring_shared.of_string in
   let parts = List.map parts ~f:String_monoid.of_string in
   let joined = join_without_checking_for_conflicts ?prologue ~parts ?epilogue boundary in
-  (* Expect tests ignore leading and trailing whitespace (and common indentation)
-     on both the 'expected' and 'actual' outputs. Wrapping in '######'s ensures
-     that no whitespace is stripped. *)
+  (* Expect tests ignore leading and trailing whitespace (and common indentation) on both
+     the 'expected' and 'actual' outputs. Wrapping in '######'s ensures that no whitespace
+     is stripped. *)
   printf "######\n%s\n######" (String_monoid.to_string joined)
 ;;
 

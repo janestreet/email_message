@@ -130,8 +130,8 @@ module Generator = struct
      - Quoted-printable text
      - Base64 encoded content.
 
-     The only posibility is that it might appear in plaintext, but
-     that would be incredibly rare.
+     The only posibility is that it might appear in plaintext, but that would be
+     incredibly rare.
 
      We avoid conflicts by generating IDs with different numbers as needed.
   *)

@@ -2,8 +2,8 @@ open! Core
 open! Import
 
 module Base : sig
-  (*_ The "exists" query can equally be accomplished using [sexp query], but
-    not the "all" one. *)
+  (*_ The "exists" query can equally be accomplished using [sexp query], but not the "all"
+      one. *)
 
   type t =
     [ `exists_header of string * Re2.t

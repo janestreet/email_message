@@ -78,8 +78,8 @@ module Value : sig
   include Hashable.S_plain with type t := t
 end
 
-(*_ The add and set functions are same as in Field_list, except they add a space
-  before the value. *)
+(*_ The add and set functions are same as in Field_list, except they add a space before
+    the value. *)
 
 type t [@@deriving compare, hash, sexp_of, equal]
 

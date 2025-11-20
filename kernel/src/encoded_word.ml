@@ -3,7 +3,7 @@ open Angstrom
 
 module Charset = struct
   (* The following might not be an exhaustive list. We can add to this as we encounter
-       more cases. *)
+     more cases. *)
   type t =
     [ `Ascii
     | `Big5
@@ -61,10 +61,8 @@ let parser_ : charset_parser:'a Angstrom.t -> ('a * string) Angstrom.t =
   let%bind data =
     match encoding with
     | `Quoted_printable ->
-      (* RFC2047 deviates slightly from common quoted printable.
-         In particular
-         4.2(2) - Underscore may be used to encode space, and
-         4.2(3)- underscore must be encoded.
+      (* RFC2047 deviates slightly from common quoted printable. In particular 4.2(2) -
+         Underscore may be used to encode space, and 4.2(3)- underscore must be encoded.
          This substituion handles that decoding step. *)
       let data = String.substr_replace_all data ~pattern:"_" ~with_:" " in
       let data_bstr, _ =
@@ -91,8 +89,8 @@ let parser_many
        [ (let%map hd = parser_ ~charset_parser
           and tl =
             (* RFC2047 6.2 When displaying a particular header field that contains
-               multiple 'encoded-word's, any 'linear-white-space' that separates a
-               pair of adjacent 'encoded-word's is ignored. *)
+               multiple 'encoded-word's, any 'linear-white-space' that separates a pair of
+               adjacent 'encoded-word's is ignored. *)
             many
               (let%map (_ : string) = option "" ws
                and res = parser_ ~charset_parser in
@@ -105,16 +103,16 @@ let parser_many
                   | '=' -> false
                   | c -> not (Char.is_whitespace c))
               ; string "="
-                (* Collapse Line breaks as per
-                 RFC822 - 3.1.1 Unfolding is accomplished by regarding CRLF immediately
-                 followed by an LWSP-char as equivalent to the LWSP-char.
-                 RFC822 - 3.1.3 Rules of (un)folding apply to these (unstructured) fields *)
+                (* Collapse Line breaks as per RFC822 - 3.1.1 Unfolding is accomplished by
+                   regarding CRLF immediately followed by an LWSP-char as equivalent to
+                   the LWSP-char. RFC822 - 3.1.3 Rules of (un)folding apply to these
+                   (unstructured) fields *)
               ; (let%bind (_ : string) = choice [ string "\r\n"; string "\n" ] in
                  ws)
-                (* The RFC is ambiguous on what should happen if there is a lone CRLF, so we
-                 ignore those, and treat these as regular white space. The RFC is also
-                 ambiguous on how to treat multiple consecutive whitespaces, so we do the
-                 conservative thing and leave them exactly as is. *)
+                (* The RFC is ambiguous on what should happen if there is a lone CRLF, so
+                   we ignore those, and treat these as regular white space. The RFC is
+                   also ambiguous on how to treat multiple consecutive whitespaces, so we
+                   do the conservative thing and leave them exactly as is. *)
               ; ws
               ]
           in

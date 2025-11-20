@@ -72,10 +72,9 @@ let email_without_prefix_no_quote =
 let email_without_prefix_quote q = char q *> email_without_prefix_no_quote <* char q
 
 let email_without_prefix_maybe_quote =
-  (* Order matters here.
-     Because [email_without_prefix_no_quote] may contain quotes in the local part
-     we need to match the quoted version first.
-     Otherwise we will 'successfully' match the string and be left with an unconsumed trailing quote.
+  (* Order matters here. Because [email_without_prefix_no_quote] may contain quotes in the
+     local part we need to match the quoted version first. Otherwise we will
+     'successfully' match the string and be left with an unconsumed trailing quote.
   *)
   email_without_prefix_quote '\''
   <|> email_without_prefix_quote '"'
@@ -96,12 +95,10 @@ let email_with_prefix =
 ;;
 
 let email =
-  (* Order matters here.
-     `email_without_prefix` can (sometimes) parse the prefix of
-     `email_with_prefix`.
-     This means we must match `email_with_prefix` first, if this fails we
-     fall back to `email_without_prefix`.
-     (Otherwise [email_without_prefix] would match and then fail due to unconsumed input)
+  (* Order matters here. `email_without_prefix` can (sometimes) parse the prefix of
+     `email_with_prefix`. This means we must match `email_with_prefix` first, if this
+     fails we fall back to `email_without_prefix`. (Otherwise [email_without_prefix] would
+     match and then fail due to unconsumed input)
   *)
   email_with_prefix <|> email_without_prefix <?> "email"
 ;;

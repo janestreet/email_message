@@ -25,8 +25,8 @@ include T
 include Comparable.Make_plain (T)
 include Hashable.Make_plain (T)
 
-(* The default type of a message depends on the type of its parent,
-   so we need to pass it around. *)
+(* The default type of a message depends on the type of its parent, so we need to pass it
+   around. *)
 let of_bigstring_shared ?(normalize_headers = `None) bstr =
   let lexbuf = Bigstring_shared.to_lexbuf bstr in
   let%map (`Message (headers, content_offset)) =

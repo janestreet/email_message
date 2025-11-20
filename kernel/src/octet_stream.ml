@@ -188,11 +188,10 @@ end
 
 module Quoted_printable = struct
   let decode bstr =
-    (* The RFC2045 says that newlines can be converted to the platforms native
-       format, so that's what we'll do. It's the same for both binary data and
-       text data. If a CRLF sequence appears in the decoded data, that's because
-       it was encoded as =0D=0A, which means the characters shouldn't be
-       interpreted as EOL.  *)
+    (* The RFC2045 says that newlines can be converted to the platforms native format, so
+       that's what we'll do. It's the same for both binary data and text data. If a CRLF
+       sequence appears in the decoded data, that's because it was encoded as =0D=0A,
+       which means the characters shouldn't be interpreted as EOL. *)
     let bigbuffer, _ =
       Quoted_printable_lexer.decode_quoted_printable
         (Bigstring_shared.length bstr)

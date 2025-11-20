@@ -20,7 +20,7 @@ module Encoding : sig
   [@@deriving sexp_of, compare, hash]
 
   (*_ RFC 2045 says 7bit should be assumed if the Content-Transfer-Encoding heading is
-    missing. *)
+      missing. *)
 
   val default : known
   val default' : t

@@ -110,8 +110,8 @@ let%expect_test "weird headers" =
      (raw_content ()))
     Successfully roundtripped: false
     |}];
-  (* Whitespace should not be a part of a header field.  Google considers this a
-     valid header.  Exim treats this as the start of the body. *)
+  (* Whitespace should not be a part of a header field. Google considers this a valid
+     header. Exim treats this as the start of the body. *)
   parse "From: foo@bar.com\nMalformed header: hello world\n";
   [%expect
     {|
@@ -119,9 +119,9 @@ let%expect_test "weird headers" =
      (raw_content ("Malformed header: hello world\n")))
     Successfully roundtripped: false
     |}];
-  (* RFC 5322 says that field names must contain at least 1 character, however
-     Google and Exim both don't have this requirement. In addition, we get some
-     messages in the wild that have broken headers like this. *)
+  (* RFC 5322 says that field names must contain at least 1 character, however Google and
+     Exim both don't have this requirement. In addition, we get some messages in the wild
+     that have broken headers like this. *)
   parse "From: foo@bar.com\n: hello world\n";
   [%expect
     {|
@@ -134,7 +134,6 @@ let%expect_test "weird headers" =
 (* RFC 2822 Section 2.2.3:
 
    {v
-
  The general rule is that wherever this standard allows for folding white space (not
  simply WSP characters), a CRLF may be inserted before any WSP. For example, the header
  field:
@@ -145,7 +144,6 @@ let%expect_test "weird headers" =
 
  Subject: This
   is a test
-
    v}
 *)
 let%expect_test "Folding whitespace" =

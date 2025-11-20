@@ -123,10 +123,9 @@ and content_of_bigstring_shared ~headers ?container_headers bstr =
   in
   match Media_type.multipart_boundary media_type with
   | Some boundary ->
-    (* According to Wikipedia, the content-transfer-encoding of a multipart
-       type must always be "7bit", "8bit" or "binary" to avoid the
-       complications that would be posed by multiple levels of decoding. In
-       this case this decode call is free. *)
+    (* According to Wikipedia, the content-transfer-encoding of a multipart type must
+       always be "7bit", "8bit" or "binary" to avoid the complications that would be posed
+       by multiple levels of decoding. In this case this decode call is free. *)
     let%bind decoded_bstr = decode octet_stream in
     let%bind multipart =
       multipart_of_bigstring_shared ~boundary ~container_headers:headers decoded_bstr

@@ -81,28 +81,28 @@ let%expect_test "2 newlines" =
 ;;
 
 let%expect_test "weird headers" =
-  (* Google and Exim both change to "body mode" (and adds a blank line) on the first
-     line that "doesn't look like a header" for some slightly different
-     interpretation of that phrase:
+  (* Google and Exim both change to "body mode" (and adds a blank line) on the first line
+     that "doesn't look like a header" for some slightly different interpretation of that
+     phrase:
 
-     - Google allows ASCII 32-57,59-126 (printable characters minus colon) in a
+     - Google allows ASCII 32-57,59-126 (printable characters minus colon) in a header
+       name
+
+     - Exim allows ASCII 33-57,59-126 (printable characters minus colon minus space) in a
        header name
 
-     - Exim allows ASCII 33-57,59-126 (printable characters minus colon minus space)
-       in a header name
-
-     RFC 5322 does not specify how to handle an invalid header line.  The following
+     RFC 5322 does not specify how to handle an invalid header line. The following
      scenarios are possible:
 
      1) An invalid header (according to the above rules) is written somewhere in the
-     header block.  Any following headers are incorrectly treated as the start of
-     the message body.
+        header block. Any following headers are incorrectly treated as the start of the
+        message body.
 
-     2) An MUA forgets to put a blank line between the header block and the body.
-     As long as the first body line does not look like a header (according to the
-     above rules), the "right thing" happens. *)
+     2) An MUA forgets to put a blank line between the header block and the body. As long
+        as the first body line does not look like a header (according to the above rules),
+        the "right thing" happens. *)
   (* Make sure we can handle the obsolete syntax of headers with whitespace before the
-     colon. This doesn't roundtrip because we remove the whitespace before the ":"*)
+     colon. This doesn't roundtrip because we remove the whitespace before the ":" *)
   parse "From: foo@bar.com\nObsolete-header : hello world\n";
   [%expect
     {|

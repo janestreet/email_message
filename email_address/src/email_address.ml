@@ -37,7 +37,7 @@ module Stable = struct
         }
       [@@deriving fields ~getters, compare ~localize, hash, stable_witness]
 
-      let%template[@mode m = (global, local)] equal = [%compare_local.equal: t]
+      let%template[@mode m = (global, local)] equal = ([%compare.equal: t] [@mode local])
       let create ?prefix ?domain local_part = { prefix; local_part; domain }
 
       let with_default_domain email ~default_domain =
@@ -200,3 +200,22 @@ module Caseless = struct
   include Hashable.Make_plain (T)
   include Comparable.Make_plain (T)
 end
+
+include (
+struct
+  let quickcheck_generator_string = String.gen' Char.gen_alphanum
+
+  [%%rederive
+    type nonrec t = t =
+      { prefix : string option
+      ; local_part : string
+      ; domain : string option
+      }
+    [@@deriving quickcheck]]
+
+  let quickcheck_generator =
+    Quickcheck.Generator.filter quickcheck_generator ~f:(fun t ->
+      to_string t |> of_string |> Result.is_ok)
+  ;;
+end :
+  Quickcheckable.S with type t := t)

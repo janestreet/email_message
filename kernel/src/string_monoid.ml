@@ -139,8 +139,7 @@ let plus a b =
 ;;
 
 let concat ?(sep = empty) ts =
-  (* Fold right is more efficient than fold_left, as it will create a
-     flat List node *)
+  (* Fold right is more efficient than fold_left, as it will create a flat List node *)
   match ts with
   | [] -> empty
   | t :: ts ->
@@ -155,9 +154,7 @@ let concat_underlying ~of_underlying ?sep strs =
 
 let concat_string = concat_underlying ~of_underlying:of_string
 
-(*
-   let __UNUSED_VALUE__concat_bigstring =
-   concat_underlying ~of_underlying:of_bigstring;;
+(* let __UNUSED_VALUE__concat_bigstring = concat_underlying ~of_underlying:of_bigstring;;
 *)
 
 type blitter =

@@ -78,8 +78,8 @@ module Expert = struct
         if String.equal (String.strip id) (String.strip id')
         then id, remove_id_from_extra_headers ()
         else
-          (* This case is odd, it will result in two different Message-Id headers on
-             the email *)
+          (* This case is odd, it will result in two different Message-Id headers on the
+             email *)
           id, extra_headers
     in
     let headers =
@@ -214,9 +214,8 @@ module Content = struct
   ;;
 
   let html_pre ?(force_no_line_wrap = true) str =
-    (* This was copy&pasted from [markup.ml] in [html] library
-       to avoid adding a dependency on the whole [html] library
-       just for this. *)
+    (* This was copy&pasted from [markup.ml] in [html] library to avoid adding a
+       dependency on the whole [html] library just for this. *)
     let html_encode s =
       let escape =
         [ "&", "&amp;"; "<", "&lt;"; ">", "&gt;"; "\"", "&quot;"; "'", "&#39;" ]
@@ -257,9 +256,9 @@ module Content = struct
       ~normalize_headers:`Whitespace
       ~content_type:Mimetype.multipart_related
       ~extra_headers
-      (* per RFC2183 only the first part gets [Content-Disposition:inline],
-         The related parts should not be displayed sequentially but are (presumably)
-         referenced in the actual content. *)
+      (* per RFC2183 only the first part gets [Content-Disposition:inline], The related
+         parts should not be displayed sequentially but are (presumably) referenced in the
+         actual content. *)
       (add_headers t [ "Content-Disposition", "inline" ]
        :: List.map resources ~f:(fun (name, content) ->
          add_headers content [ "Content-Id", sprintf "<%s>" name ]))
@@ -313,8 +312,8 @@ module Content = struct
 
   (* See https://datatracker.ietf.org/doc/html/rfc2231
 
-     This function deals with "parameter value continuations".
-     Take the following header as an example:
+     This function deals with "parameter value continuations". Take the following header
+     as an example:
 
      {v
      Content-Type: message/external-body; access-type=URL;
@@ -435,9 +434,9 @@ module Content = struct
       if String.Caseless.equal (content_type t) Mimetype.multipart_alternative
       then
         (* multipart/alternative is special since an aplication is expected to
-           present/process any one of the alternative parts. The logic for picking
-           the 'correct' alternative is application dependant so leaving this to
-           to users (e.g. first one that parses) *)
+           present/process any one of the alternative parts. The logic for picking the
+           'correct' alternative is application dependant so leaving this to to users
+           (e.g. first one that parses) *)
         [ t ]
       else List.concat_map parts ~f:inline_parts
     | None ->

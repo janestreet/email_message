@@ -33,8 +33,9 @@ let make_id () =
   if Ppx_inline_test_lib.am_running
   then "{AUTO-GENERATED-ID}"
   else
-    (* Trust that UUID does a good enough job at avoiding colision risks.
-       Only UUID to avoid leaking any interesting information. Use [X-JS-*] headers instead, see [tracing_headers] below. *)
+    (* Trust that UUID does a good enough job at avoiding colision risks. Only UUID to
+       avoid leaking any interesting information. Use [X-JS-*] headers instead, see
+       [tracing_headers] below. *)
     sprintf !"<%{Uuid}@ocaml.async_smtp>" (Uuid_unix.create ())
 ;;
 
@@ -176,8 +177,7 @@ module Attachment = struct
     { headers : Headers.t
     ; id : Id.t
     ; embedded_email : Email.t option
-        (* These are expensive operations. Ensure they are only computed once, and
-       lazily. *)
+        (* These are expensive operations. Ensure they are only computed once, and lazily. *)
     ; decoded_filename :
         [ `Plain of string | `Encoded of Email.Headers.Encoded_word.Charset.t * string ]
           list

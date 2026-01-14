@@ -139,8 +139,8 @@ let%expect_test "decode-with-charset" =
 
 let%expect_test _ =
   let test str = printf "%S\n" (decode str |> Or_error.ok_exn) in
-  (* The RFC is pretty clear in saying that spaces inside the encode word are not supported.
-     Yet we've seen some incorrectly encoded headers in the wild.
+  (* The RFC is pretty clear in saying that spaces inside the encode word are not
+     supported. Yet we've seen some incorrectly encoded headers in the wild.
 
      Adding this test to document that the current behaviour is correct.
   *)

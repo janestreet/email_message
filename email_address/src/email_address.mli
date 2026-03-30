@@ -54,7 +54,7 @@ val arg_type : t Command.Arg_type.t
 
 (* Hash and comparisons are based on the address part (local_part + domain) only. *)
 
-include Comparable.S_plain with type t := t
+include Comparable.S_plain [@mode local] with type t := t
 include Hashable.S_plain with type t := t
 
 module Caseless : sig

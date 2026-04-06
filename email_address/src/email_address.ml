@@ -175,7 +175,7 @@ let set_domain t domain = { t with domain }
 let set_prefix t prefix = { t with prefix }
 let arg_type = Command.Arg_type.create of_string_exn
 
-include Comparable.Make_plain_using_comparator (T)
+include Comparable.Make_plain_using_comparator [@mode local] (T)
 include Hashable.Make_plain (T)
 
 module Expert = struct
@@ -198,7 +198,7 @@ module Caseless = struct
 
   include T
   include Hashable.Make_plain (T)
-  include Comparable.Make_plain (T)
+  include Comparable.Make_plain [@mode local] (T)
 end
 
 include (

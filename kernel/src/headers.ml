@@ -131,6 +131,7 @@ module Common = struct
   let date = "Date"
   let message_id = "Message-ID"
   let list_id = "list-Id"
+  let received = "Received"
 end
 
 type t = (Name.t * string) list [@@deriving sexp_of, compare, hash, equal]

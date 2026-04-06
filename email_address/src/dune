@@ -3,4 +3,4 @@
  (public_name email_message.email_address)
  (libraries angstrom core base64)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

@@ -85,23 +85,23 @@ module Underlying = struct
         ~string:suffix
   ;;
 
-  let is_substr_substring ?(pos = 0) ?len t ~substring =
+  let is_substr_substring_internal ?(pos = 0) ?len t ~needle_len ~needle_str ~needle_bstr =
     let len = Option.value len ~default:(length t - pos) in
-    if len < Substring.length substring
+    if len < needle_len
     then false
     else (
-      let rec loop i =
-        if i + Substring.length substring > len
-        then false
-        else
-          is_substr_string
-            ~pos:(pos + i)
-            ~len:(Substring.length substring)
-            t
-            ~string:substring
-          || loop (i + 1)
-      in
-      loop 0)
+      match t with
+      | String str ->
+        String.is_substring (String.sub str ~pos ~len) ~substring:(Lazy.force needle_str)
+      | Bigstring bstr ->
+        Bigstring.memmem
+          ~haystack:bstr
+          ~needle:(Lazy.force needle_bstr)
+          ~haystack_pos:pos
+          ~haystack_len:len
+          ()
+        |> Option.is_some
+      | Char c -> needle_len = 1 && Char.equal c (String.get (Lazy.force needle_str) 0))
   ;;
 end
 
@@ -272,27 +272,35 @@ let rec is_substr_prefix t ~prefix =
         is_substr_string hd ~string:hd_part && is_substr_prefix tl ~prefix:tl_part))
 ;;
 
-let rec is_substr_substring t ~substring =
-  if Substring.is_empty substring
+let is_substr_substring t ~substring =
+  let needle_len = Substring.length substring in
+  let needle_str = lazy (Substring.to_string substring) in
+  let needle_bstr = lazy (Substring.to_bigstring substring) in
+  if needle_len = 0
   then true
-  else if length t < Substring.length substring
-  then false
   else (
-    match t with
-    | Leaf u -> Underlying.is_substr_substring u ~substring
-    | List (_, []) -> Substring.is_empty substring
-    | List (_, [ t ]) -> is_substr_substring t ~substring
-    | List (len, hd :: tl) ->
-      let tl = List (len - length hd, tl) in
-      let rec suffix_loop pos =
-        if pos <= 0
-        then is_substr_substring tl ~substring
-        else (
-          let hd_part, tl_part = substring_split substring ~pos in
-          (is_substr_suffix hd ~suffix:hd_part && is_substr_prefix tl ~prefix:tl_part)
-          || suffix_loop (pos - 1))
-      in
-      is_substr_substring hd ~substring || suffix_loop (Substring.length substring - 1))
+    let rec loop t =
+      if length t < needle_len
+      then false
+      else (
+        match t with
+        | Leaf u ->
+          Underlying.is_substr_substring_internal u ~needle_len ~needle_str ~needle_bstr
+        | List (_, []) -> needle_len = 0
+        | List (_, [ t ]) -> loop t
+        | List (len, hd :: (_ :: _ as tl)) ->
+          let tl = List (len - length hd, tl) in
+          let rec suffix_loop pos =
+            if pos <= 0
+            then loop tl
+            else (
+              let hd_part, tl_part = substring_split substring ~pos in
+              (is_substr_suffix hd ~suffix:hd_part && is_substr_prefix tl ~prefix:tl_part)
+              || suffix_loop (pos - 1))
+          in
+          loop hd || suffix_loop (needle_len - 1))
+    in
+    loop t)
 ;;
 
 let is_string t ~string =

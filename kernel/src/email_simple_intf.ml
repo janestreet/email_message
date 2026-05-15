@@ -158,6 +158,7 @@ module type Expert = sig
     :  from:string (** defaults to <user@host> *)
     -> to_:string list
     -> ?cc:string list
+    -> ?bcc:string
     -> ?reply_to:string
     -> subject:string
     -> id:string

@@ -53,6 +53,7 @@ module Expert = struct
     ~from
     ~to_
     ?(cc = [])
+    ?bcc
     ?reply_to
     ~subject
     ~id
@@ -87,6 +88,9 @@ module Expert = struct
       @ [ "From", from ]
       @ (if List.is_empty to_ then [] else [ "To", String.concat to_ ~sep:",\n " ])
       @ (if List.is_empty cc then [] else [ "Cc", String.concat cc ~sep:",\n " ])
+      @ (match bcc with
+         | None -> []
+         | Some bcc -> [ "Bcc", bcc ])
       @ (match reply_to with
          | None -> []
          | Some reply_to -> [ "Reply-To", reply_to ])

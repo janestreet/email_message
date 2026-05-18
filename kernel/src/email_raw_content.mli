@@ -1,6 +1,6 @@
 open! Core
 
-type t [@@deriving compare, hash, sexp_of, equal]
+type t : value mod contended portable [@@deriving compare, hash, sexp_of, equal]
 
 val to_bigstring_shared : t -> Bigstring_shared.t
 val of_string : string -> t

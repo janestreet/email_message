@@ -12,6 +12,7 @@ module Lf_or_crlf = Lf_or_crlf
 module Headers = struct
   include Headers
   module Encoded_word = Encoded_word
+  module Common = Common
 end
 
 module Stable = struct

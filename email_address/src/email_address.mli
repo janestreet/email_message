@@ -13,7 +13,7 @@ module Domain : sig
   include Hashable.S_plain with type t := t
 end
 
-type t : value mod contended portable
+type t : immutable_data
 [@@deriving sexp_of, sexp_grammar, compare ~localize, hash, quickcheck]
 
 val create : ?prefix:string -> ?domain:Domain.t -> string -> t

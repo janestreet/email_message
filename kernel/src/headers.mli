@@ -148,19 +148,19 @@ val map'
 module Stable : sig
   module Name : sig
     module V1 : sig
-      type t = Name.t [@@deriving equal]
+      type t = Name.t [@@deriving compare, equal]
 
-      include Stable_without_comparator with type t := t
+      include Stable_without_comparator_with_witness with type t := t
     end
   end
 
   module Value : sig
-    module V1 : Stable_without_comparator with type t = Value.t
+    module V1 : Stable_without_comparator_with_witness with type t = Value.t
   end
 
   module V1 : sig
-    type nonrec t = t [@@deriving equal]
+    type nonrec t = t [@@deriving compare, equal]
 
-    include Stable_without_comparator with type t := t
+    include Stable_without_comparator_with_witness with type t := t
   end
 end

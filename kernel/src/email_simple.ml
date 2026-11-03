@@ -394,6 +394,11 @@ module Content = struct
        attachment_name_from_args args ~attribute_name:"name")
   ;;
 
+  let charset t =
+    let%bind.Option _, args = parse_last_header t "Content-Type" in
+    attachment_name_from_args args ~attribute_name:"charset"
+  ;;
+
   let related_part_cid t =
     let open Option.Let_syntax in
     let%map str = last_header t "Content-Id" >>| String.strip in

@@ -1,24 +1,26 @@
-open! Core.Core_stable
-open! Core.Int.Replace_polymorphic_compare
+open! Core
 
 module Stable_caseless_string = struct
-  module U = Core.String.Caseless
+  module U = String.Caseless
 
   module V1 = struct
     module T = struct
-      type t = String.V1.t
-      [@@deriving sexp, bin_io ~localize, stable_witness, equal ~localize]
+      type t = String.Stable.V1.t [@@deriving sexp, bin_io, stable_witness]
 
-      let%template[@mode m = (global, local)] compare = (U.compare [@mode m])
-      let hash_fold_t = U.hash_fold_t
+      (* Caseless, like [compare]. *)
+      include (
+        U :
+          sig
+            type t [@@deriving compare, equal, hash]
 
-      type comparator_witness = U.comparator_witness
-
-      let comparator = U.comparator
+            include Comparator.S with type t := t
+          end
+          with type t := U.t
+           and type comparator_witness = U.comparator_witness)
     end
 
     include T
-    include Comparable.V1.With_stable_witness.Make (T)
+    include Comparable.Stable.V1.With_stable_witness.Make (T)
   end
 end
 
@@ -31,22 +33,20 @@ module Stable = struct
     module T = struct
       type t = Email_address_parser_stable_v1.t =
         { (* [prefix = None] means no brackets. *)
-          prefix : String.V1.t option [@compare.ignore] [@hash.ignore]
-        ; local_part : String.V1.t
+          prefix : String.Stable.V1.t option [@compare.ignore] [@hash.ignore]
+        ; local_part : String.Stable.V1.t
         ; domain : Domain.V1.t option
         }
-      [@@deriving fields ~getters, compare ~localize, hash, stable_witness]
+      [@@deriving fields ~getters, compare, hash, stable_witness]
 
-      let%template[@mode m = (global, local)] equal = ([%compare.equal: t] [@mode local])
+      let equal = [%compare.equal: t]
       let create ?prefix ?domain local_part = { prefix; local_part; domain }
 
       let with_default_domain email ~default_domain =
-        { email with domain = Core.Option.first_some email.domain default_domain }
+        { email with domain = Option.first_some email.domain default_domain }
       ;;
 
       let of_string ?default_domain input_str =
-        let open Core in
-        let open! Int.Replace_polymorphic_compare in
         match
           Angstrom.parse_string
             ~consume:Prefix
@@ -61,13 +61,13 @@ module Stable = struct
       ;;
 
       let of_string_exn ?default_domain input_str =
-        of_string ?default_domain input_str |> Core.Or_error.ok_exn
+        of_string ?default_domain input_str |> Or_error.ok_exn
       ;;
 
       let compose ~prefix ~address_part =
         match prefix with
         | None -> address_part
-        | Some prefix -> Core.sprintf "%s<%s>" prefix address_part
+        | Some prefix -> sprintf "%s<%s>" prefix address_part
       ;;
 
       let compose_utf8 ~prefix ~address_part =
@@ -75,15 +75,15 @@ module Stable = struct
         | None -> address_part
         | Some prefix ->
           let encoded_prefix = Base64.encode_string prefix in
-          let prefix_utf8 = Core.sprintf "=?%s?B?%s?=" "UTF-8" encoded_prefix in
-          Core.sprintf "%s<%s>" prefix_utf8 address_part
+          let prefix_utf8 = sprintf "=?%s?B?%s?=" "UTF-8" encoded_prefix in
+          sprintf "%s<%s>" prefix_utf8 address_part
       ;;
 
       let to_string t =
         let address_part =
           match t.domain with
           | None -> t.local_part
-          | Some domain -> Core.sprintf "%s@%s" t.local_part domain
+          | Some domain -> sprintf "%s@%s" t.local_part domain
         in
         compose ~prefix:t.prefix ~address_part
       ;;
@@ -92,12 +92,12 @@ module Stable = struct
         let address_part =
           match t.domain with
           | None -> t.local_part
-          | Some domain -> Core.sprintf "%s@%s" t.local_part domain
+          | Some domain -> sprintf "%s@%s" t.local_part domain
         in
         compose_utf8 ~prefix:t.prefix ~address_part
       ;;
 
-      include Sexpable.Of_stringable.V1 (struct
+      include Sexpable.Stable.Of_stringable.V1 (struct
           type nonrec t = t
 
           let to_string = to_string
@@ -106,7 +106,7 @@ module Stable = struct
 
       let t_sexp_grammar = Sexplib0.Sexp_grammar.coerce [%sexp_grammar: string]
 
-      include Binable.Of_stringable.V1 [@alert "-legacy"] (struct
+      include Binable.Stable.Of_stringable.V1 [@alert "-legacy"] (struct
           type nonrec t = t
 
           let to_string = to_string
@@ -116,16 +116,13 @@ module Stable = struct
 
     module With_comparator = struct
       include T
-      include Comparator.V1.Make (T)
+      include Comparator.Stable.V1.Make (T)
     end
 
     include With_comparator
-    include Comparable.V1.With_stable_witness.Make (With_comparator)
+    include Comparable.Stable.V1.With_stable_witness.Make (With_comparator)
   end
 end
-
-open Core
-open! Int.Replace_polymorphic_compare
 
 module Domain = struct
   include String.Caseless
@@ -152,7 +149,7 @@ let list_of_string ?default_domain input_str =
 ;;
 
 let list_of_string_exn ?default_domain input_str =
-  list_of_string ?default_domain input_str |> Core.Or_error.ok_exn
+  list_of_string ?default_domain input_str |> Or_error.ok_exn
 ;;
 
 let list_to_header_value ts = String.concat ~sep:",\n\t" (List.map ts ~f:to_string)
@@ -173,9 +170,9 @@ let set_address_part t address_part = of_string (compose ~prefix:t.prefix ~addre
 let set_local_part t local_part = { t with local_part }
 let set_domain t domain = { t with domain }
 let set_prefix t prefix = { t with prefix }
-let arg_type = Command.Arg_type.create of_string_exn
+let arg_type = Command.Arg_type.create [%eta1 of_string_exn]
 
-include Comparable.Make_plain_using_comparator [@mode local] (T)
+include Comparable.Make_plain_using_comparator (T)
 include Hashable.Make_plain (T)
 
 module Expert = struct
@@ -189,16 +186,17 @@ end
 module Caseless = struct
   module T = struct
     type nonrec t = t =
-      { prefix : String.Stable.V1.t option [@compare.ignore] [@hash.ignore]
+      { prefix : String.Stable.V1.t option
+           [@compare.ignore] [@equal.ignore] [@hash.ignore]
       ; local_part : Stable_caseless_string.V1.t
       ; domain : Stable_caseless_string.V1.t option
       }
-    [@@deriving compare ~localize, hash, sexp]
+    [@@deriving compare, equal, hash, sexp]
   end
 
   include T
   include Hashable.Make_plain (T)
-  include Comparable.Make_plain [@mode local] (T)
+  include Comparable.Make_plain (T)
 end
 
 include (

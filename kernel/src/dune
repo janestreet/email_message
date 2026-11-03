@@ -1,9 +1,11 @@
 (library
  (name email_message_kernel)
  (public_name email_message.kernel)
- (libraries angstrom base64 base64.rfc2045 core email_address magic-mime)
+ (libraries angstrom base64 base64.rfc2045 core email_address magic-mime
+   ppx_stable_witness.stable_witness)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality
+    -require-template-extension)))
 
 (ocamllex
  (modules email_lexer media_type_lexer quoted_printable_lexer))

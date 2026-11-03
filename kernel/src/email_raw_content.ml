@@ -13,17 +13,26 @@ module Stable = struct
        the serialization format is unchanged from the original [type t = ... option]. We
        use [V1] rather than [V2] because [V2] wraps the bin_shape with a caller_identity
        UUID, which would change the bin_digest. *)
+    module Bin_format = struct
+      type t = Bigstring_shared.Stable.V1.t option [@@deriving bin_io, stable_witness]
+    end
+
+    let to_binable { raw } = raw
+    let of_binable raw = { raw }
+
     include
       Binable.Of_binable.V1 [@alert "-legacy"]
-        (struct
-          type t = Bigstring_shared.Stable.V1.t option [@@deriving bin_io]
-        end)
+        (Bin_format)
         (struct
           type nonrec t = t
 
-          let to_binable { raw } = raw
-          let of_binable raw = { raw }
+          let to_binable = to_binable
+          let of_binable = of_binable
         end)
+
+    let stable_witness =
+      Stable_witness.of_serializable Bin_format.stable_witness of_binable to_binable
+    ;;
 
     let sexp_of_t { raw } = [%sexp_of: Bigstring_shared.Stable.V1.t option] raw
     let t_of_sexp sexp = { raw = [%of_sexp: Bigstring_shared.Stable.V1.t option] sexp }

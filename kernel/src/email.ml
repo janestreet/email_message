@@ -115,5 +115,12 @@ module Stable = struct
           let to_binable t = to_bigstring t
           let of_binable = of_bigstring
         end)
+
+    let stable_witness =
+      Stable_witness.of_serializable
+        Bigstring.Stable.V1.stable_witness
+        of_bigstring
+        to_bigstring
+    ;;
   end
 end

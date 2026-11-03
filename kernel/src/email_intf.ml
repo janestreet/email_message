@@ -38,6 +38,6 @@ module type Email = sig
   include Hashable.S_plain with type t := t
 
   module Stable : sig
-    module V1 : Stable_without_comparator with type t = t
+    module V1 : Stable_without_comparator_with_witness with type t = t
   end
 end

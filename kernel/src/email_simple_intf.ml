@@ -123,6 +123,9 @@ module type Content = sig
 
   val content_type : t -> Mimetype.t
 
+  (** The [charset] parameter of the Content-Type header, if any, as written. *)
+  val charset : t -> string option
+
   (** The Content-ID of the content *)
   val related_part_cid : t -> attachment_name option
 

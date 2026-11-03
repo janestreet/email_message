@@ -2,7 +2,8 @@ module Stable = struct
   open! Core.Core_stable
 
   module V1 = struct
-    type t = Core.Bigstring.Stable.V1.t_frozen [@@deriving sexp, bin_io, compare, hash]
+    type t = Core.Bigstring.Stable.V1.t_frozen
+    [@@deriving sexp, bin_io, compare, hash, stable_witness]
 
     let equal = [%compare.equal: t]
   end

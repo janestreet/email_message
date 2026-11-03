@@ -1,6 +1,4 @@
-"Email Message"
-===============
-
+# Email Message
 `email_message` is a library that defines types that represent an RFC2822 email.
 
 # Parsing an email

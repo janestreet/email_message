@@ -35,8 +35,8 @@ val substr_index : ?pos:int -> t -> pattern:t -> int option
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving equal]
+    type nonrec t = t [@@deriving compare, equal]
 
-    include Stable_without_comparator with type t := t
+    include Stable_without_comparator_with_witness with type t := t
   end
 end

@@ -3,18 +3,19 @@ module Stable = struct
 
   module Name = struct
     module V1 = struct
-      type t = string [@@deriving bin_io, compare, hash, sexp, equal]
+      type t = string [@@deriving bin_io, compare, hash, sexp, equal, stable_witness]
     end
   end
 
   module Value = struct
     module V1 = struct
-      type t = string [@@deriving bin_io, compare, hash, sexp]
+      type t = string [@@deriving bin_io, compare, hash, sexp, stable_witness]
     end
   end
 
   module V1 = struct
-    type t = (Name.V1.t * string) list [@@deriving bin_io, compare, hash, sexp, equal]
+    type t = (Name.V1.t * string) list
+    [@@deriving bin_io, compare, hash, sexp, equal, stable_witness]
   end
 end
 

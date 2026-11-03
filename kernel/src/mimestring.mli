@@ -9,7 +9,8 @@ module type S = sig
   val to_lowercase_string : t -> string
   val equal_string : t -> string -> bool
 
-  include Comparable.S_plain with type t := t
+  include%template Comparable.S_plain [@mode local] with type t := t
+
   include Hashable.S_plain with type t := t
 end
 
@@ -23,7 +24,7 @@ module Case_insensitive : sig
 
   module Stable : sig
     module V1 : sig
-      type nonrec t = t [@@deriving sexp, bin_io, compare, hash]
+      type nonrec t = t [@@deriving sexp, bin_io, compare ~localize, hash]
 
       include
         Stable

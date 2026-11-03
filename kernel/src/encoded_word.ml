@@ -14,7 +14,7 @@ module Charset = struct
     | `Windows1252
     | `KS_C_5601_1987
     ]
-  [@@deriving sexp_of, enumerate, compare, equal]
+  [@@deriving sexp_of, enumerate, compare ~localize, equal ~localize]
 
   let to_string = function
     | `Ascii -> "US-ASCII"

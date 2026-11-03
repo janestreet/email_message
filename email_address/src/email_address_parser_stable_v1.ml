@@ -1,7 +1,10 @@
 open! Core
-open! Core.Int.Replace_polymorphic_compare
-open Angstrom
-open Angstrom.Let_syntax
+
+(* The [Portable] interface to [Angstrom] is a Jane Street addition that is not part of
+   the upstream release. *)
+
+open Angstrom.Portable
+open Angstrom.Portable.Let_syntax
 
 type t =
   { prefix : string option
@@ -21,14 +24,14 @@ let is_unquoted_prefix_char = function
 ;;
 
 let skip_whitespace = skip_while is_whitespace_char
-let skip_while1 f = satisfy f *> skip_while f
+let skip_while1 (f @ portable) = satisfy f *> skip_while f
 
-let skip_satisfied_or_escaped1 f =
+let skip_satisfied_or_escaped1 (f @ portable) =
   skip_many1 (char '\\' *> advance 1 <|> skip_while1 (fun c -> Char.( <> ) '\\' c && f c))
 ;;
 
 let quoted_prefix : unit Angstrom.t =
-  let not_a_quote = Char.( <> ) '"' in
+  let not_a_quote = [%eta1 Char.( <> ) '"'] in
   char '"' *> option () (skip_satisfied_or_escaped1 not_a_quote) <* char '"'
 ;;
 
@@ -56,7 +59,7 @@ let local_part = consumed (skip_satisfied_or_escaped1 is_address_char) <?> "loca
 
 let maybe_at_domain =
   option
-    None
+    (None : string option)
     (let%map (_ : char) = char '@'
      and domain = take_while1 is_domain_char in
      Some domain)

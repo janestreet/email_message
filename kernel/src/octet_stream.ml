@@ -36,14 +36,14 @@ module Encoding = struct
     | `Binary
     | `Quoted_printable
     ]
-  [@@deriving sexp_of, compare, hash]
+  [@@deriving sexp_of, compare ~localize, hash]
 
   type t =
     (* Stable.Encoding.V1.t = *)
     [ known
     | `Unknown of string
     ]
-  [@@deriving sexp_of, compare, hash]
+  [@@deriving sexp_of, compare ~localize, hash]
 
   let of_string encoding =
     match encoding |> String.strip |> String.lowercase with
@@ -92,7 +92,7 @@ type t = Stable.V1.t =
   { encoding : Encoding.t
   ; content : Bigstring_shared.t
   }
-[@@deriving sexp_of, compare, hash]
+[@@deriving sexp_of, compare ~localize, hash]
 
 let encoding t = t.encoding
 let encoded_contents t = t.content

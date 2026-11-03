@@ -2,13 +2,16 @@ module Stable = struct
   open! Core.Core_stable
 
   module V1 = struct
-    type t = Core.Bigstring.Stable.V1.t_frozen [@@deriving sexp, bin_io, compare, hash]
+    type t = Core.Bigstring.Stable.V1.t_frozen
+    [@@deriving sexp, bin_io, compare ~localize, hash, stable_witness]
 
-    let equal = [%compare.equal: t]
+    let%template[@mode m = (global, local)] equal =
+      ([%compare.equal: t] [@mode.explicit m])
+    ;;
   end
 end
 
-type t = Stable.V1.t [@@deriving sexp_of, compare, hash, equal]
+type t = Stable.V1.t [@@deriving sexp_of, compare ~localize, hash, equal ~localize]
 
 open Core
 open Poly

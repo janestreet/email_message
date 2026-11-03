@@ -1,6 +1,6 @@
 open! Core
 
-type t [@@deriving sexp_of, compare]
+type t [@@deriving sexp_of, compare ~localize]
 
 val multipart_boundary : t -> Boundary.t option
 val set_multipart_boundary : t -> Boundary.t -> t

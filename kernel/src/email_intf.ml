@@ -4,7 +4,7 @@ module type Email = sig
   (** An [Email.t] is a list of headers along with unparsed content. [Email_content.parse]
       can be used to work with the structured content of an email. *)
 
-  type t : value mod contended portable [@@deriving compare, hash, sexp_of]
+  type t : value mod contended portable [@@deriving compare ~localize, hash, sexp_of]
 
   val create : headers:Headers.t -> raw_content:Email_raw_content.t -> t
   val headers : t -> Headers.t
@@ -38,6 +38,6 @@ module type Email = sig
   include Hashable.S_plain with type t := t
 
   module Stable : sig
-    module V1 : Stable_without_comparator with type t = t
+    module V1 : Stable_without_comparator_with_witness with type t = t
   end
 end

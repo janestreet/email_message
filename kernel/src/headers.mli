@@ -35,7 +35,7 @@ end
 module Name : sig
   (** Case insensitive *)
 
-  type t = string [@@deriving sexp_of, compare, hash]
+  type t = string [@@deriving sexp_of, compare ~localize, hash]
 
   val of_string : string -> t
   val to_string : t -> string
@@ -62,7 +62,7 @@ module Common : sig
 end
 
 module Value : sig
-  type t = string [@@deriving sexp_of, compare, hash]
+  type t = string [@@deriving sexp_of, compare ~localize, hash]
 
   (** Normalize the whitespace for processing/ if [normalize == `None] this does nothing.
       if [normalize == `Whitespace] (default), strip leading/trailing whitespace on every
@@ -82,7 +82,8 @@ end
 (*_ The add and set functions are same as in Field_list, except they add a space before
     the value. *)
 
-type t : value mod contended portable [@@deriving compare, hash, sexp_of, equal]
+type t : value mod contended portable
+[@@deriving compare ~localize, hash, sexp_of, equal ~localize]
 
 (** [eol] defaults to `LF *)
 val to_string_monoid : ?eol:Lf_or_crlf.t -> t -> String_monoid.t
@@ -148,19 +149,19 @@ val map'
 module Stable : sig
   module Name : sig
     module V1 : sig
-      type t = Name.t [@@deriving equal]
+      type t = Name.t [@@deriving compare ~localize, equal ~localize]
 
-      include Stable_without_comparator with type t := t
+      include Stable_without_comparator_with_witness with type t := t
     end
   end
 
   module Value : sig
-    module V1 : Stable_without_comparator with type t = Value.t
+    module V1 : Stable_without_comparator_with_witness with type t = Value.t
   end
 
   module V1 : sig
-    type nonrec t = t [@@deriving equal]
+    type nonrec t = t [@@deriving compare ~localize, equal ~localize]
 
-    include Stable_without_comparator with type t := t
+    include Stable_without_comparator_with_witness with type t := t
   end
 end

@@ -1,6 +1,7 @@
 open! Core
 
-type t : value mod contended portable [@@deriving compare, hash, sexp_of, equal]
+type t : value mod contended portable
+[@@deriving compare ~localize, hash, sexp_of, equal ~localize]
 
 val to_bigstring_shared : t -> Bigstring_shared.t
 val of_string : string -> t
@@ -17,8 +18,8 @@ end
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving equal]
+    type nonrec t = t [@@deriving compare ~localize, equal ~localize]
 
-    include Stable_without_comparator with type t := t
+    include Stable_without_comparator_with_witness with type t := t
   end
 end

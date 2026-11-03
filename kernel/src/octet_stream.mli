@@ -11,13 +11,13 @@ module Encoding : sig
     | `Binary
     | `Quoted_printable
     ]
-  [@@deriving sexp_of, compare, hash]
+  [@@deriving sexp_of, compare ~localize, hash]
 
   type t =
     [ known
     | `Unknown of string
     ]
-  [@@deriving sexp_of, compare, hash]
+  [@@deriving sexp_of, compare ~localize, hash]
 
   (*_ RFC 2045 says 7bit should be assumed if the Content-Transfer-Encoding heading is
       missing. *)
@@ -36,7 +36,7 @@ module Encoding : sig
   include Stringable.S with type t := t
 end
 
-type t [@@deriving sexp_of, compare, hash]
+type t [@@deriving sexp_of, compare ~localize, hash]
 
 val of_string : encoding:Encoding.t -> string -> t
 val of_bigstring_shared : encoding:Encoding.t -> Bigstring_shared.t -> t

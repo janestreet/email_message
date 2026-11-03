@@ -1,21 +1,5 @@
-open Core.Core_stable
-
 (** Case-insensitive strings *)
 module Case_insensitive = struct
-  module Stable = struct
-    module V1 = struct
-      type t = String.V1.t [@@deriving sexp, bin_io]
-
-      let compare = Core.String.Caseless.compare
-      let comparator = Core.String.Caseless.comparator
-
-      type comparator_witness = Core.String.Caseless.comparator_witness
-
-      let hash = Core.String.Caseless.hash
-      let hash_fold_t = Core.String.Caseless.hash_fold_t
-    end
-  end
-
   open Core
   include String.Caseless
 
@@ -34,7 +18,8 @@ module type S = sig
   val to_lowercase_string : t -> string
   val equal_string : t -> string -> bool
 
-  include Comparable.S_plain with type t := t
+  include%template Comparable.S_plain [@mode local] with type t := t
+
   include Hashable.S_plain with type t := t
 end
 

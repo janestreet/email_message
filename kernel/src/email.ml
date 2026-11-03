@@ -6,7 +6,7 @@ module Stable_no_v1_bin_io = struct
       { headers : Headers.Stable.V1.t
       ; raw_content : Email_raw_content.Stable.V1.t
       }
-    [@@deriving sexp, compare]
+    [@@deriving sexp, compare ~localize]
   end
 end
 
@@ -18,7 +18,7 @@ module T = struct
     { headers : Headers.t
     ; raw_content : Email_raw_content.t
     }
-  [@@deriving sexp_of, fields ~getters ~iterators:create, compare, hash]
+  [@@deriving sexp_of, fields ~getters ~iterators:create, compare ~localize, hash]
 end
 
 include T
@@ -115,5 +115,12 @@ module Stable = struct
           let to_binable t = to_bigstring t
           let of_binable = of_bigstring
         end)
+
+    let stable_witness =
+      Stable_witness.of_serializable
+        Bigstring.Stable.V1.stable_witness
+        of_bigstring
+        to_bigstring
+    ;;
   end
 end

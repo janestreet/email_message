@@ -3,18 +3,20 @@ module Stable = struct
 
   module Name = struct
     module V1 = struct
-      type t = string [@@deriving bin_io, compare, hash, sexp, equal]
+      type t = string
+      [@@deriving bin_io, compare ~localize, hash, sexp, equal ~localize, stable_witness]
     end
   end
 
   module Value = struct
     module V1 = struct
-      type t = string [@@deriving bin_io, compare, hash, sexp]
+      type t = string [@@deriving bin_io, compare ~localize, hash, sexp, stable_witness]
     end
   end
 
   module V1 = struct
-    type t = (Name.V1.t * string) list [@@deriving bin_io, compare, hash, sexp, equal]
+    type t = (Name.V1.t * string) list
+    [@@deriving bin_io, compare ~localize, hash, sexp, equal ~localize, stable_witness]
   end
 end
 
@@ -39,7 +41,7 @@ module Normalize = struct
 end
 
 module Name : sig
-  type t = string [@@deriving sexp_of, compare, hash, equal]
+  type t = string [@@deriving sexp_of, compare ~localize, hash, equal ~localize]
 
   val of_string : string -> t
   val to_string : t -> string
@@ -56,7 +58,7 @@ end = struct
 end
 
 module Value : sig
-  type t = string [@@deriving sexp_of, compare, hash]
+  type t = string [@@deriving sexp_of, compare ~localize, hash]
 
   val of_string : ?normalize:Normalize.decode -> string -> t
   val to_string : ?normalize:Normalize.encode -> t -> string
@@ -134,7 +136,8 @@ module Common = struct
   let received = "Received"
 end
 
-type t = (Name.t * string) list [@@deriving sexp_of, compare, hash, equal]
+type t = (Name.t * string) list
+[@@deriving sexp_of, compare ~localize, hash, equal ~localize]
 
 let to_string_monoid ?(eol = `LF) t =
   List.map t ~f:(fun (name, value) ->

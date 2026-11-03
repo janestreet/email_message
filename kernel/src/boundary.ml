@@ -2,13 +2,13 @@ module Stable = struct
   open Core.Core_stable
 
   module V1 = struct
-    type t = string [@@deriving sexp, bin_io, compare]
+    type t = string [@@deriving sexp, bin_io, compare ~localize]
   end
 end
 
 open Core
 
-type t = string [@@deriving sexp_of, compare, hash]
+type t = string [@@deriving sexp_of, compare ~localize, hash]
 type boundary = t
 
 let of_string = Fn.id

@@ -1,7 +1,7 @@
 open Core
 
 module Params = struct
-  type t = (Headers.Name.t * string) list [@@deriving sexp_of, compare]
+  type t = (Headers.Name.t * string) list [@@deriving sexp_of, compare ~localize]
 
   let last t name =
     let name = Headers.Name.of_string name in
@@ -19,7 +19,7 @@ type t =
   ; mime_subtype : Rfc.RFC2045.Token.t
   ; params : Params.t
   }
-[@@deriving compare, sexp_of]
+[@@deriving compare ~localize, sexp_of]
 
 let mime_type t = Rfc.RFC2045.Token.to_lowercase_string t.mime_type
 let mime_subtype t = Rfc.RFC2045.Token.to_lowercase_string t.mime_subtype

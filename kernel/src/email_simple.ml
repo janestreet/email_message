@@ -7,7 +7,7 @@ module Stable = struct
 
   module Mimetype = struct
     module V1 = struct
-      type t = String.V1.t [@@deriving bin_io, compare, sexp]
+      type t = String.V1.t [@@deriving bin_io, compare ~localize, sexp]
     end
   end
 end
@@ -128,7 +128,7 @@ module Expert = struct
 end
 
 module Mimetype = struct
-  type t = Stable.Mimetype.V1.t [@@deriving compare, sexp_of]
+  type t = Stable.Mimetype.V1.t [@@deriving compare ~localize, sexp_of]
 
   let text = "text/plain"
   let text_utf8 = "text/plain; charset=\"UTF-8\""
@@ -392,6 +392,11 @@ module Content = struct
        else None)
       (let%bind _, args = parse_last_header t "Content-Type" in
        attachment_name_from_args args ~attribute_name:"name")
+  ;;
+
+  let charset t =
+    let%bind.Option _, args = parse_last_header t "Content-Type" in
+    attachment_name_from_args args ~attribute_name:"charset"
   ;;
 
   let related_part_cid t =

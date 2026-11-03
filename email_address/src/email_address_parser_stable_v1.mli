@@ -1,3 +1,5 @@
+@@ portable
+
 type t =
   { prefix : string option
   ; local_part : string

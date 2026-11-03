@@ -1,7 +1,7 @@
 open! Core
 
 module type Mimetype = sig
-  type t = private string [@@deriving compare, sexp_of]
+  type t = private string [@@deriving compare ~localize, sexp_of]
 
   val text : t
   val text_utf8 : t
@@ -122,6 +122,9 @@ module type Content = sig
     -> t
 
   val content_type : t -> Mimetype.t
+
+  (** The [charset] parameter of the Content-Type header, if any, as written. *)
+  val charset : t -> string option
 
   (** The Content-ID of the content *)
   val related_part_cid : t -> attachment_name option
